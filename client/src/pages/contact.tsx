@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import Header from "@/components/Header";
-import { Mail, Phone, MessageCircle, Facebook, Linkedin } from "lucide-react";
+import { Mail, Phone, MessageCircle, Facebook, Linkedin, MessageSquare } from "lucide-react";
 
 export default function ContactPage() {
   return (
@@ -11,6 +11,7 @@ export default function ContactPage() {
       <section className="py-12 md:py-20 bg-gradient-to-r from-primary/10 to-primary/5 border-b">
         <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8">
           <div className="text-center">
+            <MessageSquare className="h-16 w-16 mx-auto mb-6 text-primary" />
             <h1 className="text-4xl md:text-5xl font-bold mb-4">تواصل معنا</h1>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
               نحن هنا لمساعدتك. استخدم أحد طرق التواصل التالية للتواصل معنا

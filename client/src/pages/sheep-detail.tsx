@@ -244,7 +244,7 @@ export default function SheepDetail() {
             </div>
 
             {/* Order Button */}
-            {user && user.role === "buyer" && (
+            {user && (user.role === "buyer" || user.role === "seller") && (
               <Button
                 size="lg"
                 className="w-full text-lg"
@@ -260,7 +260,7 @@ export default function SheepDetail() {
               <Card className="bg-muted/50">
                 <CardContent className="p-6 text-center">
                   <p className="text-muted-foreground mb-4">
-                    يجب تسجيل الدخول كمشتري لإنشاء طلب شراء
+                    يجب تسجيل الدخول لإنشاء طلب شراء
                   </p>
                   <Button onClick={() => setLocation("/login")}>
                     تسجيل الدخول

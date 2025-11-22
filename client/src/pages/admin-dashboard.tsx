@@ -47,6 +47,13 @@ export default function AdminDashboard() {
   const [reviewing, setReviewing] = useState(false);
   const [rejectionReason, setRejectionReason] = useState("");
 
+  // Helper function to convert Persian/Arabic digits to English digits
+  const convertPersianToEnglish = (str: string) => {
+    return str.replace(/[\u06F0-\u06F9]/g, (digit) => 
+      String.fromCharCode(digit.charCodeAt(0) - 0x0630)
+    );
+  };
+
   useEffect(() => {
     fetchAllData();
   }, []);
@@ -483,7 +490,7 @@ export default function AdminDashboard() {
                           {u.phone || "-"}
                         </TableCell>
                         <TableCell className="text-sm text-muted-foreground">
-                          {new Date(u.createdAt).toLocaleDateString('ar-SA')}
+                          {convertPersianToEnglish(new Date(u.createdAt).toLocaleDateString('ar-SA'))}
                         </TableCell>
                       </TableRow>
                     ))}

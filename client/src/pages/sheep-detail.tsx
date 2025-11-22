@@ -116,35 +116,23 @@ export default function SheepDetail() {
 
     setCreatingOrder(true);
     try {
-      const orderData: Omit<InsertOrder, "sheepId" | "totalPrice"> & { 
-        buyerId: string;
-        buyerEmail: string;
-        sellerId: string;
-        sellerEmail: string;
-        sheepId: string;
-        totalPrice: number;
-        sheepData: Partial<Sheep>;
-        status: string;
-        createdAt: number;
-        buyerInfo: OrderFormData;
-      } = {
+      const orderData = {
         buyerId: user.uid,
         buyerEmail: user.email,
+        buyerName: formData.fullName,
+        buyerPhone: formData.phone,
+        buyerCity: formData.city,
+        buyerAddress: formData.address,
         sellerId: sheep.sellerId,
         sellerEmail: sheep.sellerEmail || "",
         sheepId: sheep.id,
+        sheepPrice: sheep.price,
+        sheepAge: sheep.age,
+        sheepWeight: sheep.weight,
+        sheepCity: sheep.city,
         totalPrice: sheep.price,
-        sheepData: {
-          images: sheep.images,
-          price: sheep.price,
-          age: sheep.age,
-          weight: sheep.weight,
-          city: sheep.city,
-          description: sheep.description,
-        },
         status: "pending",
         createdAt: Date.now(),
-        buyerInfo: formData,
       };
 
       await addDoc(collection(db, "orders"), orderData);

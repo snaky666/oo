@@ -159,8 +159,19 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen w-full flex items-center justify-center bg-background px-4 py-12">
-      <Card className="w-full max-w-md">
+    <div 
+      className="min-h-screen w-full flex items-center justify-center px-4 py-12"
+      style={{
+        backgroundImage: 'url(/login-bg.gif)',
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundAttachment: 'fixed'
+      }}
+    >
+      {/* Overlay to make card readable */}
+      <div className="absolute inset-0 bg-black/40" />
+      
+      <Card className="w-full max-w-md relative z-10">
         <CardHeader className="space-y-2 text-center">
           <CardTitle className="text-3xl font-bold">تسجيل الدخول</CardTitle>
           <CardDescription>

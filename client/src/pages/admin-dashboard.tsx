@@ -455,7 +455,7 @@ export default function AdminDashboard() {
                               {u.address || "-"}
                             </TableCell>
                             <TableCell className="text-sm text-muted-foreground whitespace-nowrap">
-                              {new Date(u.createdAt).toLocaleDateString('ar-SA')}
+                              {formatGregorianDate(u.createdAt)}
                             </TableCell>
                           </TableRow>
                         ))}
@@ -552,7 +552,7 @@ export default function AdminDashboard() {
                             </Badge>
                           </TableCell>
                           <TableCell className="text-sm text-muted-foreground">
-                            {new Date(o.createdAt).toLocaleDateString('ar-SA')}
+                            {formatGregorianDate(o.createdAt)}
                           </TableCell>
                           <TableCell>
                             {(!o.status || o.status === "pending") && (
@@ -603,7 +603,7 @@ export default function AdminDashboard() {
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">التاريخ</p>
-                  <p className="font-semibold">{new Date(selectedOrder.createdAt).toLocaleDateString('ar-SA')}</p>
+                  <p className="font-semibold">{formatGregorianDate(selectedOrder.createdAt)}</p>
                 </div>
               </div>
             </div>

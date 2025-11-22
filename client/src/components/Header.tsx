@@ -2,7 +2,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import ThemeToggle from "@/components/ThemeToggle";
 import { Link, useLocation } from "wouter";
-import { LogOut, Menu, X } from "lucide-react";
+import { LogOut, Menu, X, Home } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import {
@@ -64,6 +64,20 @@ export default function Header() {
 
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center gap-1">
+            {/* Home Icon - متاح فقط للمستخدمين المسجلين */}
+            {user && (
+              <Link href={getDashboardLink()} className={cn("rounded-md hover-elevate", isActive(getDashboardLink()) && "bg-accent/10")}>
+                <Button 
+                  variant="ghost" 
+                  size="icon"
+                  title="الصفحة الرئيسية"
+                  className={cn(isActive(getDashboardLink()) && "text-primary")}
+                >
+                  <Home className="h-5 w-5" />
+                </Button>
+              </Link>
+            )}
+
             {/* الأضاحي - متاح فقط للمستخدمين المسجلين */}
             {user && (
               <Link href="/browse" className={cn("rounded-md hover-elevate", isActive("/browse") && "bg-accent/10")}>
@@ -164,6 +178,20 @@ export default function Header() {
         {/* Mobile Navigation */}
         {mobileMenuOpen && (
           <div className="md:hidden border-t py-4 space-y-2">
+            {/* Home Icon - متاح فقط للمستخدمين المسجلين */}
+            {user && (
+              <Link href={getDashboardLink()}>
+                <Button
+                  variant="ghost"
+                  className={cn("w-full justify-start", isActive(getDashboardLink()) && "bg-accent/10 text-primary font-semibold")}
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  <Home className="mr-2 h-5 w-5" />
+                  الصفحة الرئيسية
+                </Button>
+              </Link>
+            )}
+
             {/* الأضاحي - متاح فقط للمستخدمين المسجلين */}
             {user && (
               <Link href="/browse">

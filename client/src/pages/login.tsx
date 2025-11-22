@@ -15,8 +15,7 @@ import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, LogIn } from "lucide-react";
 import { FcGoogle } from "react-icons/fc";
-
-const loginBgGif = new URL("/login-bg.gif", import.meta.url).href;
+import loginBgGif from "@assets/images/login-bg.gif";
 
 const loginSchema = z.object({
   email: z.string().email("البريد الإلكتروني غير صالح"),
@@ -164,7 +163,7 @@ export default function Login() {
     <div 
       className="min-h-screen w-full flex items-center justify-center px-4 py-12"
       style={{
-        backgroundImage: `url(${loginBgGif})`,
+        backgroundImage: `url('${loginBgGif}')`,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
         backgroundAttachment: 'fixed'

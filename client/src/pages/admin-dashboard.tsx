@@ -355,6 +355,7 @@ export default function AdminDashboard() {
                           <TableHead className="text-right">الاسم الكامل</TableHead>
                           <TableHead className="text-right">رقم الهاتف</TableHead>
                           <TableHead className="text-right">المدينة</TableHead>
+                          <TableHead className="text-right">البلدية</TableHead>
                           <TableHead className="text-right">العنوان</TableHead>
                           <TableHead className="text-right">تاريخ التسجيل</TableHead>
                         </TableRow>
@@ -366,6 +367,7 @@ export default function AdminDashboard() {
                             <TableCell>{u.fullName || "-"}</TableCell>
                             <TableCell>{u.phone || "-"}</TableCell>
                             <TableCell>{u.city || "-"}</TableCell>
+                            <TableCell className="text-sm">{u.municipality || "-"}</TableCell>
                             <TableCell className="text-sm text-muted-foreground max-w-xs truncate">
                               {u.address || "-"}
                             </TableCell>

@@ -39,10 +39,12 @@ export default function SellerProfile() {
       phone: user?.phone || "",
       address: user?.address || "",
       city: user?.city || "",
+      municipality: user?.municipality || "",
     },
   });
 
   const selectedCity = watch("city");
+  const selectedMunicipality = watch("municipality");
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -56,6 +58,7 @@ export default function SellerProfile() {
       setValue("phone", user.phone || "");
       setValue("address", user.address || "");
       setValue("city", user.city || "");
+      setValue("municipality", user.municipality || "");
     }
   }, [user, setValue]);
 
@@ -197,6 +200,25 @@ export default function SellerProfile() {
                 {errors.city && (
                   <p className="text-red-500 text-sm text-right">
                     {errors.city.message}
+                  </p>
+                )}
+              </div>
+
+              {/* Municipality */}
+              <div className="space-y-2">
+                <Label htmlFor="municipality" className="text-right block">
+                  البلدية / الحي *
+                </Label>
+                <Input
+                  id="municipality"
+                  placeholder="مثال: الحي الشرقي، بنزرت، بلدية الأندلس"
+                  dir="rtl"
+                  {...register("municipality")}
+                  className="text-right"
+                />
+                {errors.municipality && (
+                  <p className="text-red-500 text-sm text-right">
+                    {errors.municipality.message}
                   </p>
                 )}
               </div>

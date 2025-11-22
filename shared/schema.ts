@@ -22,6 +22,7 @@ export interface User {
   fullName?: string;
   address?: string;
   city?: string;
+  municipality?: string; // البلدية/الحي
   profileComplete?: boolean; // هل ملأ البائع بيانات كاملة
   createdAt: number;
   updatedAt?: number;
@@ -42,6 +43,7 @@ export const updateSellerProfileSchema = z.object({
   phone: z.string().min(7, "رقم الهاتف يجب أن يكون صحيح"),
   address: z.string().min(5, "العنوان يجب أن يكون 5 أحرف على الأقل"),
   city: z.string().min(2, "يجب اختيار المدينة"),
+  municipality: z.string().min(2, "يجب إدخال البلدية"),
 });
 
 export type UpdateSellerProfile = z.infer<typeof updateSellerProfileSchema>;

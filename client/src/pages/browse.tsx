@@ -89,8 +89,8 @@ export default function BrowseSheep() {
           />
         </div>
         <div className="flex justify-between text-sm text-muted-foreground">
-          <span>{priceRange[0].toLocaleString('ar-SA')}</span>
-          <span>{priceRange[1].toLocaleString('ar-SA')}</span>
+          <span>{priceRange[0].toLocaleString()}</span>
+          <span>{priceRange[1].toLocaleString()}</span>
         </div>
       </div>
 

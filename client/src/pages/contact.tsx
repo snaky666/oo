@@ -87,8 +87,8 @@ export default function ContactPage() {
                 <p className="text-muted-foreground mb-4">
                   تابعنا على الفيسبوك لآخر المستجدات.
                 </p>
-                <a href="https://facebook.com/odhiyati" target="_blank" rel="noopener noreferrer" className="text-primary font-bold text-lg hover:underline">
-                  odhiyati.com
+                <a href="https://web.facebook.com/abderazak.habirat.2025" target="_blank" rel="noopener noreferrer" className="text-primary font-bold text-lg hover:underline">
+                  Facebook الملف الشخصي
                 </a>
               </CardContent>
             </Card>
@@ -101,8 +101,8 @@ export default function ContactPage() {
                 <p className="text-muted-foreground mb-4">
                   اتصل بنا عبر LinkedIn للفرص العملية.
                 </p>
-                <a href="https://linkedin.com/company/odhiyati" target="_blank" rel="noopener noreferrer" className="text-primary font-bold text-lg hover:underline">
-                  odhiyati.com
+                <a href="https://www.linkedin.com/in/habirat-abderazek-3a7b3b219/" target="_blank" rel="noopener noreferrer" className="text-primary font-bold text-lg hover:underline">
+                  LinkedIn الملف الشخصي
                 </a>
               </CardContent>
             </Card>

@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import Header from "@/components/Header";
-import { Mail, Phone, MapPin, Clock, Globe, MessageCircle, Facebook, Linkedin } from "lucide-react";
+import { Mail, Phone, MessageCircle, Facebook, Linkedin } from "lucide-react";
 
 export default function ContactPage() {
   return (
@@ -107,47 +107,6 @@ export default function ContactPage() {
               </CardContent>
             </Card>
 
-            {/* Location */}
-            <Card className="hover:shadow-lg transition-shadow">
-              <CardContent className="p-8">
-                <MapPin className="h-12 w-12 mb-4 text-primary" />
-                <h3 className="text-xl font-semibold mb-3">المقر الرئيسي</h3>
-                <p className="text-muted-foreground mb-4">
-                  يمكنك زيارتنا مباشرة.
-                </p>
-                <p className="text-primary font-bold text-lg">
-                  الجزائر، الجزائر العاصمة
-                </p>
-              </CardContent>
-            </Card>
-
-            {/* Hours */}
-            <Card className="hover:shadow-lg transition-shadow">
-              <CardContent className="p-8">
-                <Clock className="h-12 w-12 mb-4 text-primary" />
-                <h3 className="text-xl font-semibold mb-3">ساعات العمل</h3>
-                <p className="text-muted-foreground mb-4">
-                  فريقنا متاح على مدار السنة.
-                </p>
-                <p className="text-primary font-bold text-lg">
-                  24/7 متاح دائماً
-                </p>
-              </CardContent>
-            </Card>
-
-            {/* Website */}
-            <Card className="hover:shadow-lg transition-shadow">
-              <CardContent className="p-8">
-                <Globe className="h-12 w-12 mb-4 text-primary" />
-                <h3 className="text-xl font-semibold mb-3">الموقع الإلكتروني</h3>
-                <p className="text-muted-foreground mb-4">
-                  للحصول على مزيد من المعلومات.
-                </p>
-                <a href="https://odhiyati.com" target="_blank" rel="noopener noreferrer" className="text-primary font-bold text-lg hover:underline">
-                  odhiyati.com
-                </a>
-              </CardContent>
-            </Card>
           </div>
 
           {/* Summary Card */}

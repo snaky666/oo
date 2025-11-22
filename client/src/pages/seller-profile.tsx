@@ -246,7 +246,7 @@ export default function SellerProfile() {
               <Button
                 type="submit"
                 disabled={submitting}
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-lg font-semibold text-lg"
+                className="w-full bg-amber-600 hover:bg-amber-700 text-white py-2 rounded-lg font-semibold text-lg"
               >
                 {submitting ? (
                   <>

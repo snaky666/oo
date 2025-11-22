@@ -136,7 +136,7 @@ export default function BrowseSheep() {
       <div className="space-y-3">
         <Label className="text-base font-semibold">المدينة</Label>
         <div className="max-h-64 overflow-y-auto space-y-2 pr-2">
-          {algeriaCities.slice(0, 10).map(city => (
+          {algeriaCities.map(city => (
             <div key={city} className="flex items-center gap-2">
               <Checkbox
                 id={`city-${city}`}

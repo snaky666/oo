@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { collection, query, where, getDocs, addDoc, deleteDoc, doc, updateDoc } from "firebase/firestore";
-import { ref, uploadBytes, getDownloadURL, deleteObject } from "firebase/storage";
-import { db, storage } from "@/lib/firebase";
+import { db } from "@/lib/firebase";
+import { uploadMultipleImagesToImgBB } from "@/lib/imgbb";
 import { useAuth } from "@/contexts/AuthContext";
 import { Sheep, insertSheepSchema, InsertSheep, saudiCities } from "@shared/schema";
 import Header from "@/components/Header";
@@ -111,14 +111,14 @@ export default function SellerDashboard() {
   };
 
   const uploadImages = async (): Promise<string[]> => {
-    const uploadPromises = selectedImages.map(async (file, index) => {
-      const fileName = `sheep/${user!.uid}/${Date.now()}_${index}_${file.name}`;
-      const storageRef = ref(storage, fileName);
-      await uploadBytes(storageRef, file);
-      return await getDownloadURL(storageRef);
-    });
-
-    return await Promise.all(uploadPromises);
+    try {
+      // Upload images to ImgBB
+      const imageUrls = await uploadMultipleImagesToImgBB(selectedImages);
+      return imageUrls;
+    } catch (error) {
+      console.error("Error uploading images to ImgBB:", error);
+      throw new Error("فشل رفع الصور. تأكد من وجود API key صحيح");
+    }
   };
 
   const onSubmit = async (data: InsertSheep) => {

@@ -224,6 +224,64 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* About Us Section */}
+      <section className="py-12 md:py-20">
+        <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl md:text-4xl font-semibold mb-4">
+              من نحن؟
+            </h2>
+            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+              نحن منصة متخصصة في خدمة سوق الأغنام الجزائري
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
+            <div className="space-y-6">
+              <div>
+                <h3 className="text-xl font-semibold mb-3">رؤيتنا</h3>
+                <p className="text-muted-foreground">
+                  نسعى إلى بناء سوق آمن وموثوق لبيع وشراء الأغنام في الجزائر، حيث يمكن للبائعين والمشترين التواصل بسهولة وثقة مع ضمان جودة عالية في كل معاملة.
+                </p>
+              </div>
+              <div>
+                <h3 className="text-xl font-semibold mb-3">مهمتنا</h3>
+                <p className="text-muted-foreground">
+                  توفير منصة سهلة الاستخدام وآمنة تربط بين البائعين والمشترين مع إشراف إداري شامل لضمان سلامة جميع المعاملات وحقوق الجميع.
+                </p>
+              </div>
+              <div>
+                <h3 className="text-xl font-semibold mb-3">قيمنا</h3>
+                <p className="text-muted-foreground">
+                  الشفافية والأمان والموثوقية هي أساس عملنا. نعتقد أن الثقة هي أساس أي معاملة ناجحة.
+                </p>
+              </div>
+            </div>
+
+            <div className="bg-gradient-to-br from-primary/10 to-primary/5 rounded-lg p-8 border border-primary/20">
+              <div className="space-y-6">
+                <div>
+                  <h3 className="text-2xl font-bold text-primary mb-2">1000+</h3>
+                  <p className="text-muted-foreground">مستخدم نشط يثق بنا</p>
+                </div>
+                <div>
+                  <h3 className="text-2xl font-bold text-primary mb-2">500+</h3>
+                  <p className="text-muted-foreground">معاملة تمت بنجاح</p>
+                </div>
+                <div>
+                  <h3 className="text-2xl font-bold text-primary mb-2">24/7</h3>
+                  <p className="text-muted-foreground">دعم فني متواجد دائماً</p>
+                </div>
+                <div>
+                  <h3 className="text-2xl font-bold text-primary mb-2">100%</h3>
+                  <p className="text-muted-foreground">معاملات آمنة وموثوقة</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Footer */}
       <footer className="border-t py-8 md:py-12 bg-muted/30">
         <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8">

@@ -2,7 +2,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import ThemeToggle from "@/components/ThemeToggle";
 import { Link, useLocation } from "wouter";
-import { LogOut, Menu, X, Home } from "lucide-react";
+import { LogOut, Menu, X, Home, MessageSquare } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import {
@@ -77,6 +77,18 @@ export default function Header() {
                 </Button>
               </Link>
             )}
+
+            {/* Contact Icon - متاح للجميع */}
+            <Link href="/contact" className={cn("rounded-md hover-elevate", isActive("/contact") && "bg-accent/10")}>
+              <Button 
+                variant="ghost" 
+                size="icon"
+                title="تواصل معنا"
+                className={cn(isActive("/contact") && "text-primary")}
+              >
+                <MessageSquare className="h-5 w-5" />
+              </Button>
+            </Link>
 
             {/* الأضاحي - متاح فقط للمستخدمين المسجلين */}
             {user && (
@@ -191,6 +203,18 @@ export default function Header() {
                 </Button>
               </Link>
             )}
+
+            {/* Contact Icon - متاح للجميع */}
+            <Link href="/contact">
+              <Button
+                variant="ghost"
+                className={cn("w-full justify-start", isActive("/contact") && "bg-accent/10 text-primary font-semibold")}
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                <MessageSquare className="mr-2 h-5 w-5" />
+                تواصل معنا
+              </Button>
+            </Link>
 
             {/* الأضاحي - متاح فقط للمستخدمين المسجلين */}
             {user && (

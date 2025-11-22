@@ -161,7 +161,7 @@ export default function Login() {
 
   return (
     <div 
-      className="min-h-screen w-full flex items-center justify-center px-4 py-12"
+      className="min-h-screen w-full flex flex-col"
       style={{
         backgroundImage: `url('${loginBgGif}')`,
         backgroundSize: 'cover',
@@ -172,14 +172,16 @@ export default function Login() {
       {/* Overlay to make card readable */}
       <div className="absolute inset-0 bg-black/40" />
       
-      <Card className="w-full max-w-md relative z-10">
-        <CardHeader className="space-y-2 text-center">
-          <CardTitle className="text-3xl font-bold">تسجيل الدخول</CardTitle>
-          <CardDescription>
-            سجل دخولك للوصول إلى حسابك في أضحيتي
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
+      {/* Main content */}
+      <div className="flex-1 flex items-center justify-center px-4 py-12 relative z-10">
+        <Card className="w-full max-w-md">
+          <CardHeader className="space-y-2 text-center">
+            <CardTitle className="text-3xl font-bold">تسجيل الدخول</CardTitle>
+            <CardDescription>
+              سجل دخولك للوصول إلى حسابك في أضحيتي
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
             {/* Email */}
             <div className="space-y-2">
@@ -296,8 +298,23 @@ export default function Login() {
               </div>
             )}
           </form>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Footer */}
+      <footer className="relative z-10 bg-black/20 backdrop-blur-sm border-t border-white/10">
+        <div className="max-w-7xl mx-auto px-4 py-6">
+          <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+            <div className="text-center md:text-right text-sm text-white/70">
+              <p>أضحيتي © 2025 - منصة متخصصة في بيع وشراء الأغنام</p>
+            </div>
+            <div className="text-center text-sm text-white/70">
+              <p>Developed by <span className="font-semibold text-white">NovaWeb</span></p>
+            </div>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }

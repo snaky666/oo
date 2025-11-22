@@ -58,20 +58,27 @@ export default function LandingPage() {
                 تواصل آمن بين البائعين والمشترين مع إشراف إداري كامل
               </p>
               <div className="flex flex-wrap gap-4">
-                <Link href="/register" data-testid="button-register-buyer">
-                  <Button size="lg" className="text-lg">
-                    ابدأ الشراء
-                  </Button>
-                </Link>
-                <Link href="/register" data-testid="button-register-seller">
-                  <Button 
-                    size="lg" 
-                    variant="outline" 
-                    className="text-lg bg-white/10 backdrop-blur-sm border-white/20 text-white hover:bg-white/20"
-                  >
-                    ابدأ البيع
-                  </Button>
-                </Link>
+                {/* Show "ابدأ الشراء" for buyers and sellers, hide for admins */}
+                {(!user || user.role === "buyer" || user.role === "seller") && (
+                  <Link href="/register" data-testid="button-register-buyer">
+                    <Button size="lg" className="text-lg">
+                      ابدأ الشراء
+                    </Button>
+                  </Link>
+                )}
+                
+                {/* Show "ابدأ البيع" only for sellers, hide for buyers and admins */}
+                {(!user || user.role === "seller") && (
+                  <Link href="/register" data-testid="button-register-seller">
+                    <Button 
+                      size="lg" 
+                      variant="outline" 
+                      className="text-lg bg-white/10 backdrop-blur-sm border-white/20 text-white hover:bg-white/20"
+                    >
+                      ابدأ البيع
+                    </Button>
+                  </Link>
+                )}
               </div>
             </div>
           </div>

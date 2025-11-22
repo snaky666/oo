@@ -31,7 +31,7 @@ export default function ContactPage() {
                 <p className="text-muted-foreground mb-4">
                   للاستفسارات والطلبات العامة.
                 </p>
-                <a href="mailto:odhiyaty@gmail.com" className="text-primary font-bold text-lg hover:underline break-all">
+                <a href="https://mail.google.com/mail/?view=cm&fs=1&to=odhiyaty@gmail.com" target="_blank" rel="noopener noreferrer" className="text-primary font-bold text-lg hover:underline break-all">
                   odhiyaty@gmail.com
                 </a>
               </CardContent>
@@ -45,7 +45,7 @@ export default function ContactPage() {
                 <p className="text-muted-foreground mb-4">
                   للمشاكل والشكاوى الخاصة.
                 </p>
-                <a href="mailto:habiratabderazek@gmail.com" className="text-primary font-bold text-lg hover:underline break-all">
+                <a href="https://mail.google.com/mail/?view=cm&fs=1&to=habiratabderazek@gmail.com" target="_blank" rel="noopener noreferrer" className="text-primary font-bold text-lg hover:underline break-all">
                   habiratabderazek@gmail.com
                 </a>
               </CardContent>

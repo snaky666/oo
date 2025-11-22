@@ -76,12 +76,18 @@ export default function AdminDashboard() {
   };
 
   const fetchOrders = async () => {
-    const snapshot = await getDocs(collection(db, "orders"));
-    const ordersData = snapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data()
-    })) as Order[];
-    setOrders(ordersData);
+    try {
+      const snapshot = await getDocs(collection(db, "orders"));
+      const ordersData = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      })) as Order[];
+      console.log("🔍 عدد الطلبات المجلوبة:", ordersData.length);
+      console.log("📋 الطلبات:", ordersData);
+      setOrders(ordersData);
+    } catch (error) {
+      console.error("❌ خطأ في جلب الطلبات:", error);
+    }
   };
 
   const fetchUsers = async () => {
@@ -494,54 +500,67 @@ export default function AdminDashboard() {
                 <CardTitle>الطلبات ({orders.length})</CardTitle>
               </CardHeader>
               <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>المشتري</TableHead>
-                      <TableHead>البائع</TableHead>
-                      <TableHead>السعر</TableHead>
-                      <TableHead>الحالة</TableHead>
-                      <TableHead>التاريخ</TableHead>
-                      <TableHead>الإجراءات</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {orders.map(o => (
-                      <TableRow key={o.id}>
-                        <TableCell className="text-sm">{o.buyerEmail || o.buyerId.slice(0, 8)}</TableCell>
-                        <TableCell className="text-sm">{o.sellerEmail || o.sellerId.slice(0, 8)}</TableCell>
-                        <TableCell>{o.totalPrice.toLocaleString()} DA</TableCell>
-                        <TableCell>
-                          <Badge
-                            className={
-                              o.status === "confirmed"
-                                ? "bg-green-500/10 text-green-700"
-                                : (!o.status || o.status === "pending")
-                                ? "bg-yellow-500/10 text-yellow-700"
-                                : "bg-red-500/10 text-red-700"
-                            }
-                          >
-                            {!o.status || o.status === "pending" ? "قيد المراجعة" : o.status === "confirmed" ? "مؤكد" : "مرفوض"}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-sm text-muted-foreground">
-                          {new Date(o.createdAt).toLocaleDateString('ar-SA')}
-                        </TableCell>
-                        <TableCell>
-                          {(!o.status || o.status === "pending") && (
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={() => setSelectedOrder(o)}
-                            >
-                              مراجعة
-                            </Button>
-                          )}
-                        </TableCell>
+                {loading ? (
+                  <p className="text-center text-muted-foreground">جاري التحميل...</p>
+                ) : orders.length === 0 ? (
+                  <Card>
+                    <CardContent className="p-12 text-center">
+                      <ShoppingBag className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
+                      <p className="text-lg text-muted-foreground">
+                        لا توجد طلبات حتى الآن
+                      </p>
+                    </CardContent>
+                  </Card>
+                ) : (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>المشتري</TableHead>
+                        <TableHead>البائع</TableHead>
+                        <TableHead>السعر</TableHead>
+                        <TableHead>الحالة</TableHead>
+                        <TableHead>التاريخ</TableHead>
+                        <TableHead>الإجراءات</TableHead>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                    </TableHeader>
+                    <TableBody>
+                      {orders.map(o => (
+                        <TableRow key={o.id}>
+                          <TableCell className="text-sm">{o.buyerEmail || o.buyerId.slice(0, 8)}</TableCell>
+                          <TableCell className="text-sm">{o.sellerEmail || o.sellerId.slice(0, 8)}</TableCell>
+                          <TableCell>{o.totalPrice.toLocaleString()} DA</TableCell>
+                          <TableCell>
+                            <Badge
+                              className={
+                                o.status === "confirmed"
+                                  ? "bg-green-500/10 text-green-700"
+                                  : (!o.status || o.status === "pending")
+                                  ? "bg-yellow-500/10 text-yellow-700"
+                                  : "bg-red-500/10 text-red-700"
+                              }
+                            >
+                              {!o.status || o.status === "pending" ? "قيد المراجعة" : o.status === "confirmed" ? "مؤكد" : "مرفوض"}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-sm text-muted-foreground">
+                            {new Date(o.createdAt).toLocaleDateString('ar-SA')}
+                          </TableCell>
+                          <TableCell>
+                            {(!o.status || o.status === "pending") && (
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => setSelectedOrder(o)}
+                              >
+                                مراجعة
+                              </Button>
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                )}
               </CardContent>
             </Card>
           </TabsContent>

@@ -31,19 +31,22 @@ export default function BrowseSheep() {
     try {
       const sheepQuery = query(
         collection(db, "sheep"),
-        where("status", "==", "approved"),
-        orderBy("createdAt", "desc")
+        where("status", "==", "approved")
       );
       
       const snapshot = await getDocs(sheepQuery);
-      const sheepData = snapshot.docs.map(doc => ({
+      let sheepData = snapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data()
       })) as Sheep[];
       
+      // Sort by createdAt in descending order on client side
+      sheepData = sheepData.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+      
       setSheep(sheepData);
     } catch (error) {
       console.error("Error fetching sheep:", error);
+      setSheep([]);
     } finally {
       setLoading(false);
     }
@@ -74,7 +77,7 @@ export default function BrowseSheep() {
     <div className="space-y-6">
       {/* Price Filter */}
       <div className="space-y-3">
-        <Label className="text-base font-semibold">السعر (ر.س)</Label>
+        <Label className="text-base font-semibold">السعر (DA)</Label>
         <div className="px-2">
           <Slider
             value={priceRange}

@@ -224,30 +224,6 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* CTA Section */}
-      <section className="py-12 md:py-20">
-        <div className="max-w-4xl mx-auto px-4 md:px-6 lg:px-8 text-center">
-          <h2 className="text-3xl md:text-4xl font-semibold mb-6">
-            جاهز للبدء؟
-          </h2>
-          <p className="text-lg text-muted-foreground mb-8">
-            انضم الآن إلى آلاف المستخدمين الذين يثقون في أضحيتي
-          </p>
-          <div className="flex flex-wrap justify-center gap-4">
-            <Link href="/register" data-testid="button-cta-register">
-              <Button size="lg" className="text-lg">
-                إنشاء حساب مجاني
-              </Button>
-            </Link>
-            <Link href="/browse" data-testid="button-cta-browse">
-              <Button size="lg" variant="outline" className="text-lg">
-                تصفح الأغنام
-              </Button>
-            </Link>
-          </div>
-        </div>
-      </section>
-
       {/* Footer */}
       <footer className="border-t py-8 md:py-12 bg-muted/30">
         <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8">

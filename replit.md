@@ -7,8 +7,8 @@
 - **Frontend**: React + TypeScript + Tailwind CSS + Shadcn UI
 - **Backend**: Express.js + Firebase Admin SDK
 - **Database**: Firebase Firestore
-- **Authentication**: Firebase Auth (Email/Password)
-- **Storage**: Firebase Storage (للصور)
+- **Authentication**: Firebase Auth (Email/Password + Google)
+- **Image Hosting**: ImgBB API (رفع تلقائي للصور)
 - **Routing**: Wouter
 - **State Management**: TanStack React Query
 - **Forms**: React Hook Form + Zod
@@ -57,6 +57,7 @@
 - `VITE_FIREBASE_PROJECT_ID` - معرف مشروع Firebase
 - `VITE_FIREBASE_APP_ID` - معرف تطبيق Firebase
 - `VITE_FIREBASE_API_KEY` - مفتاح API لـ Firebase
+- `VITE_IMGBB_API_KEY` - مفتاح API لـ ImgBB (لرفع الصور)
 - `SESSION_SECRET` - سر الجلسات
 
 ## تفضيلات المستخدم:
@@ -161,6 +162,12 @@ The following environment variables must be set in Replit:
 - `ADMIN_SETUP.md` - دليل إعداد حساب Admin
 
 ## آخر التحديثات:
+- 2025-11-22: تم تطبيق نظام رفع الصور التلقائي إلى ImgBB:
+  - إنشاء `client/src/lib/imgbb.ts` مع دوال رفع آلية
+  - تحديث `seller-dashboard.tsx` لاستخدام ImgBB بدل Firebase Storage
+  - إضافة معالجة الأخطاء والـ loading states
+  - توثيق كامل في `IMGBB_INTEGRATION.md`
+  - النظام يعمل بشكل آلي: رفع → استلام الرابط → حفظ في Firestore ✅
 - 2025-11-22: تم تطبيق نظام إدارة الأغنام مع المراجعة:
   - إضافة سبب الرفض (rejection reason) للأغنام المرفوضة
   - تحسين admin-dashboard بـ textarea لسبب الرفض

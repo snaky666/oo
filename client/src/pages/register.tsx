@@ -64,15 +64,11 @@ export default function Register() {
 
       toast({
         title: "تم إنشاء الحساب بنجاح",
-        description: "مرحباً بك في أضحيتي",
+        description: "الرجاء تسجيل الدخول الآن",
       });
 
-      // Redirect based on role
-      if (selectedRole === "seller") {
-        setLocation("/seller");
-      } else {
-        setLocation("/browse");
-      }
+      // Redirect to login page
+      setLocation("/login");
     } catch (error: any) {
       let errorMessage = "حدث خطأ أثناء إنشاء الحساب";
       
@@ -111,15 +107,11 @@ export default function Register() {
       if (result.success) {
         toast({
           title: "تم إنشاء الحساب بنجاح",
-          description: "مرحباً بك في أضحيتي",
+          description: "الرجاء تسجيل الدخول الآن",
         });
 
-        // Redirect based on role
-        if (selectedRole === "seller") {
-          setLocation("/seller");
-        } else {
-          setLocation("/browse");
-        }
+        // Redirect to login page
+        setLocation("/login");
       } else {
         toast({
           title: "خطأ",

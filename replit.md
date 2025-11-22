@@ -107,7 +107,43 @@ The following environment variables must be set in Replit:
 - `VITE_FIREBASE_PROJECT_ID`  
 - `VITE_FIREBASE_APP_ID`
 
+## نظام Authentication (Client-Side):
+
+### تدفق المستخدم:
+1. **Sign Up Flow**:
+   - المستخدم ينشئ حساب جديد (Email/Password أو Google)
+   - بعد النجاح: `redirect("/login")` - لتسجيل الدخول يدويًا
+
+2. **Sign In Flow**:
+   - المستخدم يسجل الدخول بنجاح
+   - Firebase persistence تحفظ الجلسة في localStorage
+   - بعد النجاح: `redirect("/dashboard")` حسب الدور:
+     - Admin → `/admin`
+     - Seller → `/seller`
+     - Buyer → `/browse`
+
+3. **Protected Routes Guard**:
+   - ✅ إذا حاول مستخدم غير مسجل الوصول إلى `/browse` أو `/seller` أو `/admin` → يُعاد إلى `/login`
+   - ✅ إذا حاول مستخدم مسجل الوصول إلى `/login` أو `/register` → يُعاد إلى dashboard حسب دوره
+
+4. **Persistence**:
+   - Firebase browserLocalPersistence - الجلسة تبقى حتى تسجيل الخروج
+   - عند التحديث (F5)، المستخدم يبقى مسجل الدخول
+
+### المكونات المرتبطة:
+- `AuthContext.tsx`: إدارة الجلسة مع Firebase persistence
+- `ProtectedRoute.tsx`: حماية المسارات المحمية
+- `PublicRoute.tsx`: منع المستخدمين المسجلين من فتح /login و /register
+- `register.tsx`: redirect إلى /login بعد الإنشاء
+- `login.tsx`: redirect إلى dashboard حسب الدور
+
 ## آخر التحديثات:
+- 2025-11-22: تم تحسين نظام Authentication (Client-Side):
+  - إضافة Firebase browserLocalPersistence للجلسات الدائمة
+  - تصحيح جميع الـ redirects: signup → /login, signin → dashboard
+  - إنشاء PublicRoute component لمنع المستخدمين المسجلين من /login و /register
+  - تحسين ProtectedRoute guards للمسارات المحمية
+  - اختبار الـ route guards (يعمل بشكل صحيح ✅)
 - 2025-11-22: تم إعداد المشروع للنشر على Vercel
   - إنشاء `vercel.json` مع تكوين routes صحيح (filesystem + SPA fallback)
   - إضافة `vercel-build` script في package.json

@@ -14,14 +14,23 @@ import SheepDetail from "@/pages/sheep-detail";
 import SellerDashboard from "@/pages/seller-dashboard";
 import AdminDashboard from "@/pages/admin-dashboard";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import PublicRoute from "@/components/PublicRoute";
 
 function Router() {
   return (
     <Switch>
       {/* Public routes */}
       <Route path="/" component={LandingPage} />
-      <Route path="/login" component={Login} />
-      <Route path="/register" component={Register} />
+      <Route path="/login">
+        <PublicRoute>
+          <Login />
+        </PublicRoute>
+      </Route>
+      <Route path="/register">
+        <PublicRoute>
+          <Register />
+        </PublicRoute>
+      </Route>
       
       {/* Buyer routes */}
       <Route path="/browse">

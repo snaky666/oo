@@ -21,9 +21,10 @@ export default function ProtectedRoute({
   useEffect(() => {
     if (!loading) {
       if (requireAuth && !user) {
+        // إذا لم يكن مسجل دخول وحاول الوصول إلى صفحة محمية، أعده إلى login
         setLocation("/login");
       } else if (user && allowedRoles && !allowedRoles.includes(user.role)) {
-        // Redirect based on user role
+        // إذا كان لديه role لكنه لا يملك وصول، أعده إلى dashboard حسب الدور الخاص به
         if (user.role === "admin") {
           setLocation("/admin");
         } else if (user.role === "seller") {

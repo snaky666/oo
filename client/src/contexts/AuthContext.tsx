@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState } from "react";
-import { User as FirebaseUser, onAuthStateChanged, signOut as firebaseSignOut, signInWithPopup } from "firebase/auth";
+import { User as FirebaseUser, onAuthStateChanged, signOut as firebaseSignOut, signInWithPopup, setPersistence, browserLocalPersistence } from "firebase/auth";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { auth, db, googleProvider } from "@/lib/firebase";
 import { User, UserRole } from "@shared/schema";
@@ -41,19 +41,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-      setFirebaseUser(firebaseUser);
-      
-      if (firebaseUser) {
-        await fetchUserData(firebaseUser);
-      } else {
-        setUser(null);
-      }
-      
-      setLoading(false);
-    });
+    // Set Firebase persistence to browser local storage
+    setPersistence(auth, browserLocalPersistence)
+      .then(() => {
+        // Persistence set successfully
+        const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+          setFirebaseUser(firebaseUser);
+          
+          if (firebaseUser) {
+            await fetchUserData(firebaseUser);
+          } else {
+            setUser(null);
+          }
+          
+          setLoading(false);
+        });
 
-    return () => unsubscribe();
+        return () => unsubscribe();
+      })
+      .catch((error) => {
+        console.error("Error setting persistence:", error);
+        setLoading(false);
+      });
   }, []);
 
   const signOut = async () => {

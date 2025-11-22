@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { collection, query, getDocs, doc, updateDoc, where, orderBy } from "firebase/firestore";
+import { collection, query, getDocs, doc, updateDoc, deleteDoc, where, orderBy } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { Sheep, Order, User } from "@shared/schema";
 import Header from "@/components/Header";
@@ -16,6 +16,7 @@ import {
   ShoppingBag,
   Clock,
   Loader2,
+  Trash2,
 } from "lucide-react";
 import {
   Dialog,
@@ -42,6 +43,7 @@ export default function AdminDashboard() {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedSheep, setSelectedSheep] = useState<Sheep | null>(null);
+  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [reviewing, setReviewing] = useState(false);
   const [rejectionReason, setRejectionReason] = useState("");
 
@@ -117,6 +119,58 @@ export default function AdminDashboard() {
       toast({
         title: "خطأ",
         description: "حدث خطأ أثناء المراجعة",
+        variant: "destructive",
+      });
+    } finally {
+      setReviewing(false);
+    }
+  };
+
+  const handleOrderReview = async (orderId: string, approved: boolean) => {
+    setReviewing(true);
+    try {
+      await updateDoc(doc(db, "orders", orderId), {
+        status: approved ? "confirmed" : "rejected",
+        updatedAt: Date.now(),
+      });
+
+      toast({
+        title: approved ? "تم قبول الطلب" : "تم رفض الطلب",
+        description: approved ? "تم تأكيد الطلب بنجاح" : "تم رفض الطلب",
+      });
+
+      setSelectedOrder(null);
+      fetchOrders();
+    } catch (error) {
+      console.error("Error reviewing order:", error);
+      toast({
+        title: "خطأ",
+        description: "حدث خطأ أثناء المراجعة",
+        variant: "destructive",
+      });
+    } finally {
+      setReviewing(false);
+    }
+  };
+
+  const handleDeleteSheep = async (sheepId: string) => {
+    if (!confirm("هل أنت متأكد من حذف هذا العرض؟")) return;
+    
+    setReviewing(true);
+    try {
+      await deleteDoc(doc(db, "sheep", sheepId));
+
+      toast({
+        title: "تم حذف العرض",
+        description: "تم حذف الخروف بنجاح",
+      });
+
+      fetchSheep();
+    } catch (error) {
+      console.error("Error deleting sheep:", error);
+      toast({
+        title: "خطأ",
+        description: "حدث خطأ أثناء الحذف",
         variant: "destructive",
       });
     } finally {
@@ -297,6 +351,7 @@ export default function AdminDashboard() {
                       <TableHead>المدينة</TableHead>
                       <TableHead>البائع</TableHead>
                       <TableHead>الحالة</TableHead>
+                      <TableHead>الإجراءات</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -326,6 +381,19 @@ export default function AdminDashboard() {
                           >
                             {s.status === "approved" ? "مقبول" : s.status === "pending" ? "قيد المراجعة" : "مرفوض"}
                           </Badge>
+                        </TableCell>
+                        <TableCell>
+                          {s.status === "approved" && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleDeleteSheep(s.id)}
+                              disabled={reviewing}
+                              className="text-red-500 hover:text-red-700"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          )}
                         </TableCell>
                       </TableRow>
                     ))}
@@ -434,6 +502,7 @@ export default function AdminDashboard() {
                       <TableHead>السعر</TableHead>
                       <TableHead>الحالة</TableHead>
                       <TableHead>التاريخ</TableHead>
+                      <TableHead>الإجراءات</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -443,10 +512,31 @@ export default function AdminDashboard() {
                         <TableCell className="text-sm">{o.sellerEmail || o.sellerId.slice(0, 8)}</TableCell>
                         <TableCell>{o.totalPrice.toLocaleString()} DA</TableCell>
                         <TableCell>
-                          <Badge variant="secondary">{o.status}</Badge>
+                          <Badge
+                            className={
+                              o.status === "confirmed"
+                                ? "bg-green-500/10 text-green-700"
+                                : o.status === "pending"
+                                ? "bg-yellow-500/10 text-yellow-700"
+                                : "bg-red-500/10 text-red-700"
+                            }
+                          >
+                            {o.status === "pending" ? "قيد المراجعة" : o.status === "confirmed" ? "مؤكد" : "مرفوض"}
+                          </Badge>
                         </TableCell>
                         <TableCell className="text-sm text-muted-foreground">
                           {new Date(o.createdAt).toLocaleDateString('ar-SA')}
+                        </TableCell>
+                        <TableCell>
+                          {o.status === "pending" && (
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => setSelectedOrder(o)}
+                            >
+                              مراجعة
+                            </Button>
+                          )}
                         </TableCell>
                       </TableRow>
                     ))}
@@ -458,7 +548,60 @@ export default function AdminDashboard() {
         </Tabs>
       </div>
 
-      {/* Review Dialog */}
+      {/* Order Review Dialog */}
+      {selectedOrder && (
+        <Dialog open={!!selectedOrder} onOpenChange={() => setSelectedOrder(null)}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>مراجعة الطلب</DialogTitle>
+              <DialogDescription>
+                قم بمراجعة تفاصيل الطلب واتخاذ القرار بالقبول أو الرفض
+              </DialogDescription>
+            </DialogHeader>
+            
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm text-muted-foreground">المشتري</p>
+                  <p className="font-semibold">{selectedOrder.buyerEmail}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">البائع</p>
+                  <p className="font-semibold">{selectedOrder.sellerEmail}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">السعر</p>
+                  <p className="font-semibold">{selectedOrder.totalPrice.toLocaleString()} DA</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">التاريخ</p>
+                  <p className="font-semibold">{new Date(selectedOrder.createdAt).toLocaleDateString('ar-SA')}</p>
+                </div>
+              </div>
+            </div>
+
+            <DialogFooter className="gap-2">
+              <Button
+                variant="destructive"
+                onClick={() => handleOrderReview(selectedOrder.id, false)}
+                disabled={reviewing}
+              >
+                {reviewing ? <Loader2 className="ml-2 h-4 w-4 animate-spin" /> : <XCircle className="ml-2 h-4 w-4" />}
+                رفض
+              </Button>
+              <Button
+                onClick={() => handleOrderReview(selectedOrder.id, true)}
+                disabled={reviewing}
+              >
+                {reviewing ? <Loader2 className="ml-2 h-4 w-4 animate-spin" /> : <CheckCircle className="ml-2 h-4 w-4" />}
+                قبول
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {/* Sheep Review Dialog */}
       {selectedSheep && (
         <Dialog open={!!selectedSheep} onOpenChange={() => { setSelectedSheep(null); setRejectionReason(""); }}>
           <DialogContent className="max-w-3xl">

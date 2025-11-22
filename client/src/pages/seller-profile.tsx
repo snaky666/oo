@@ -211,7 +211,7 @@ export default function SellerProfile() {
                 </Label>
                 <Input
                   id="municipality"
-                  placeholder="مثال: الحي الشرقي، بنزرت، بلدية الأندلس"
+                  placeholder="مثال: بن عكنون، الحي الإداري، الوادي"
                   dir="rtl"
                   {...register("municipality")}
                   className="text-right"
@@ -230,7 +230,7 @@ export default function SellerProfile() {
                 </Label>
                 <Input
                   id="address"
-                  placeholder="مثال: شارع النيل، الحي الشرقي، بجوار السوق"
+                  placeholder="مثال: شارع محمد علي الذهبي، عمارة 15، بجوار السوق المركزي"
                   dir="rtl"
                   {...register("address")}
                   className="text-right"

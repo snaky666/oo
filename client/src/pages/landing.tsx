@@ -24,17 +24,6 @@ export default function LandingPage() {
     <div className="bg-background w-full">
       <Header />
 
-      {/* Welcome Banner for Logged-in Users */}
-      {user && (
-        <div className="bg-primary/10 border-b border-primary/20 py-4">
-          <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8">
-            <p className="text-lg font-semibold text-center">
-              مرحباً بك في أضحيتي 👋 - {user.email}
-            </p>
-          </div>
-        </div>
-      )}
-
       {/* Hero Section */}
       <section className="relative h-[500px] md:h-[600px] overflow-hidden">
         {/* Hero Image with Dark Overlay */}

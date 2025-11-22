@@ -301,11 +301,9 @@ export default function Login() {
 
       {/* Footer */}
       <div className="relative z-10 py-8 text-center">
-        <div className="bg-white/90 backdrop-blur-sm rounded-full px-6 py-3 inline-block">
-          <p className="text-lg font-bold text-black">
-            Developed by <span className="text-black font-extrabold hover:text-gray-700 transition-colors cursor-default">NovaWeb</span>
-          </p>
-        </div>
+        <p className="text-sm font-semibold text-gray-700 tracking-wider">
+          Developed by <span className="text-amber-700 font-bold hover:text-amber-600 transition-colors duration-300">NovaWeb</span>
+        </p>
       </div>
     </div>
   );

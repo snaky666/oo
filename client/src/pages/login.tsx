@@ -31,6 +31,7 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [waitingForGoogleRedirect, setWaitingForGoogleRedirect] = useState(false);
+  const [showAdminLogin, setShowAdminLogin] = useState(false);
 
   const {
     register,
@@ -260,6 +261,28 @@ export default function Login() {
                 إنشاء حساب جديد
               </button>
             </div>
+
+            {/* Admin Login Toggle */}
+            <div className="text-center pt-4 border-t">
+              <button
+                type="button"
+                onClick={() => setShowAdminLogin(!showAdminLogin)}
+                className="text-xs text-muted-foreground hover:underline"
+              >
+                {showAdminLogin ? "إخفاء تسجيل دخول الإدارة" : "هل أنت مدير؟"}
+              </button>
+            </div>
+
+            {showAdminLogin && (
+              <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-3 text-xs">
+                <p className="text-yellow-700 dark:text-yellow-400 font-semibold mb-1">
+                  تنبيه: تسجيل دخول الإدارة
+                </p>
+                <p className="text-yellow-600 dark:text-yellow-500">
+                  استخدم بيانات حسابك الإداري فقط. تسجيل الدخول هنا سيمنحك صلاحيات إدارية على المنصة.
+                </p>
+              </div>
+            )}
           </form>
         </CardContent>
       </Card>

@@ -59,9 +59,16 @@ export default function SheepCard({ sheep, showStatus = false }: SheepCardProps)
         {/* Status Badge (for seller/admin) */}
         {showStatus && (
           <div className="absolute top-2 left-2">
-            <Badge className={getStatusColor(sheep.status)}>
-              {getStatusLabel(sheep.status)}
-            </Badge>
+            <div className="flex flex-col gap-1">
+              <Badge className={getStatusColor(sheep.status)}>
+                {getStatusLabel(sheep.status)}
+              </Badge>
+              {sheep.status === "rejected" && sheep.rejectionReason && (
+                <div className="bg-red-500/90 backdrop-blur-sm rounded text-white text-xs p-1 max-w-[150px] line-clamp-2">
+                  {sheep.rejectionReason}
+                </div>
+              )}
+            </div>
           </div>
         )}
 

@@ -137,7 +137,37 @@ The following environment variables must be set in Replit:
 - `register.tsx`: redirect إلى /login بعد الإنشاء
 - `login.tsx`: redirect إلى dashboard حسب الدور
 
+## نظام إدارة الأغنام (المراجعة الإدارية):
+
+### تدفق العمل:
+1. **البائع**: ينشئ قائمة خروف جديد → حالة "pending"
+2. **الإدمن**: يراجع الطلب في Dashboard
+   - ✅ قبول: تصبح القائمة "approved" وتظهر للمشترين
+   - ❌ رفض: تصبح "rejected" مع سبب الرفض
+3. **البائع**: يرى الحالة والرفض (إن وجد) في لوحة تحكمه
+4. **المشتري**: يرى فقط الأغنام "approved"
+
+### الميزات:
+- ✅ حقل "سبب الرفض" عند رفض القائمة
+- ✅ عرض سبب الرفض على بطاقة الخروف للبائع
+- ✅ نظام Admin محمي (يحتاج role = admin)
+- ✅ لا احتكاك مباشر بين البائع والمشتري
+
+### ملفات معدلة:
+- `shared/schema.ts` - إضافة rejectionReason
+- `client/src/pages/admin-dashboard.tsx` - textarea لسبب الرفض
+- `client/src/pages/login.tsx` - رسالة تحذير Admin Login
+- `client/src/components/SheepCard.tsx` - عرض سبب الرفض
+- `ADMIN_SETUP.md` - دليل إعداد حساب Admin
+
 ## آخر التحديثات:
+- 2025-11-22: تم تطبيق نظام إدارة الأغنام مع المراجعة:
+  - إضافة سبب الرفض (rejection reason) للأغنام المرفوضة
+  - تحسين admin-dashboard بـ textarea لسبب الرفض
+  - إضافة رسالة تحذير لـ Admin Login
+  - عرض سبب الرفض على بطاقات الأغنام في seller-dashboard
+  - إنشاء ADMIN_SETUP.md بتعليمات إعداد المسؤول
+  - اختبار النظام والتحقق من جميع الـ redirects ✅
 - 2025-11-22: تم تحسين نظام Authentication (Client-Side):
   - إضافة Firebase browserLocalPersistence للجلسات الدائمة
   - تصحيح جميع الـ redirects: signup → /login, signin → dashboard

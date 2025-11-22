@@ -43,6 +43,7 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [selectedSheep, setSelectedSheep] = useState<Sheep | null>(null);
   const [reviewing, setReviewing] = useState(false);
+  const [rejectionReason, setRejectionReason] = useState("");
 
   useEffect(() => {
     fetchAllData();
@@ -90,17 +91,23 @@ export default function AdminDashboard() {
     setUsers(usersData);
   };
 
-  const handleReview = async (sheepId: string, approved: boolean) => {
+  const handleReview = async (sheepId: string, approved: boolean, rejectionReason?: string) => {
     setReviewing(true);
     try {
-      await updateDoc(doc(db, "sheep", sheepId), {
+      const updateData: any = {
         status: approved ? "approved" : "rejected",
         updatedAt: Date.now(),
-      });
+      };
+      
+      if (!approved && rejectionReason) {
+        updateData.rejectionReason = rejectionReason;
+      }
+      
+      await updateDoc(doc(db, "sheep", sheepId), updateData);
 
       toast({
         title: approved ? "تم قبول الخروف" : "تم رفض الخروف",
-        description: approved ? "الخروف الآن متاح للمشترين" : "تم رفض القائمة",
+        description: approved ? "الخروف الآن متاح للمشترين" : "تم رفض القائمة بسبب: " + (rejectionReason || "أسباب إدارية"),
       });
 
       setSelectedSheep(null);
@@ -401,7 +408,7 @@ export default function AdminDashboard() {
 
       {/* Review Dialog */}
       {selectedSheep && (
-        <Dialog open={!!selectedSheep} onOpenChange={() => setSelectedSheep(null)}>
+        <Dialog open={!!selectedSheep} onOpenChange={() => { setSelectedSheep(null); setRejectionReason(""); }}>
           <DialogContent className="max-w-3xl">
             <DialogHeader>
               <DialogTitle>مراجعة الخروف</DialogTitle>
@@ -448,10 +455,23 @@ export default function AdminDashboard() {
               </div>
             </div>
 
+            <div className="space-y-4">
+              <div>
+                <p className="text-sm font-semibold mb-2">إذا كنت ستقوم برفض، أضف سبب الرفض:</p>
+                <textarea
+                  placeholder="مثال: الصور غير واضحة، أو السعر غير مناسب، إلخ..."
+                  className="w-full p-3 rounded-md border border-input bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                  rows={3}
+                  value={rejectionReason}
+                  onChange={(e) => setRejectionReason(e.target.value)}
+                />
+              </div>
+            </div>
+
             <DialogFooter className="gap-2">
               <Button
                 variant="destructive"
-                onClick={() => handleReview(selectedSheep.id, false)}
+                onClick={() => handleReview(selectedSheep.id, false, rejectionReason || "لم يتم تحديد سبب")}
                 disabled={reviewing}
                 data-testid="button-reject"
               >

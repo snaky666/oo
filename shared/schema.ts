@@ -42,6 +42,7 @@ export interface Sheep {
   city: string;
   description: string;
   status: SheepStatus;
+  rejectionReason?: string; // سبب الرفض (إن وجد)
   createdAt: number;
   updatedAt?: number;
 }

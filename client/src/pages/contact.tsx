@@ -31,8 +31,8 @@ export default function ContactPage() {
                 <p className="text-muted-foreground mb-4">
                   للاستفسارات والطلبات العامة.
                 </p>
-                <a href="mailto:info@odhiyati.com" className="text-primary font-bold text-lg hover:underline break-all">
-                  info@odhiyati.com
+                <a href="mailto:odhiyaty@gmail.com" className="text-primary font-bold text-lg hover:underline break-all">
+                  odhiyaty@gmail.com
                 </a>
               </CardContent>
             </Card>
@@ -45,8 +45,8 @@ export default function ContactPage() {
                 <p className="text-muted-foreground mb-4">
                   للمشاكل والشكاوى الخاصة.
                 </p>
-                <a href="mailto:support@odhiyati.com" className="text-primary font-bold text-lg hover:underline break-all">
-                  support@odhiyati.com
+                <a href="mailto:habiratabderazek@gmail.com" className="text-primary font-bold text-lg hover:underline break-all">
+                  habiratabderazek@gmail.com
                 </a>
               </CardContent>
             </Card>
@@ -59,8 +59,8 @@ export default function ContactPage() {
                 <p className="text-muted-foreground mb-4">
                   اتصل بنا مباشرة للحصول على الدعم الفوري.
                 </p>
-                <a href="tel:+213123456789" className="text-primary font-bold text-lg hover:underline">
-                  +213 (0) 123 456 789
+                <a href="tel:+213771832971" className="text-primary font-bold text-lg hover:underline">
+                  0771832971
                 </a>
               </CardContent>
             </Card>
@@ -73,8 +73,8 @@ export default function ContactPage() {
                 <p className="text-muted-foreground mb-4">
                   للمحادثة الفورية والرد السريع.
                 </p>
-                <a href="https://wa.me/213123456789" target="_blank" rel="noopener noreferrer" className="text-primary font-bold text-lg hover:underline">
-                  +213 (0) 123 456 789
+                <a href="https://wa.me/213794769766" target="_blank" rel="noopener noreferrer" className="text-primary font-bold text-lg hover:underline">
+                  0794769766
                 </a>
               </CardContent>
             </Card>

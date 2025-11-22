@@ -170,7 +170,7 @@ export default function Login() {
       }}
     >
       {/* Overlay to make card readable */}
-      <div className="absolute inset-0 bg-black/40" />
+      <div className="absolute inset-0 bg-black/75" />
       
       {/* Main content */}
       <div className="flex-1 flex items-center justify-center px-4 py-12 relative z-10">

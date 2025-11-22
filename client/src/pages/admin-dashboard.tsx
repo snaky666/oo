@@ -49,9 +49,9 @@ export default function AdminDashboard() {
 
   // Helper function to convert Persian/Arabic digits to English digits
   const convertPersianToEnglish = (str: string) => {
-    return str.replace(/[\u06F0-\u06F9]/g, (digit) => 
-      String.fromCharCode(digit.charCodeAt(0) - 0x0630)
-    );
+    return str
+      .replace(/[\u0660-\u0669]/g, (digit) => String.fromCharCode(digit.charCodeAt(0) - 0x0660 + 0x30))
+      .replace(/[\u06F0-\u06F9]/g, (digit) => String.fromCharCode(digit.charCodeAt(0) - 0x06F0 + 0x30));
   };
 
   useEffect(() => {

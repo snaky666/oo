@@ -64,14 +64,14 @@ export default function Header() {
 
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center gap-1">
-            {/* Home Icon - متاح فقط للمستخدمين المسجلين */}
+            {/* Home Icon - متاح للجميع */}
             {user && (
-              <Link href="/" className={cn("rounded-md hover-elevate", isActive("/") && "bg-accent/10")}>
+              <Link href="/landing" className={cn("rounded-md hover-elevate", isActive("/landing") && "bg-accent/10")}>
                 <Button 
                   variant="ghost" 
                   size="icon"
                   title="الصفحة الرئيسية"
-                  className={cn(isActive("/") && "text-primary")}
+                  className={cn(isActive("/landing") && "text-primary")}
                 >
                   <Home className="h-5 w-5" />
                 </Button>
@@ -178,12 +178,12 @@ export default function Header() {
         {/* Mobile Navigation */}
         {mobileMenuOpen && (
           <div className="md:hidden border-t py-4 space-y-2">
-            {/* Home Icon - متاح فقط للمستخدمين المسجلين */}
+            {/* Home Icon - متاح للجميع */}
             {user && (
-              <Link href={getDashboardLink()}>
+              <Link href="/landing">
                 <Button
                   variant="ghost"
-                  className={cn("w-full justify-start", isActive(getDashboardLink()) && "bg-accent/10 text-primary font-semibold")}
+                  className={cn("w-full justify-start", isActive("/landing") && "bg-accent/10 text-primary font-semibold")}
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   <Home className="mr-2 h-5 w-5" />

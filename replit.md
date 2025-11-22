@@ -93,7 +93,27 @@ The following environment variables must be set in Replit:
 - `server/index-dev.ts` - Development server with Vite middleware
 - `server/index-prod.ts` - Production server serving static files
 
+## Vercel Deployment:
+
+### إعداد النشر على Vercel:
+تم إعداد المشروع للنشر على Vercel كتطبيق ثابت (Static Site):
+- **التكوين**: `vercel.json` مع filesystem routing
+- **البناء**: `npm run vercel-build` ينشئ `dist/public`
+- **البنية**: Client-side only مع Firebase (لا توجد API routes في الباك اند)
+- **الوثائق**: راجع `VERCEL_DEPLOYMENT.md` للتعليمات الكاملة
+
+### المتغيرات المطلوبة في Vercel:
+- `VITE_FIREBASE_API_KEY`
+- `VITE_FIREBASE_PROJECT_ID`  
+- `VITE_FIREBASE_APP_ID`
+
 ## آخر التحديثات:
+- 2025-11-22: تم إعداد المشروع للنشر على Vercel
+  - إنشاء `vercel.json` مع تكوين routes صحيح (filesystem + SPA fallback)
+  - إضافة `vercel-build` script في package.json
+  - إنشاء `VERCEL_DEPLOYMENT.md` مع دليل شامل للنشر
+  - اختبار البناء والتحقق من إنشاء dist/public بنجاح
+  - توضيح أن المشروع client-side فقط (لا API routes)
 - 2025-11-22: تم إعداد المشروع للعمل على Replit
   - تم تثبيت جميع التبعيات
   - تم إصلاح مشكلة storage interface (تغيير username إلى email)

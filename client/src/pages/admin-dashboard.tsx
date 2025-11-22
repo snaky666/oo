@@ -516,19 +516,19 @@ export default function AdminDashboard() {
                             className={
                               o.status === "confirmed"
                                 ? "bg-green-500/10 text-green-700"
-                                : o.status === "pending"
+                                : (!o.status || o.status === "pending")
                                 ? "bg-yellow-500/10 text-yellow-700"
                                 : "bg-red-500/10 text-red-700"
                             }
                           >
-                            {o.status === "pending" ? "قيد المراجعة" : o.status === "confirmed" ? "مؤكد" : "مرفوض"}
+                            {!o.status || o.status === "pending" ? "قيد المراجعة" : o.status === "confirmed" ? "مؤكد" : "مرفوض"}
                           </Badge>
                         </TableCell>
                         <TableCell className="text-sm text-muted-foreground">
                           {new Date(o.createdAt).toLocaleDateString('ar-SA')}
                         </TableCell>
                         <TableCell>
-                          {o.status === "pending" && (
+                          {(!o.status || o.status === "pending") && (
                             <Button
                               size="sm"
                               variant="ghost"

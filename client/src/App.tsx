@@ -14,6 +14,7 @@ import SheepDetail from "@/pages/sheep-detail";
 import SellerDashboard from "@/pages/seller-dashboard";
 import SellerProfile from "@/pages/seller-profile";
 import AdminDashboard from "@/pages/admin-dashboard";
+import ContactPage from "@/pages/contact";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import PublicRoute from "@/components/PublicRoute";
 
@@ -32,6 +33,7 @@ function Router() {
         </PublicRoute>
       </Route>
       <Route path="/landing" component={LandingPage} />
+      <Route path="/contact" component={ContactPage} />
       <Route path="/register">
         <PublicRoute>
           <Register />

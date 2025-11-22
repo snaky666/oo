@@ -310,6 +310,11 @@ export default function LandingPage() {
                     تسجيل الدخول
                   </Link>
                 </li>
+                <li>
+                  <Link href="/contact" className="text-muted-foreground hover:text-foreground transition-colors">
+                    تواصل معنا
+                  </Link>
+                </li>
               </ul>
             </div>
             <div>

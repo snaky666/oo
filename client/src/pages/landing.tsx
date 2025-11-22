@@ -320,7 +320,7 @@ export default function LandingPage() {
             <div>
               <h3 className="font-semibold mb-4">تواصل معنا</h3>
               <p className="text-sm text-muted-foreground">
-                info@odhiyati.com
+                odhiyaty@gmail.com
               </p>
             </div>
           </div>

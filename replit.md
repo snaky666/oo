@@ -168,8 +168,9 @@ The following environment variables must be set in Replit:
   - تحديث `seller-dashboard.tsx` مع guard لفحص `profileComplete`
   - تحديث `App.tsx` مع route `/seller/profile`
   - البائع يتم إعادة توجيهه تلقائياً إلى `/seller/profile` إذا لم يكمل البيانات
-  - النموذج يتضمن: الاسم الكامل، رقم الهاتف، اسم النشاط، المدينة، العنوان، الرقم الوطني
+  - النموذج يتضمن: الاسم الكامل، رقم الهاتف، المدينة، العنوان
   - بعد الحفظ: يتم تعيين `profileComplete: true` والتوجيه إلى `/seller` ✅
+  - تم إزالة: اسم الشركة والرقم الوطني/السجل التجاري من الحقول المطلوبة
 - 2025-11-22: تم تطبيق نظام رفع الصور التلقائي إلى ImgBB:
   - إنشاء `client/src/lib/imgbb.ts` مع دوال رفع آلية
   - تحديث `seller-dashboard.tsx` لاستخدام ImgBB بدل Firebase Storage

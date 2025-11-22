@@ -39,8 +39,6 @@ export default function SellerProfile() {
       phone: user?.phone || "",
       address: user?.address || "",
       city: user?.city || "",
-      businessName: user?.businessName || "",
-      identityNumber: user?.identityNumber || "",
     },
   });
 
@@ -58,8 +56,6 @@ export default function SellerProfile() {
       setValue("phone", user.phone || "");
       setValue("address", user.address || "");
       setValue("city", user.city || "");
-      setValue("businessName", user.businessName || "");
-      setValue("identityNumber", user.identityNumber || "");
     }
   }, [user, setValue]);
 
@@ -130,7 +126,7 @@ export default function SellerProfile() {
                 البيانات مطلوبة
               </p>
               <p className="text-sm text-blue-800 dark:text-blue-200">
-                يجب إكمال جميع البيانات الشخصية والعنوان ورقم الهاتف والرقم الوطني
+                يجب إكمال جميع البيانات الشخصية والعنوان ورقم الهاتف
               </p>
             </div>
           </CardContent>
@@ -158,25 +154,6 @@ export default function SellerProfile() {
                 {errors.fullName && (
                   <p className="text-red-500 text-sm text-right">
                     {errors.fullName.message}
-                  </p>
-                )}
-              </div>
-
-              {/* Business Name */}
-              <div className="space-y-2">
-                <Label htmlFor="businessName" className="text-right block">
-                  اسم النشاط/المتجر *
-                </Label>
-                <Input
-                  id="businessName"
-                  placeholder="مثال: متجر الأغنام الفاخرة"
-                  dir="rtl"
-                  {...register("businessName")}
-                  className="text-right"
-                />
-                {errors.businessName && (
-                  <p className="text-red-500 text-sm text-right">
-                    {errors.businessName.message}
                   </p>
                 )}
               </div>
@@ -239,25 +216,6 @@ export default function SellerProfile() {
                 {errors.address && (
                   <p className="text-red-500 text-sm text-right">
                     {errors.address.message}
-                  </p>
-                )}
-              </div>
-
-              {/* National ID */}
-              <div className="space-y-2">
-                <Label htmlFor="identityNumber" className="text-right block">
-                  الرقم الوطني / السجل التجاري *
-                </Label>
-                <Input
-                  id="identityNumber"
-                  placeholder="مثال: 1234567890"
-                  dir="ltr"
-                  {...register("identityNumber")}
-                  className="text-left"
-                />
-                {errors.identityNumber && (
-                  <p className="text-red-500 text-sm text-right">
-                    {errors.identityNumber.message}
                   </p>
                 )}
               </div>

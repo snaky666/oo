@@ -301,6 +301,13 @@ export default function Login() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Footer */}
+      <div className="relative z-10 py-6 text-center">
+        <p className="text-sm font-medium text-white/70">
+          Developed by <span className="text-white font-semibold hover:text-primary transition-colors cursor-default">NovaWeb</span>
+        </p>
+      </div>
     </div>
   );
 }

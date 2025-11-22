@@ -26,14 +26,13 @@ export default function LandingPage() {
 
       {/* Hero Section */}
       <section className="relative h-[500px] md:h-[600px] overflow-hidden">
-        {/* Hero Image with Dark Overlay */}
+        {/* Hero Image */}
         <div className="absolute inset-0">
           <img
             src={heroImage}
             alt="مزرعة أغنام"
             className="w-full h-full object-cover"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/50 to-black/30" />
         </div>
 
         {/* Hero Content */}

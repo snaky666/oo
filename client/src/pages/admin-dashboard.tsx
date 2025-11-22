@@ -47,11 +47,13 @@ export default function AdminDashboard() {
   const [reviewing, setReviewing] = useState(false);
   const [rejectionReason, setRejectionReason] = useState("");
 
-  // Helper function to convert Persian/Arabic digits to English digits
-  const convertPersianToEnglish = (str: string) => {
-    return str
-      .replace(/[\u0660-\u0669]/g, (digit) => String.fromCharCode(digit.charCodeAt(0) - 0x0660 + 0x30))
-      .replace(/[\u06F0-\u06F9]/g, (digit) => String.fromCharCode(digit.charCodeAt(0) - 0x06F0 + 0x30));
+  // Helper function to format date as Gregorian (Miladi)
+  const formatGregorianDate = (date: any) => {
+    const d = new Date(date);
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${day}/${month}/${year}`;
   };
 
   useEffect(() => {
@@ -490,7 +492,7 @@ export default function AdminDashboard() {
                           {u.phone || "-"}
                         </TableCell>
                         <TableCell className="text-sm text-muted-foreground">
-                          {convertPersianToEnglish(new Date(u.createdAt).toLocaleDateString('ar-SA'))}
+                          {formatGregorianDate(u.createdAt)}
                         </TableCell>
                       </TableRow>
                     ))}

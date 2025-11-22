@@ -1,14 +1,19 @@
 import { useState, useEffect } from "react";
 import { useRoute } from "wouter";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import { doc, getDoc, collection, addDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
-import { Sheep, InsertOrder } from "@shared/schema";
+import { Sheep, InsertOrder, algeriaCities } from "@shared/schema";
 import Header from "@/components/Header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { MapPin, Calendar, Weight, ArrowRight, ShoppingCart } from "lucide-react";
 import { useLocation } from "wouter";
@@ -20,7 +25,23 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import placeholderImage from "@assets/generated_images/sheep_product_placeholder.png";
+
+const orderFormSchema = z.object({
+  fullName: z.string().min(3, "الاسم الكامل مطلوب"),
+  phone: z.string().regex(/^(\+213|0)[1-9]\d{8}$/, "رقم الهاتف غير صحيح"),
+  address: z.string().min(5, "العنوان مطلوب"),
+  city: z.string().min(1, "المدينة مطلوبة"),
+});
+
+type OrderFormData = z.infer<typeof orderFormSchema>;
 
 export default function SheepDetail() {
   const [, params] = useRoute("/sheep/:id");
@@ -33,11 +54,38 @@ export default function SheepDetail() {
   const [orderDialogOpen, setOrderDialogOpen] = useState(false);
   const [creatingOrder, setCreatingOrder] = useState(false);
 
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+    setValue,
+    watch,
+  } = useForm<OrderFormData>({
+    resolver: zodResolver(orderFormSchema),
+    defaultValues: {
+      fullName: user?.fullName || "",
+      phone: user?.phone || "",
+      address: user?.address || "",
+      city: user?.city || "",
+    },
+  });
+
+  const selectedCity = watch("city");
+
   useEffect(() => {
     if (params?.id) {
       fetchSheep(params.id);
     }
   }, [params?.id]);
+
+  useEffect(() => {
+    if (user) {
+      setValue("fullName", user.fullName || "");
+      setValue("phone", user.phone || "");
+      setValue("address", user.address || "");
+      setValue("city", user.city || "");
+    }
+  }, [user, setValue]);
 
   const fetchSheep = async (id: string) => {
     setLoading(true);
@@ -65,7 +113,7 @@ export default function SheepDetail() {
     }
   };
 
-  const handleCreateOrder = async () => {
+  const handleCreateOrder = async (formData: OrderFormData) => {
     if (!sheep || !user) return;
 
     setCreatingOrder(true);
@@ -80,6 +128,7 @@ export default function SheepDetail() {
         sheepData: Partial<Sheep>;
         status: string;
         createdAt: number;
+        buyerInfo: OrderFormData;
       } = {
         buyerId: user.uid,
         buyerEmail: user.email,
@@ -97,6 +146,7 @@ export default function SheepDetail() {
         },
         status: "pending",
         createdAt: Date.now(),
+        buyerInfo: formData,
       };
 
       await addDoc(collection(db, "orders"), orderData);
@@ -274,42 +324,105 @@ export default function SheepDetail() {
 
       {/* Order Confirmation Dialog */}
       <Dialog open={orderDialogOpen} onOpenChange={setOrderDialogOpen}>
-        <DialogContent>
+        <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>تأكيد طلب الشراء</DialogTitle>
+            <DialogTitle>طلب شراء - إدخال البيانات الشخصية</DialogTitle>
             <DialogDescription>
-              هل أنت متأكد من رغبتك في شراء هذا الخروف؟
+              يرجى إدخال بيانات التواصل الخاصة بك
             </DialogDescription>
           </DialogHeader>
-          <div className="py-4">
+          
+          <form onSubmit={handleSubmit(handleCreateOrder)} className="space-y-4">
+            {/* Full Name */}
             <div className="space-y-2">
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">السعر:</span>
-                <span className="font-semibold">{sheep.price.toLocaleString('ar-SA')} DA</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">المدينة:</span>
-                <span className="font-semibold">{sheep.city}</span>
-              </div>
+              <Label htmlFor="fullName">الاسم الكامل</Label>
+              <Input
+                id="fullName"
+                placeholder="أحمد محمد"
+                {...register("fullName")}
+              />
+              {errors.fullName && (
+                <p className="text-sm text-destructive">{errors.fullName.message}</p>
+              )}
             </div>
-          </div>
-          <DialogFooter className="gap-2">
-            <Button
-              variant="outline"
-              onClick={() => setOrderDialogOpen(false)}
-              disabled={creatingOrder}
-              data-testid="button-cancel-order"
-            >
-              إلغاء
-            </Button>
-            <Button
-              onClick={handleCreateOrder}
-              disabled={creatingOrder}
-              data-testid="button-confirm-order"
-            >
-              {creatingOrder ? "جاري الإنشاء..." : "تأكيد الطلب"}
-            </Button>
-          </DialogFooter>
+
+            {/* Phone */}
+            <div className="space-y-2">
+              <Label htmlFor="phone">رقم الهاتف</Label>
+              <Input
+                id="phone"
+                placeholder="+213612345678 أو 0612345678"
+                {...register("phone")}
+              />
+              {errors.phone && (
+                <p className="text-sm text-destructive">{errors.phone.message}</p>
+              )}
+            </div>
+
+            {/* City */}
+            <div className="space-y-2">
+              <Label htmlFor="city">الولاية</Label>
+              <Select value={selectedCity} onValueChange={(value) => setValue("city", value)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="اختر الولاية" />
+                </SelectTrigger>
+                <SelectContent>
+                  {Object.keys(algeriaCities).map((city) => (
+                    <SelectItem key={city} value={city}>
+                      {city}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {errors.city && (
+                <p className="text-sm text-destructive">{errors.city.message}</p>
+              )}
+            </div>
+
+            {/* Address */}
+            <div className="space-y-2">
+              <Label htmlFor="address">العنوان</Label>
+              <Input
+                id="address"
+                placeholder="شارع ما، الحي الإداري"
+                {...register("address")}
+              />
+              {errors.address && (
+                <p className="text-sm text-destructive">{errors.address.message}</p>
+              )}
+            </div>
+
+            {/* Order Summary */}
+            <Card className="bg-muted/50">
+              <CardContent className="p-4 space-y-2">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">السعر:</span>
+                  <span className="font-semibold">{sheep.price.toLocaleString('ar-SA')} DA</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">العمر:</span>
+                  <span className="font-semibold">{sheep.age} شهر</span>
+                </div>
+              </CardContent>
+            </Card>
+
+            <DialogFooter className="gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setOrderDialogOpen(false)}
+                disabled={creatingOrder}
+              >
+                إلغاء
+              </Button>
+              <Button
+                type="submit"
+                disabled={creatingOrder}
+              >
+                {creatingOrder ? "جاري الإنشاء..." : "تأكيد الطلب"}
+              </Button>
+            </DialogFooter>
+          </form>
         </DialogContent>
       </Dialog>
     </div>

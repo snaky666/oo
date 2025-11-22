@@ -12,6 +12,7 @@ import LandingPage from "@/pages/landing";
 import BrowseSheep from "@/pages/browse";
 import SheepDetail from "@/pages/sheep-detail";
 import SellerDashboard from "@/pages/seller-dashboard";
+import SellerProfile from "@/pages/seller-profile";
 import AdminDashboard from "@/pages/admin-dashboard";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import PublicRoute from "@/components/PublicRoute";
@@ -48,6 +49,11 @@ function Router() {
       <Route path="/seller">
         <ProtectedRoute allowedRoles={["seller"]}>
           <SellerDashboard />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/seller/profile">
+        <ProtectedRoute allowedRoles={["seller"]}>
+          <SellerProfile />
         </ProtectedRoute>
       </Route>
       

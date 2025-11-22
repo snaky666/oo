@@ -162,6 +162,14 @@ The following environment variables must be set in Replit:
 - `ADMIN_SETUP.md` - دليل إعداد حساب Admin
 
 ## آخر التحديثات:
+- 2025-11-22: تم إضافة نموذج إكمال البيانات الشخصية للبائع:
+  - إنشاء `client/src/pages/seller-profile.tsx` - صفحة إكمال البيانات
+  - تحديث `shared/schema.ts` مع `UpdateSellerProfile` schema و `User` fields
+  - تحديث `seller-dashboard.tsx` مع guard لفحص `profileComplete`
+  - تحديث `App.tsx` مع route `/seller/profile`
+  - البائع يتم إعادة توجيهه تلقائياً إلى `/seller/profile` إذا لم يكمل البيانات
+  - النموذج يتضمن: الاسم الكامل، رقم الهاتف، اسم النشاط، المدينة، العنوان، الرقم الوطني
+  - بعد الحفظ: يتم تعيين `profileComplete: true` والتوجيه إلى `/seller` ✅
 - 2025-11-22: تم تطبيق نظام رفع الصور التلقائي إلى ImgBB:
   - إنشاء `client/src/lib/imgbb.ts` مع دوال رفع آلية
   - تحديث `seller-dashboard.tsx` لاستخدام ImgBB بدل Firebase Storage

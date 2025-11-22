@@ -3,6 +3,7 @@ import { collection, query, where, getDocs, addDoc, deleteDoc, doc, updateDoc } 
 import { db } from "@/lib/firebase";
 import { uploadMultipleImagesToImgBB } from "@/lib/imgbb";
 import { useAuth } from "@/contexts/AuthContext";
+import { useLocation } from "wouter";
 import { Sheep, insertSheepSchema, InsertSheep, saudiCities } from "@shared/schema";
 import Header from "@/components/Header";
 import SheepCard from "@/components/SheepCard";
@@ -35,12 +36,20 @@ import placeholderImage from "@assets/generated_images/sheep_product_placeholder
 export default function SellerDashboard() {
   const { user } = useAuth();
   const { toast } = useToast();
+  const [, setLocation] = useLocation();
   const [sheep, setSheep] = useState<Sheep[]>([]);
   const [loading, setLoading] = useState(true);
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [selectedImages, setSelectedImages] = useState<File[]>([]);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
+
+  // Check if user profile is complete
+  useEffect(() => {
+    if (user && !user.profileComplete) {
+      setLocation("/seller/profile");
+    }
+  }, [user, setLocation]);
 
   const {
     register,

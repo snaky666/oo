@@ -18,7 +18,15 @@ export interface User {
   email: string;
   role: UserRole;
   phone?: string;
+  // Seller-specific fields
+  fullName?: string;
+  address?: string;
+  city?: string;
+  businessName?: string;
+  identityNumber?: string; // رقم الهوية أو السجل التجاري
+  profileComplete?: boolean; // هل ملأ البائع بيانات كاملة
   createdAt: number;
+  updatedAt?: number;
 }
 
 export const insertUserSchema = z.object({
@@ -29,6 +37,18 @@ export const insertUserSchema = z.object({
 });
 
 export type InsertUser = z.infer<typeof insertUserSchema>;
+
+// Seller profile update schema
+export const updateSellerProfileSchema = z.object({
+  fullName: z.string().min(3, "الاسم الكامل يجب أن يكون 3 أحرف على الأقل"),
+  phone: z.string().min(7, "رقم الهاتف يجب أن يكون صحيح"),
+  address: z.string().min(5, "العنوان يجب أن يكون 5 أحرف على الأقل"),
+  city: z.string().min(2, "يجب اختيار المدينة"),
+  businessName: z.string().min(3, "اسم النشاط يجب أن يكون 3 أحرف على الأقل"),
+  identityNumber: z.string().min(9, "رقم الهوية/السجل يجب أن يكون 9 أرقام على الأقل"),
+});
+
+export type UpdateSellerProfile = z.infer<typeof updateSellerProfileSchema>;
 
 // Sheep schema (Firestore)
 export interface Sheep {

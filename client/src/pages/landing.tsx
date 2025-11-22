@@ -3,6 +3,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import Header from "@/components/Header";
 import { Link } from "wouter";
+import { useAuth } from "@/contexts/AuthContext";
 import { 
   ShieldCheck, 
   Search, 
@@ -17,9 +18,22 @@ import heroImage from "@assets/generated_images/arabic_sheep_farm_hero.png";
 import trustImage from "@assets/generated_images/trust_verification_illustration.png";
 
 export default function LandingPage() {
+  const { user } = useAuth();
+
   return (
-    <div className="min-h-screen bg-background">
+    <div className="bg-background w-full">
       <Header />
+
+      {/* Welcome Banner for Logged-in Users */}
+      {user && (
+        <div className="bg-primary/10 border-b border-primary/20 py-4">
+          <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8">
+            <p className="text-lg font-semibold text-center">
+              مرحباً بك في أضحيتي 👋 - {user.email}
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Hero Section */}
       <section className="relative h-[500px] md:h-[600px] overflow-hidden">

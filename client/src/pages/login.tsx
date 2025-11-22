@@ -169,9 +169,6 @@ export default function Login() {
         backgroundAttachment: 'fixed'
       }}
     >
-      {/* Overlay to make card readable */}
-      <div className="absolute inset-0 bg-black/70" />
-      
       {/* Main content */}
       <div className="flex-1 flex items-center justify-center px-4 py-12 relative z-10">
         <Card className="w-full max-w-md">

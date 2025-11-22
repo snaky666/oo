@@ -4,7 +4,7 @@ import { db } from "@/lib/firebase";
 import { uploadMultipleImagesToImgBB } from "@/lib/imgbb";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLocation } from "wouter";
-import { Sheep, insertSheepSchema, InsertSheep, saudiCities } from "@shared/schema";
+import { Sheep, insertSheepSchema, InsertSheep, algeriaCities } from "@shared/schema";
 import Header from "@/components/Header";
 import SheepCard from "@/components/SheepCard";
 import { Button } from "@/components/ui/button";
@@ -387,7 +387,7 @@ export default function SellerDashboard() {
                   <SelectValue placeholder="اختر المدينة" />
                 </SelectTrigger>
                 <SelectContent>
-                  {saudiCities.slice(0, 10).map(city => (
+                  {algeriaCities.slice(0, 10).map(city => (
                     <SelectItem key={city} value={city}>
                       {city}
                     </SelectItem>

@@ -3,7 +3,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useLocation } from "wouter";
 import { doc, updateDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import { UpdateSellerProfile, updateSellerProfileSchema, saudiCities } from "@shared/schema";
+import { UpdateSellerProfile, updateSellerProfileSchema, algeriaCities } from "@shared/schema";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
@@ -165,7 +165,7 @@ export default function SellerProfile() {
                 </Label>
                 <Input
                   id="phone"
-                  placeholder="مثال: 0501234567"
+                  placeholder="مثال: 0771234567"
                   dir="ltr"
                   {...register("phone")}
                   className="text-left"
@@ -187,7 +187,7 @@ export default function SellerProfile() {
                     <SelectValue placeholder="اختر المدينة" />
                   </SelectTrigger>
                   <SelectContent>
-                    {saudiCities.map((city) => (
+                    {algeriaCities.map((city) => (
                       <SelectItem key={city} value={city}>
                         {city}
                       </SelectItem>

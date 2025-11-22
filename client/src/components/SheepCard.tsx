@@ -52,7 +52,7 @@ export default function SheepCard({ sheep, showStatus = false }: SheepCardProps)
         {/* Price Badge */}
         <div className="absolute top-2 right-2">
           <Badge className="text-base font-bold px-3 py-1 bg-primary/90 backdrop-blur-sm">
-            {sheep.price.toLocaleString('ar-SA')} ر.س
+            {sheep.price.toLocaleString('ar-SA')} DA
           </Badge>
         </div>
 

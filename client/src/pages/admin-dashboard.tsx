@@ -259,7 +259,7 @@ export default function AdminDashboard() {
                     </div>
                     <CardContent className="p-4">
                       <div className="flex justify-between items-start mb-3">
-                        <Badge>{s.price.toLocaleString('ar-SA')} ر.س</Badge>
+                        <Badge>{s.price.toLocaleString('ar-SA')} DA</Badge>
                         <Badge variant="secondary">{s.city}</Badge>
                       </div>
                       <p className="text-sm text-muted-foreground line-clamp-2 mb-4">
@@ -309,7 +309,7 @@ export default function AdminDashboard() {
                             className="h-12 w-12 rounded object-cover"
                           />
                         </TableCell>
-                        <TableCell>{s.price.toLocaleString('ar-SA')} ر.س</TableCell>
+                        <TableCell>{s.price.toLocaleString('ar-SA')} DA</TableCell>
                         <TableCell>{s.city}</TableCell>
                         <TableCell className="text-sm text-muted-foreground">
                           {s.sellerEmail || s.sellerId.slice(0, 8)}
@@ -439,7 +439,7 @@ export default function AdminDashboard() {
                       <TableRow key={o.id}>
                         <TableCell className="text-sm">{o.buyerEmail || o.buyerId.slice(0, 8)}</TableCell>
                         <TableCell className="text-sm">{o.sellerEmail || o.sellerId.slice(0, 8)}</TableCell>
-                        <TableCell>{o.totalPrice.toLocaleString('ar-SA')} ر.س</TableCell>
+                        <TableCell>{o.totalPrice.toLocaleString('ar-SA')} DA</TableCell>
                         <TableCell>
                           <Badge variant="secondary">{o.status}</Badge>
                         </TableCell>
@@ -478,7 +478,7 @@ export default function AdminDashboard() {
               <div className="space-y-4">
                 <div>
                   <p className="text-sm text-muted-foreground">السعر</p>
-                  <p className="text-2xl font-bold">{selectedSheep.price.toLocaleString('ar-SA')} ر.س</p>
+                  <p className="text-2xl font-bold">{selectedSheep.price.toLocaleString('ar-SA')} DA</p>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>

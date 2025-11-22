@@ -208,7 +208,7 @@ export default function SheepDetail() {
             {/* Price */}
             <div>
               <Badge className="text-2xl font-bold px-4 py-2">
-                {sheep.price.toLocaleString('ar-SA')} ر.س
+                {sheep.price.toLocaleString('ar-SA')} DA
               </Badge>
             </div>
 
@@ -285,7 +285,7 @@ export default function SheepDetail() {
             <div className="space-y-2">
               <div className="flex justify-between">
                 <span className="text-muted-foreground">السعر:</span>
-                <span className="font-semibold">{sheep.price.toLocaleString('ar-SA')} ر.س</span>
+                <span className="font-semibold">{sheep.price.toLocaleString('ar-SA')} DA</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">المدينة:</span>

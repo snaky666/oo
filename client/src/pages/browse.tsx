@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { collection, query, where, orderBy, getDocs, Query, DocumentData } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import { Sheep, saudiCities } from "@shared/schema";
+import { Sheep, algeriaCities } from "@shared/schema";
 import Header from "@/components/Header";
 import SheepCard from "@/components/SheepCard";
 import { Button } from "@/components/ui/button";
@@ -133,7 +133,7 @@ export default function BrowseSheep() {
       <div className="space-y-3">
         <Label className="text-base font-semibold">المدينة</Label>
         <div className="max-h-64 overflow-y-auto space-y-2 pr-2">
-          {saudiCities.slice(0, 10).map(city => (
+          {algeriaCities.slice(0, 10).map(city => (
             <div key={city} className="flex items-center gap-2">
               <Checkbox
                 id={`city-${city}`}

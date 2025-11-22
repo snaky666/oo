@@ -30,7 +30,7 @@ export default function Header() {
   };
 
   const getDashboardLink = () => {
-    if (!user) return null;
+    if (!user) return "/login";
     if (user.role === "admin") return "/admin";
     if (user.role === "seller") return "/seller";
     return "/browse";
@@ -54,7 +54,7 @@ export default function Header() {
       <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8">
         <div className="flex h-16 md:h-20 items-center justify-between gap-4">
           {/* Logo */}
-          <Link href="/" className="flex items-center gap-2 hover-elevate px-2 py-1 rounded-md" data-testid="link-home">
+          <Link href={getDashboardLink()} className="flex items-center gap-2 hover-elevate px-2 py-1 rounded-md" data-testid="link-home">
             <img 
               src="/logo.png" 
               alt="أضحيتي" 
@@ -64,27 +64,18 @@ export default function Header() {
 
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center gap-1">
-            {/* الرئيسية */}
-            <Link href="/" className={cn("rounded-md hover-elevate", isActive("/") && "bg-accent/10")}>
-              <Button 
-                variant="ghost" 
-                data-testid="link-home-nav"
-                className={cn(isActive("/") && "text-primary font-semibold")}
-              >
-                الرئيسية
-              </Button>
-            </Link>
-
-            {/* الأضاحي */}
-            <Link href="/browse" className={cn("rounded-md hover-elevate", isActive("/browse") && "bg-accent/10")}>
-              <Button 
-                variant="ghost" 
-                data-testid="link-sheep"
-                className={cn(isActive("/browse") && "text-primary font-semibold")}
-              >
-                الأضاحي
-              </Button>
-            </Link>
+            {/* الأضاحي - متاح فقط للمستخدمين المسجلين */}
+            {user && (
+              <Link href="/browse" className={cn("rounded-md hover-elevate", isActive("/browse") && "bg-accent/10")}>
+                <Button 
+                  variant="ghost" 
+                  data-testid="link-sheep"
+                  className={cn(isActive("/browse") && "text-primary font-semibold")}
+                >
+                  الأضاحي
+                </Button>
+              </Link>
+            )}
 
             {/* لوحة تحكم البائع - فقط للبائعين */}
             {user?.role === "seller" && (
@@ -173,27 +164,18 @@ export default function Header() {
         {/* Mobile Navigation */}
         {mobileMenuOpen && (
           <div className="md:hidden border-t py-4 space-y-2">
-            {/* الرئيسية */}
-            <Link href="/">
-              <Button
-                variant="ghost"
-                className={cn("w-full justify-start", isActive("/") && "bg-accent/10 text-primary font-semibold")}
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                الرئيسية
-              </Button>
-            </Link>
-
-            {/* الأضاحي */}
-            <Link href="/browse">
-              <Button
-                variant="ghost"
-                className={cn("w-full justify-start", isActive("/browse") && "bg-accent/10 text-primary font-semibold")}
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                الأضاحي
-              </Button>
-            </Link>
+            {/* الأضاحي - متاح فقط للمستخدمين المسجلين */}
+            {user && (
+              <Link href="/browse">
+                <Button
+                  variant="ghost"
+                  className={cn("w-full justify-start", isActive("/browse") && "bg-accent/10 text-primary font-semibold")}
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  الأضاحي
+                </Button>
+              </Link>
+            )}
 
             {/* لوحة تحكم البائع - فقط للبائعين */}
             {user?.role === "seller" && (

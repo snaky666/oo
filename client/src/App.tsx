@@ -21,12 +21,17 @@ function Router() {
   return (
     <Switch>
       {/* Public routes */}
-      <Route path="/" component={LandingPage} />
+      <Route path="/">
+        <PublicRoute>
+          <Login />
+        </PublicRoute>
+      </Route>
       <Route path="/login">
         <PublicRoute>
           <Login />
         </PublicRoute>
       </Route>
+      <Route path="/landing" component={LandingPage} />
       <Route path="/register">
         <PublicRoute>
           <Register />

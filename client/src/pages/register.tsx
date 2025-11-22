@@ -16,6 +16,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Loader2, UserPlus, ShoppingCart, Store } from "lucide-react";
 import { FcGoogle } from "react-icons/fc";
 import { cn } from "@/lib/utils";
+import loginBgGif from "@assets/images/login-bg.gif";
 
 export default function Register() {
   const [, setLocation] = useLocation();
@@ -125,175 +126,189 @@ export default function Register() {
   };
 
   return (
-    <div className="min-h-screen w-full flex items-center justify-center bg-background px-4 py-12">
-      <Card className="w-full max-w-md">
-        <CardHeader className="space-y-2 text-center">
-          <CardTitle className="text-3xl font-bold">إنشاء حساب جديد</CardTitle>
-          <CardDescription>
-            انضم إلى أضحيتي وابدأ في بيع أو شراء الأغنام
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-            {/* Role Selection */}
-            <div className="space-y-3">
-              <Label className="text-base font-semibold">نوع الحساب *</Label>
-              <div className="grid grid-cols-2 gap-4">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setSelectedRole("buyer");
-                    setValue("role", "buyer");
-                  }}
-                  data-testid="button-role-buyer"
-                  className={cn(
-                    "flex flex-col items-center justify-center p-6 rounded-md border-2 transition-all hover-elevate",
-                    selectedRole === "buyer"
-                      ? "border-primary bg-primary/10"
-                      : "border-border bg-card"
-                  )}
-                >
-                  <ShoppingCart className="h-8 w-8 mb-2 text-primary" />
-                  <span className="font-semibold">مشتري</span>
-                  <span className="text-xs text-muted-foreground mt-1">
-                    أريد شراء أغنام
-                  </span>
-                </button>
+    <div 
+      className="min-h-screen w-full flex flex-col"
+      style={{
+        backgroundImage: `url('${loginBgGif}')`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundAttachment: 'fixed'
+      }}
+    >
+      {/* Overlay to make card readable */}
+      <div className="absolute inset-0 bg-black/40" />
+      
+      {/* Main content */}
+      <div className="flex-1 flex items-center justify-center px-4 py-12 relative z-10">
+        <Card className="w-full max-w-md">
+          <CardHeader className="space-y-2 text-center">
+            <CardTitle className="text-3xl font-bold">إنشاء حساب جديد</CardTitle>
+            <CardDescription>
+              انضم إلى أضحيتي وابدأ في بيع أو شراء الأغنام
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+              {/* Role Selection */}
+              <div className="space-y-3">
+                <Label className="text-base font-semibold">نوع الحساب *</Label>
+                <div className="grid grid-cols-2 gap-4">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedRole("buyer");
+                      setValue("role", "buyer");
+                    }}
+                    data-testid="button-role-buyer"
+                    className={cn(
+                      "flex flex-col items-center justify-center p-6 rounded-md border-2 transition-all hover-elevate",
+                      selectedRole === "buyer"
+                        ? "border-primary bg-primary/10"
+                        : "border-border bg-card"
+                    )}
+                  >
+                    <ShoppingCart className="h-8 w-8 mb-2 text-primary" />
+                    <span className="font-semibold">مشتري</span>
+                    <span className="text-xs text-muted-foreground mt-1">
+                      أريد شراء أغنام
+                    </span>
+                  </button>
 
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedRole("seller");
+                      setValue("role", "seller");
+                    }}
+                    data-testid="button-role-seller"
+                    className={cn(
+                      "flex flex-col items-center justify-center p-6 rounded-md border-2 transition-all hover-elevate",
+                      selectedRole === "seller"
+                        ? "border-primary bg-primary/10"
+                        : "border-border bg-card"
+                    )}
+                  >
+                    <Store className="h-8 w-8 mb-2 text-primary" />
+                    <span className="font-semibold">بائع</span>
+                    <span className="text-xs text-muted-foreground mt-1">
+                      أريد بيع أغنام
+                    </span>
+                  </button>
+                </div>
+                {errors.role && (
+                  <p className="text-sm text-destructive">{errors.role.message}</p>
+                )}
+              </div>
+
+              {/* Email */}
+              <div className="space-y-2">
+                <Label htmlFor="email">البريد الإلكتروني *</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="example@domain.com"
+                  data-testid="input-email"
+                  {...register("email")}
+                />
+                {errors.email && (
+                  <p className="text-sm text-destructive">{errors.email.message}</p>
+                )}
+              </div>
+
+              {/* Password */}
+              <div className="space-y-2">
+                <Label htmlFor="password">كلمة المرور *</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  placeholder="••••••••"
+                  data-testid="input-password"
+                  {...register("password")}
+                />
+                {errors.password && (
+                  <p className="text-sm text-destructive">{errors.password.message}</p>
+                )}
+              </div>
+
+              {/* Phone (Optional) */}
+              <div className="space-y-2">
+                <Label htmlFor="phone">رقم الجوال (اختياري)</Label>
+                <Input
+                  id="phone"
+                  type="tel"
+                  placeholder="05xxxxxxxx"
+                  data-testid="input-phone"
+                  dir="ltr"
+                  {...register("phone")}
+                />
+              </div>
+
+              {/* Submit Button */}
+              <Button
+                type="submit"
+                className="w-full"
+                disabled={loading || googleLoading}
+                data-testid="button-submit"
+              >
+                {loading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    جاري إنشاء الحساب...
+                  </>
+                ) : (
+                  <>
+                    <UserPlus className="mr-2 h-4 w-4" />
+                    إنشاء حساب
+                  </>
+                )}
+              </Button>
+
+              {/* Separator */}
+              <div className="relative">
+                <Separator />
+                <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-card px-2 text-xs text-muted-foreground">
+                  أو
+                </span>
+              </div>
+
+              {/* Google Sign Up */}
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full"
+                onClick={handleGoogleSignUp}
+                disabled={loading || googleLoading}
+                data-testid="button-google-signup"
+              >
+                {googleLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                    جاري إنشاء الحساب...
+                  </>
+                ) : (
+                  <>
+                    <FcGoogle className="mr-2 h-5 w-5" />
+                    التسجيل بحساب Google
+                  </>
+                )}
+              </Button>
+
+              {/* Login Link */}
+              <div className="text-center text-sm">
+                <span className="text-muted-foreground">لديك حساب بالفعل؟ </span>
                 <button
                   type="button"
-                  onClick={() => {
-                    setSelectedRole("seller");
-                    setValue("role", "seller");
-                  }}
-                  data-testid="button-role-seller"
-                  className={cn(
-                    "flex flex-col items-center justify-center p-6 rounded-md border-2 transition-all hover-elevate",
-                    selectedRole === "seller"
-                      ? "border-primary bg-primary/10"
-                      : "border-border bg-card"
-                  )}
+                  onClick={() => setLocation("/login")}
+                  className="text-primary hover:underline font-medium"
+                  data-testid="link-login"
                 >
-                  <Store className="h-8 w-8 mb-2 text-primary" />
-                  <span className="font-semibold">بائع</span>
-                  <span className="text-xs text-muted-foreground mt-1">
-                    أريد بيع أغنام
-                  </span>
+                  تسجيل الدخول
                 </button>
               </div>
-              {errors.role && (
-                <p className="text-sm text-destructive">{errors.role.message}</p>
-              )}
-            </div>
-
-            {/* Email */}
-            <div className="space-y-2">
-              <Label htmlFor="email">البريد الإلكتروني *</Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="example@domain.com"
-                data-testid="input-email"
-                {...register("email")}
-              />
-              {errors.email && (
-                <p className="text-sm text-destructive">{errors.email.message}</p>
-              )}
-            </div>
-
-            {/* Password */}
-            <div className="space-y-2">
-              <Label htmlFor="password">كلمة المرور *</Label>
-              <Input
-                id="password"
-                type="password"
-                placeholder="••••••••"
-                data-testid="input-password"
-                {...register("password")}
-              />
-              {errors.password && (
-                <p className="text-sm text-destructive">{errors.password.message}</p>
-              )}
-            </div>
-
-            {/* Phone (Optional) */}
-            <div className="space-y-2">
-              <Label htmlFor="phone">رقم الجوال (اختياري)</Label>
-              <Input
-                id="phone"
-                type="tel"
-                placeholder="05xxxxxxxx"
-                data-testid="input-phone"
-                dir="ltr"
-                {...register("phone")}
-              />
-            </div>
-
-            {/* Submit Button */}
-            <Button
-              type="submit"
-              className="w-full"
-              disabled={loading || googleLoading}
-              data-testid="button-submit"
-            >
-              {loading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  جاري إنشاء الحساب...
-                </>
-              ) : (
-                <>
-                  <UserPlus className="mr-2 h-4 w-4" />
-                  إنشاء حساب
-                </>
-              )}
-            </Button>
-
-            {/* Separator */}
-            <div className="relative">
-              <Separator />
-              <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-card px-2 text-xs text-muted-foreground">
-                أو
-              </span>
-            </div>
-
-            {/* Google Sign Up */}
-            <Button
-              type="button"
-              variant="outline"
-              className="w-full"
-              onClick={handleGoogleSignUp}
-              disabled={loading || googleLoading}
-              data-testid="button-google-signup"
-            >
-              {googleLoading ? (
-                <>
-                  <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                  جاري إنشاء الحساب...
-                </>
-              ) : (
-                <>
-                  <FcGoogle className="mr-2 h-5 w-5" />
-                  التسجيل بحساب Google
-                </>
-              )}
-            </Button>
-
-            {/* Login Link */}
-            <div className="text-center text-sm">
-              <span className="text-muted-foreground">لديك حساب بالفعل؟ </span>
-              <button
-                type="button"
-                onClick={() => setLocation("/login")}
-                className="text-primary hover:underline font-medium"
-                data-testid="link-login"
-              >
-                تسجيل الدخول
-              </button>
-            </div>
-          </form>
-        </CardContent>
-      </Card>
+            </form>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }

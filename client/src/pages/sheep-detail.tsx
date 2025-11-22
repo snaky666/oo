@@ -369,7 +369,7 @@ export default function SheepDetail() {
                       <SelectValue placeholder="اختر الولاية" />
                     </SelectTrigger>
                     <SelectContent>
-                      {Object.keys(algeriaCities).map((city) => (
+                      {algeriaCities.map((city) => (
                         <SelectItem key={city} value={city}>
                           {city}
                         </SelectItem>

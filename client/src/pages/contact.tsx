@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import Header from "@/components/Header";
-import { Mail, Phone, MapPin, Clock, Globe, MessageCircle } from "lucide-react";
+import { Mail, Phone, MapPin, Clock, Globe, MessageCircle, Facebook, Linkedin } from "lucide-react";
 
 export default function ContactPage() {
   return (
@@ -23,16 +23,30 @@ export default function ContactPage() {
       <section className="py-16 md:py-24">
         <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {/* Email */}
+            {/* Primary Email */}
             <Card className="hover:shadow-lg transition-shadow">
               <CardContent className="p-8">
                 <Mail className="h-12 w-12 mb-4 text-primary" />
-                <h3 className="text-xl font-semibold mb-3">البريد الإلكتروني</h3>
+                <h3 className="text-xl font-semibold mb-3">البريد الإلكتروني الرئيسي</h3>
                 <p className="text-muted-foreground mb-4">
-                  تواصل معنا عبر البريد الإلكتروني وسنرد عليك في أقرب وقت ممكن.
+                  للاستفسارات والطلبات العامة.
                 </p>
-                <a href="mailto:info@odhiyati.com" className="text-primary font-bold text-lg hover:underline">
+                <a href="mailto:info@odhiyati.com" className="text-primary font-bold text-lg hover:underline break-all">
                   info@odhiyati.com
+                </a>
+              </CardContent>
+            </Card>
+
+            {/* Secondary Email */}
+            <Card className="hover:shadow-lg transition-shadow">
+              <CardContent className="p-8">
+                <Mail className="h-12 w-12 mb-4 text-primary" />
+                <h3 className="text-xl font-semibold mb-3">البريد الإلكتروني الثانوي</h3>
+                <p className="text-muted-foreground mb-4">
+                  للمشاكل والشكاوى الخاصة.
+                </p>
+                <a href="mailto:support@odhiyati.com" className="text-primary font-bold text-lg hover:underline break-all">
+                  support@odhiyati.com
                 </a>
               </CardContent>
             </Card>
@@ -41,9 +55,9 @@ export default function ContactPage() {
             <Card className="hover:shadow-lg transition-shadow">
               <CardContent className="p-8">
                 <Phone className="h-12 w-12 mb-4 text-primary" />
-                <h3 className="text-xl font-semibold mb-3">الهاتف</h3>
+                <h3 className="text-xl font-semibold mb-3">رقم الهاتف</h3>
                 <p className="text-muted-foreground mb-4">
-                  اتصل بنا مباشرة للحصول على الدعم الفوري والمساعدة المباشرة.
+                  اتصل بنا مباشرة للحصول على الدعم الفوري.
                 </p>
                 <a href="tel:+213123456789" className="text-primary font-bold text-lg hover:underline">
                   +213 (0) 123 456 789
@@ -57,10 +71,38 @@ export default function ContactPage() {
                 <MessageCircle className="h-12 w-12 mb-4 text-primary" />
                 <h3 className="text-xl font-semibold mb-3">WhatsApp</h3>
                 <p className="text-muted-foreground mb-4">
-                  تواصل معنا عبر WhatsApp للمحادثة الفورية والرد السريع.
+                  للمحادثة الفورية والرد السريع.
                 </p>
                 <a href="https://wa.me/213123456789" target="_blank" rel="noopener noreferrer" className="text-primary font-bold text-lg hover:underline">
                   +213 (0) 123 456 789
+                </a>
+              </CardContent>
+            </Card>
+
+            {/* Facebook */}
+            <Card className="hover:shadow-lg transition-shadow">
+              <CardContent className="p-8">
+                <Facebook className="h-12 w-12 mb-4 text-primary" />
+                <h3 className="text-xl font-semibold mb-3">Facebook</h3>
+                <p className="text-muted-foreground mb-4">
+                  تابعنا على الفيسبوك لآخر المستجدات.
+                </p>
+                <a href="https://facebook.com/odhiyati" target="_blank" rel="noopener noreferrer" className="text-primary font-bold text-lg hover:underline">
+                  odhiyati.com
+                </a>
+              </CardContent>
+            </Card>
+
+            {/* LinkedIn */}
+            <Card className="hover:shadow-lg transition-shadow">
+              <CardContent className="p-8">
+                <Linkedin className="h-12 w-12 mb-4 text-primary" />
+                <h3 className="text-xl font-semibold mb-3">LinkedIn</h3>
+                <p className="text-muted-foreground mb-4">
+                  اتصل بنا عبر LinkedIn للفرص العملية.
+                </p>
+                <a href="https://linkedin.com/company/odhiyati" target="_blank" rel="noopener noreferrer" className="text-primary font-bold text-lg hover:underline">
+                  odhiyati.com
                 </a>
               </CardContent>
             </Card>
@@ -71,7 +113,7 @@ export default function ContactPage() {
                 <MapPin className="h-12 w-12 mb-4 text-primary" />
                 <h3 className="text-xl font-semibold mb-3">المقر الرئيسي</h3>
                 <p className="text-muted-foreground mb-4">
-                  يمكنك زيارتنا في مقرنا الرئيسي للتعامل المباشر معنا.
+                  يمكنك زيارتنا مباشرة.
                 </p>
                 <p className="text-primary font-bold text-lg">
                   الجزائر، الجزائر العاصمة
@@ -85,7 +127,7 @@ export default function ContactPage() {
                 <Clock className="h-12 w-12 mb-4 text-primary" />
                 <h3 className="text-xl font-semibold mb-3">ساعات العمل</h3>
                 <p className="text-muted-foreground mb-4">
-                  فريقنا متاح على مدار السنة لمساعدتك في أي وقت.
+                  فريقنا متاح على مدار السنة.
                 </p>
                 <p className="text-primary font-bold text-lg">
                   24/7 متاح دائماً
@@ -99,7 +141,7 @@ export default function ContactPage() {
                 <Globe className="h-12 w-12 mb-4 text-primary" />
                 <h3 className="text-xl font-semibold mb-3">الموقع الإلكتروني</h3>
                 <p className="text-muted-foreground mb-4">
-                  زر موقعنا الإلكتروني للحصول على مزيد من المعلومات والمساعدة.
+                  للحصول على مزيد من المعلومات.
                 </p>
                 <a href="https://odhiyati.com" target="_blank" rel="noopener noreferrer" className="text-primary font-bold text-lg hover:underline">
                   odhiyati.com

@@ -7,7 +7,7 @@ import SheepCard from "@/components/SheepCard";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import { Slider } from "@/components/ui/slider";
+import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
@@ -78,57 +78,93 @@ export default function BrowseSheep() {
       {/* Price Filter */}
       <div className="space-y-3">
         <Label className="text-base font-semibold">السعر (DA)</Label>
-        <div className="px-2">
-          <Slider
-            value={priceRange}
-            onValueChange={(value) => setPriceRange(value as [number, number])}
-            min={0}
-            max={10000}
-            step={100}
-            data-testid="slider-price"
-          />
-        </div>
-        <div className="flex justify-between text-sm text-muted-foreground">
-          <span>{priceRange[0].toLocaleString()}</span>
-          <span>{priceRange[1].toLocaleString()}</span>
+        <div className="flex gap-2 items-end">
+          <div className="flex-1">
+            <Label className="text-xs text-muted-foreground mb-1 block">من</Label>
+            <Input
+              type="number"
+              value={priceRange[0]}
+              onChange={(e) => setPriceRange([Math.max(0, parseInt(e.target.value) || 0), priceRange[1]])}
+              min={0}
+              max={10000}
+              placeholder="0"
+              data-testid="input-price-min"
+            />
+          </div>
+          <div className="flex-1">
+            <Label className="text-xs text-muted-foreground mb-1 block">إلى</Label>
+            <Input
+              type="number"
+              value={priceRange[1]}
+              onChange={(e) => setPriceRange([priceRange[0], Math.min(10000, parseInt(e.target.value) || 10000)])}
+              min={0}
+              max={10000}
+              placeholder="10000"
+              data-testid="input-price-max"
+            />
+          </div>
         </div>
       </div>
 
       {/* Age Filter */}
       <div className="space-y-3">
         <Label className="text-base font-semibold">العمر (شهر)</Label>
-        <div className="px-2">
-          <Slider
-            value={ageRange}
-            onValueChange={(value) => setAgeRange(value as [number, number])}
-            min={0}
-            max={48}
-            step={1}
-            data-testid="slider-age"
-          />
-        </div>
-        <div className="flex justify-between text-sm text-muted-foreground">
-          <span>{ageRange[0]}</span>
-          <span>{ageRange[1]}</span>
+        <div className="flex gap-2 items-end">
+          <div className="flex-1">
+            <Label className="text-xs text-muted-foreground mb-1 block">من</Label>
+            <Input
+              type="number"
+              value={ageRange[0]}
+              onChange={(e) => setAgeRange([Math.max(0, parseInt(e.target.value) || 0), ageRange[1]])}
+              min={0}
+              max={48}
+              placeholder="0"
+              data-testid="input-age-min"
+            />
+          </div>
+          <div className="flex-1">
+            <Label className="text-xs text-muted-foreground mb-1 block">إلى</Label>
+            <Input
+              type="number"
+              value={ageRange[1]}
+              onChange={(e) => setAgeRange([ageRange[0], Math.min(48, parseInt(e.target.value) || 48)])}
+              min={0}
+              max={48}
+              placeholder="48"
+              data-testid="input-age-max"
+            />
+          </div>
         </div>
       </div>
 
       {/* Weight Filter */}
       <div className="space-y-3">
         <Label className="text-base font-semibold">الوزن (كجم)</Label>
-        <div className="px-2">
-          <Slider
-            value={weightRange}
-            onValueChange={(value) => setWeightRange(value as [number, number])}
-            min={0}
-            max={100}
-            step={1}
-            data-testid="slider-weight"
-          />
-        </div>
-        <div className="flex justify-between text-sm text-muted-foreground">
-          <span>{weightRange[0]}</span>
-          <span>{weightRange[1]}</span>
+        <div className="flex gap-2 items-end">
+          <div className="flex-1">
+            <Label className="text-xs text-muted-foreground mb-1 block">من</Label>
+            <Input
+              type="number"
+              value={weightRange[0]}
+              onChange={(e) => setWeightRange([Math.max(0, parseInt(e.target.value) || 0), weightRange[1]])}
+              min={0}
+              max={100}
+              placeholder="0"
+              data-testid="input-weight-min"
+            />
+          </div>
+          <div className="flex-1">
+            <Label className="text-xs text-muted-foreground mb-1 block">إلى</Label>
+            <Input
+              type="number"
+              value={weightRange[1]}
+              onChange={(e) => setWeightRange([weightRange[0], Math.min(100, parseInt(e.target.value) || 100)])}
+              min={0}
+              max={100}
+              placeholder="100"
+              data-testid="input-weight-max"
+            />
+          </div>
         </div>
       </div>
 

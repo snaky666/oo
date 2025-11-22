@@ -32,3 +32,19 @@ outputType = "webview"
 [[ports]]
 localPort = 5000
 externalPort = 80
+
+[[ports]]
+localPort = 40903
+externalPort = 3000
+
+[userenv]
+
+[userenv.shared]
+VITE_FIREBASE_API_KEY = "AIzaSyB73bZRKxOv2SpzHQk0-NOG4dtoAXjOo7E"
+VITE_FIREBASE_PROJECT_ID = "odhya-e7cca"
+VITE_FIREBASE_APP_ID = "1:377136777872:web:e768a6c9672ec05293e615"
+
+[deployment]
+deploymentTarget = "autoscale"
+run = ["npm", "start"]
+build = ["npm", "run", "build"]

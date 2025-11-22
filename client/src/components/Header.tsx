@@ -66,12 +66,12 @@ export default function Header() {
           <nav className="hidden md:flex items-center gap-1">
             {/* Home Icon - متاح فقط للمستخدمين المسجلين */}
             {user && (
-              <Link href={getDashboardLink()} className={cn("rounded-md hover-elevate", isActive(getDashboardLink()) && "bg-accent/10")}>
+              <Link href="/" className={cn("rounded-md hover-elevate", isActive("/") && "bg-accent/10")}>
                 <Button 
                   variant="ghost" 
                   size="icon"
                   title="الصفحة الرئيسية"
-                  className={cn(isActive(getDashboardLink()) && "text-primary")}
+                  className={cn(isActive("/") && "text-primary")}
                 >
                   <Home className="h-5 w-5" />
                 </Button>

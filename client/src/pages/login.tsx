@@ -301,20 +301,6 @@ export default function Login() {
           </CardContent>
         </Card>
       </div>
-
-      {/* Footer */}
-      <footer className="relative z-10 bg-black/20 backdrop-blur-sm border-t border-white/10">
-        <div className="max-w-7xl mx-auto px-4 py-6">
-          <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-            <div className="text-center md:text-right text-sm text-white/70">
-              <p>أضحيتي © 2025 - منصة متخصصة في بيع وشراء الأغنام</p>
-            </div>
-            <div className="text-center text-sm text-white/70">
-              <p>Developed by <span className="font-semibold text-white">NovaWeb</span></p>
-            </div>
-          </div>
-        </div>
-      </footer>
     </div>
   );
 }

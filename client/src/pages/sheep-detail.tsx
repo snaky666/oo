@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useRoute } from "wouter";
-import { useForm } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { doc, getDoc, collection, addDoc } from "firebase/firestore";
@@ -58,8 +58,8 @@ export default function SheepDetail() {
     register,
     handleSubmit,
     formState: { errors },
+    control,
     setValue,
-    watch,
   } = useForm<OrderFormData>({
     resolver: zodResolver(orderFormSchema),
     defaultValues: {
@@ -69,8 +69,6 @@ export default function SheepDetail() {
       city: user?.city || "",
     },
   });
-
-  const selectedCity = watch("city");
 
   useEffect(() => {
     if (params?.id) {
@@ -362,18 +360,24 @@ export default function SheepDetail() {
             {/* City */}
             <div className="space-y-2">
               <Label htmlFor="city">الولاية</Label>
-              <Select value={selectedCity} onValueChange={(value) => setValue("city", value)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="اختر الولاية" />
-                </SelectTrigger>
-                <SelectContent>
-                  {Object.keys(algeriaCities).map((city) => (
-                    <SelectItem key={city} value={city}>
-                      {city}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Controller
+                name="city"
+                control={control}
+                render={({ field }) => (
+                  <Select value={field.value} onValueChange={field.onChange}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="اختر الولاية" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {Object.keys(algeriaCities).map((city) => (
+                        <SelectItem key={city} value={city}>
+                          {city}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              />
               {errors.city && (
                 <p className="text-sm text-destructive">{errors.city.message}</p>
               )}

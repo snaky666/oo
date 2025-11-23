@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { collection, query, where, orderBy, getDocs, Query, DocumentData } from "firebase/firestore";
+import { collection, query, where, orderBy, getDocs, Query, DocumentData, onSnapshot } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { Sheep, algeriaCities } from "@shared/schema";
 import Header from "@/components/Header";
@@ -23,34 +23,37 @@ export default function BrowseSheep() {
   const [filtersOpen, setFiltersOpen] = useState(false);
 
   useEffect(() => {
-    fetchSheep();
-  }, []);
-
-  const fetchSheep = async () => {
     setLoading(true);
-    try {
-      const sheepQuery = query(
-        collection(db, "sheep"),
-        where("status", "==", "approved")
-      );
-      
-      const snapshot = await getDocs(sheepQuery);
-      let sheepData = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      })) as Sheep[];
-      
-      // Sort by createdAt in descending order on client side
-      sheepData = sheepData.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
-      
-      setSheep(sheepData);
-    } catch (error) {
-      console.error("Error fetching sheep:", error);
-      setSheep([]);
-    } finally {
-      setLoading(false);
-    }
-  };
+    const sheepQuery = query(
+      collection(db, "sheep"),
+      where("status", "==", "approved")
+    );
+    
+    // Real-time listener for approved sheep
+    const unsubscribe = onSnapshot(
+      sheepQuery,
+      (snapshot) => {
+        let sheepData = snapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        })) as Sheep[];
+        
+        // Sort by createdAt in descending order on client side
+        sheepData = sheepData.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+        
+        setSheep(sheepData);
+        setLoading(false);
+      },
+      (error) => {
+        console.error("Error listening to sheep:", error);
+        setSheep([]);
+        setLoading(false);
+      }
+    );
+
+    // Cleanup listener when component unmounts
+    return () => unsubscribe();
+  }, []);
 
   const filteredSheep = sheep.filter(s => {
     if (s.price < priceRange[0] || s.price > priceRange[1]) return false;

@@ -21,37 +21,24 @@ export default function BrowseSheep() {
   const [filtersOpen, setFiltersOpen] = useState(false);
 
   useEffect(() => {
-    const fetchApprovedSheep = async () => {
-      setLoading(true);
-      try {
-        const response = await fetch("/api/sheep/approved");
-        
-        if (!response.ok) {
-          throw new Error("Failed to fetch sheep");
+    setLoading(true);
+    // Try backend API first
+    fetch("/api/sheep/approved")
+      .then(res => res.json())
+      .then(sheepData => {
+        if (Array.isArray(sheepData)) {
+          console.log("✅ Fetched", sheepData.length, "approved sheep from backend");
+          const sortedSheep = sheepData.sort((a: any, b: any) => (b.createdAt || 0) - (a.createdAt || 0));
+          setSheep(sortedSheep as Sheep[]);
         }
-        
-        const sheepData = await response.json();
-        
-        console.log("✅ Fetched", sheepData.length, "approved sheep from backend");
-        
-        // Sort by createdAt in descending order on client side
-        const sortedSheep = sheepData.sort((a: any, b: any) => (b.createdAt || 0) - (a.createdAt || 0));
-        
-        setSheep(sortedSheep as Sheep[]);
-      } catch (error) {
-        console.error("❌ Error fetching sheep:", error);
-        setSheep([]);
-      } finally {
         setLoading(false);
-      }
-    };
-
-    fetchApprovedSheep();
-    
-    // Optional: Poll for updates every 30 seconds
-    const interval = setInterval(fetchApprovedSheep, 30000);
-    
-    return () => clearInterval(interval);
+      })
+      .catch(error => {
+        console.error("❌ Backend API error, trying Firestore...", error);
+        setLoading(false);
+        // If backend fails, don't retry - just show empty
+        setSheep([]);
+      });
   }, []);
 
   const filteredSheep = sheep.filter(s => {

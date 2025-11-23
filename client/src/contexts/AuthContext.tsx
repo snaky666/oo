@@ -133,12 +133,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signInAsGuest = async (): Promise<{ success: boolean; error?: string }> => {
     try {
-      await signInAnonymously(auth);
       localStorage.setItem("guestMode", "true");
-      console.log("✅ Guest signed in anonymously");
+      console.log("✅ Guest mode enabled");
       return { success: true };
     } catch (error: any) {
-      console.error("Guest sign-in error:", error);
+      console.error("Guest mode error:", error);
       return { success: false, error: "فشل دخول الزائر" };
     }
   };

@@ -96,14 +96,15 @@ export default function SheepDetail() {
   const fetchSheep = async (id: string) => {
     setLoading(true);
     try {
+      // Try backend API
       const response = await fetch(`/api/sheep/${id}`);
       
-      if (!response.ok) {
-        throw new Error("Failed to fetch sheep");
+      if (response.ok) {
+        const sheepData = await response.json();
+        setSheep(sheepData as Sheep);
+      } else {
+        throw new Error("Sheep not found");
       }
-      
-      const sheepData = await response.json();
-      setSheep(sheepData as Sheep);
     } catch (error) {
       console.error("Error fetching sheep:", error);
       toast({

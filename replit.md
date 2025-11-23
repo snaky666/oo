@@ -48,6 +48,15 @@ The project is structured with `client/` for the React frontend, `server/` for t
 
 ## Recent Implementation Updates (November 23, 2025)
 
+### Guest Mode - Browse Without Account
+- Added "الدخول كزائر" (Enter as Guest) button on login page
+- Guests can browse approved sheep listings without account registration
+- Guest mode stored in localStorage (`guestMode` flag)
+- **Browse Access**: Guests can view all approved sheep and access sheep details
+- **Purchase Restriction**: When guests attempt to purchase, they see "سجل الدخول أولاً" (Register first) button
+- **Login Redirect**: Clicking "Register first" clears guest mode and redirects to login page
+- **Route Protection**: Modified `ProtectedRoute` component to allow guest access to `/browse` and `/sheep/:id` routes via `allowGuest` prop
+
 ### Municipality System Implementation
 - Integrated comprehensive Algerian municipalities data from JSON file
 - **Sheep Model**: Added `municipality` field to track sheep location at municipality level

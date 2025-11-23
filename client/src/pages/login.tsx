@@ -260,6 +260,20 @@ export default function Login() {
               )}
             </Button>
 
+            {/* Guest Login Button */}
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full text-amber-700 border-amber-700/30 hover:bg-amber-700/5"
+              onClick={() => {
+                localStorage.setItem("guestMode", "true");
+                setLocation("/browse");
+              }}
+              data-testid="button-guest-login"
+            >
+              الدخول كزائر
+            </Button>
+
             {/* Register Link */}
             <div className="text-center text-sm">
               <span className="text-muted-foreground">ليس لديك حساب؟ </span>

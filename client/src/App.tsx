@@ -42,12 +42,12 @@ function Router() {
       
       {/* Buyer routes */}
       <Route path="/browse">
-        <ProtectedRoute allowedRoles={["buyer", "admin", "seller"]}>
+        <ProtectedRoute allowedRoles={["buyer", "admin", "seller"]} allowGuest={true}>
           <BrowseSheep />
         </ProtectedRoute>
       </Route>
       <Route path="/sheep/:id">
-        <ProtectedRoute allowedRoles={["buyer", "admin", "seller"]}>
+        <ProtectedRoute allowedRoles={["buyer", "admin", "seller"]} allowGuest={true}>
           <SheepDetail />
         </ProtectedRoute>
       </Route>

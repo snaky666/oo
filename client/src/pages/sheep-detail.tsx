@@ -53,6 +53,8 @@ export default function SheepDetail() {
   const [selectedImage, setSelectedImage] = useState(0);
   const [orderDialogOpen, setOrderDialogOpen] = useState(false);
   const [creatingOrder, setCreatingOrder] = useState(false);
+  const [guestLoginDialogOpen, setGuestLoginDialogOpen] = useState(false);
+  const isGuest = localStorage.getItem("guestMode") === "true";
 
   const {
     register,
@@ -292,14 +294,17 @@ export default function SheepDetail() {
               </Button>
             )}
 
-            {!user && (
+            {(!user || isGuest) && (
               <Card className="bg-muted/50">
                 <CardContent className="p-6 text-center">
                   <p className="text-muted-foreground mb-4">
                     يجب تسجيل الدخول لإنشاء طلب شراء
                   </p>
-                  <Button onClick={() => setLocation("/login")}>
-                    تسجيل الدخول
+                  <Button onClick={() => {
+                    localStorage.removeItem("guestMode");
+                    setLocation("/login");
+                  }}>
+                    سجل الدخول أولاً
                   </Button>
                 </CardContent>
               </Card>

@@ -8,20 +8,27 @@ interface ProtectedRouteProps {
   children: React.ReactNode;
   allowedRoles?: UserRole[];
   requireAuth?: boolean;
+  allowGuest?: boolean;
 }
 
 export default function ProtectedRoute({ 
   children, 
   allowedRoles,
-  requireAuth = true 
+  requireAuth = true,
+  allowGuest = false 
 }: ProtectedRouteProps) {
   const { user, loading } = useAuth();
+  const [location] = useLocation();
   const [, setLocation] = useLocation();
+  const isGuest = localStorage.getItem("guestMode") === "true";
 
   useEffect(() => {
     if (!loading) {
-      if (requireAuth && !user) {
-        // إذا لم يكن مسجل دخول وحاول الوصول إلى صفحة محمية، أعده إلى login
+      // السماح للزائرين بدخول صفحة browse و sheep-detail إذا كانت الخاصية allowGuest مفعلة
+      const canAccessAsGuest = allowGuest && isGuest;
+
+      if (requireAuth && !user && !canAccessAsGuest) {
+        // إذا لم يكن مسجل دخول وليس زائر، وحاول الوصول إلى صفحة محمية، أعده إلى login
         setLocation("/login");
       } else if (user && allowedRoles && !allowedRoles.includes(user.role)) {
         // إذا كان لديه role لكنه لا يملك وصول، أعده إلى dashboard حسب الدور الخاص به
@@ -34,7 +41,7 @@ export default function ProtectedRoute({
         }
       }
     }
-  }, [user, loading, requireAuth, allowedRoles, setLocation]);
+  }, [user, loading, requireAuth, allowedRoles, setLocation, isGuest, allowGuest]);
 
   if (loading) {
     return (
@@ -44,7 +51,10 @@ export default function ProtectedRoute({
     );
   }
 
-  if (requireAuth && !user) {
+  // السماح للزائرين بالوصول إلى browse و sheep detail إذا كانت allowGuest مفعلة
+  const canAccessAsGuest = allowGuest && isGuest;
+
+  if (requireAuth && !user && !canAccessAsGuest) {
     return null;
   }
 

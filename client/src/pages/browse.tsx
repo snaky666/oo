@@ -16,7 +16,7 @@ import { Filter, X } from "lucide-react";
 export default function BrowseSheep() {
   const [sheep, setSheep] = useState<Sheep[]>([]);
   const [loading, setLoading] = useState(true);
-  const [priceRange, setPriceRange] = useState<[number, number]>([0, 10000]);
+  const [priceRange, setPriceRange] = useState<[number, number]>([0, 1000000]);
   const [ageRange, setAgeRange] = useState<[number, number]>([0, 48]);
   const [weightRange, setWeightRange] = useState<[number, number]>([0, 100]);
   const [selectedCities, setSelectedCities] = useState<string[]>([]);
@@ -33,19 +33,26 @@ export default function BrowseSheep() {
     const unsubscribe = onSnapshot(
       sheepQuery,
       (snapshot) => {
-        let sheepData = snapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        })) as Sheep[];
+        console.log("📦 Sheep Listener - Snapshot received with", snapshot.docs.length, "approved sheep");
+        
+        let sheepData = snapshot.docs.map(doc => {
+          const data = doc.data();
+          console.log("🐑 Sheep ID:", doc.id, "Status:", data.status, "Price:", data.price);
+          return {
+            id: doc.id,
+            ...data
+          };
+        }) as Sheep[];
         
         // Sort by createdAt in descending order on client side
         sheepData = sheepData.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
         
+        console.log("✅ Setting sheep state with", sheepData.length, "items");
         setSheep(sheepData);
         setLoading(false);
       },
       (error) => {
-        console.error("Error listening to sheep:", error);
+        console.error("❌ Error listening to sheep:", error);
         setSheep([]);
         setLoading(false);
       }
@@ -63,6 +70,11 @@ export default function BrowseSheep() {
     return true;
   });
 
+  // Log the state for debugging
+  useEffect(() => {
+    console.log("🔍 Browse Page State - Loading:", loading, "Sheep:", sheep.length, "Filtered:", filteredSheep.length);
+  }, [loading, sheep, filteredSheep]);
+
   const toggleCity = (city: string) => {
     setSelectedCities(prev =>
       prev.includes(city) ? prev.filter(c => c !== city) : [...prev, city]
@@ -70,7 +82,7 @@ export default function BrowseSheep() {
   };
 
   const clearFilters = () => {
-    setPriceRange([0, 10000]);
+    setPriceRange([0, 1000000]);
     setAgeRange([0, 48]);
     setWeightRange([0, 100]);
     setSelectedCities([]);
@@ -99,10 +111,10 @@ export default function BrowseSheep() {
             <Input
               type="number"
               value={priceRange[1]}
-              onChange={(e) => setPriceRange([priceRange[0], Math.min(10000, parseInt(e.target.value) || 10000)])}
+              onChange={(e) => setPriceRange([priceRange[0], Math.min(1000000, parseInt(e.target.value) || 1000000)])}
               min={0}
-              max={10000}
-              placeholder="10000"
+              max={1000000}
+              placeholder="1000000"
               data-testid="input-price-max"
             />
           </div>

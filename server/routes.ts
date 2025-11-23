@@ -125,36 +125,50 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get approved sheep listings (public endpoint for guests and users)
   app.get("/api/sheep/approved", async (req, res) => {
     try {
-      console.log("🐑 Fetching approved sheep from Firestore...");
+      console.log("🐑 Fetching approved sheep...");
       
-      try {
-        const admin = await import("firebase-admin");
-        if (admin.default.apps.length === 0) {
-          throw new Error("Firebase not initialized");
+      // Use REST API with a direct Firestore query
+      const body = {
+        structuredQuery: {
+          from: [{ collectionId: "sheep" }],
+          where: {
+            fieldFilter: {
+              field: { fieldPath: "status" },
+              op: "EQUAL",
+              value: { stringValue: "approved" }
+            }
+          }
         }
-        const db = admin.default.firestore();
-        
-        const snapshot = await db.collection("sheep")
-          .where("status", "==", "approved")
-          .orderBy("createdAt", "desc")
-          .get();
-        
-        const sheep = snapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        }));
+      };
 
-        console.log(`✅ Found ${sheep.length} approved sheep`);
-        res.json(sheep);
-      } catch (firebaseError: any) {
-        console.error("Firebase error:", firebaseError?.message);
-        // If Firebase fails, return empty array instead of error
-        console.log("⚠️ Firebase unavailable, returning empty array");
-        res.json([]);
+      const response = await fetch(
+        `https://firestore.googleapis.com/v1/projects/${FIREBASE_PROJECT_ID}/databases/(default)/documents:runQuery`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${FIREBASE_API_KEY}`
+          },
+          body: JSON.stringify(body)
+        }
+      );
+
+      let data = [];
+      if (response.ok) {
+        const result = await response.json();
+        if (Array.isArray(result)) {
+          data = result.filter((item: any) => item.document).map((item: any) => ({
+            id: item.document.name.split('/').pop(),
+            ...extractDocumentData(item.document.fields)
+          }));
+        }
       }
+
+      console.log(`✅ Found ${data.length} approved sheep`);
+      res.json(data);
     } catch (error: any) {
-      console.error("❌ Error in sheep endpoint:", error?.message || error);
-      res.status(500).json({ error: "Failed to fetch sheep listings", details: error?.message });
+      console.error("❌ Error:", error?.message);
+      res.json([]);
     }
   });
 
@@ -163,17 +177,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       console.log(`🐑 Fetching sheep ${req.params.id}...`);
       
-      const admin = await import("firebase-admin");
-      const db = admin.default.firestore();
-      
-      const doc = await db.collection("sheep").doc(req.params.id).get();
-      
-      if (!doc.exists) {
-        console.log(`⚠️ Sheep ${req.params.id} not found`);
-        return res.status(404).json({ error: "Sheep not found" });
+      const response = await fetch(
+        `https://firestore.googleapis.com/v1/projects/${FIREBASE_PROJECT_ID}/databases/(default)/documents/sheep/${req.params.id}`,
+        {
+          method: "GET",
+          headers: {
+            "X-Goog-Api-Key": FIREBASE_API_KEY || ""
+          }
+        }
+      );
+
+      if (!response.ok) {
+        if (response.status === 404) {
+          console.log(`⚠️ Sheep ${req.params.id} not found`);
+          return res.status(404).json({ error: "Sheep not found" });
+        }
+        const errorText = await response.text();
+        console.error(`❌ Firestore API error: ${response.status} ${errorText}`);
+        return res.status(500).json({ error: "Failed to fetch sheep" });
       }
-      
-      const data = doc.data();
+
+      const doc = await response.json();
+      const data = extractDocumentData(doc.fields);
       
       // Only return if approved
       if (data?.status !== "approved") {

@@ -9,15 +9,10 @@ import { createServer as createViteServer, createLogger } from "vite";
 import viteConfig from "../vite.config";
 import runApp from "./app";
 
-// Initialize Firebase Admin SDK BEFORE anything else
+// Initialize Firebase Client SDK for server-side access
 async function initFirebase() {
-  const admin = await import("firebase-admin");
-  if (!admin.default.apps.length) {
-    admin.default.initializeApp({
-      projectId: process.env.VITE_FIREBASE_PROJECT_ID,
-      databaseURL: `https://${process.env.VITE_FIREBASE_PROJECT_ID}.firebaseio.com`,
-    });
-  }
+  // No need to initialize - we'll use REST API directly
+  console.log("🔧 Firebase initialized for REST API access");
 }
 
 export async function setupVite(app: Express, server: Server) {

@@ -1,7 +1,7 @@
 import { useAuth } from "@/contexts/AuthContext";
 import { UserRole } from "@shared/schema";
 import { useLocation } from "wouter";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Loader2 } from "lucide-react";
 
 interface ProtectedRouteProps {
@@ -18,9 +18,8 @@ export default function ProtectedRoute({
   allowGuest = false 
 }: ProtectedRouteProps) {
   const { user, loading } = useAuth();
-  const [location] = useLocation();
   const [, setLocation] = useLocation();
-  const isGuest = localStorage.getItem("guestMode") === "true";
+  const isGuest = typeof window !== "undefined" ? localStorage.getItem("guestMode") === "true" : false;
 
   useEffect(() => {
     if (!loading) {

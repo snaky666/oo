@@ -90,18 +90,16 @@ export default function Header() {
               </Button>
             </Link>
 
-            {/* الأضاحي - متاح فقط للمستخدمين المسجلين */}
-            {user && (
-              <Link href="/browse" className={cn("rounded-md hover-elevate", isActive("/browse") && "bg-accent/10")}>
-                <Button 
-                  variant="ghost" 
-                  data-testid="link-sheep"
-                  className={cn(isActive("/browse") && "text-primary font-semibold")}
-                >
-                  الأضاحي
-                </Button>
-              </Link>
-            )}
+            {/* الأضاحي - متاح للجميع (مسجلين وزائرين) */}
+            <Link href="/browse" className={cn("rounded-md hover-elevate", isActive("/browse") && "bg-accent/10")}>
+              <Button 
+                variant="ghost" 
+                data-testid="link-sheep"
+                className={cn(isActive("/browse") && "text-primary font-semibold")}
+              >
+                الأضاحي
+              </Button>
+            </Link>
 
             {/* لوحة تحكم البائع - فقط للبائعين */}
             {user?.role === "seller" && (
@@ -216,18 +214,16 @@ export default function Header() {
               </Button>
             </Link>
 
-            {/* الأضاحي - متاح فقط للمستخدمين المسجلين */}
-            {user && (
-              <Link href="/browse">
-                <Button
-                  variant="ghost"
-                  className={cn("w-full justify-start", isActive("/browse") && "bg-accent/10 text-primary font-semibold")}
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  الأضاحي
-                </Button>
-              </Link>
-            )}
+            {/* الأضاحي - متاح للجميع (مسجلين وزائرين) */}
+            <Link href="/browse">
+              <Button
+                variant="ghost"
+                className={cn("w-full justify-start", isActive("/browse") && "bg-accent/10 text-primary font-semibold")}
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                الأضاحي
+              </Button>
+            </Link>
 
             {/* لوحة تحكم البائع - فقط للبائعين */}
             {user?.role === "seller" && (

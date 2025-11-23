@@ -285,13 +285,7 @@ export default function SheepDetail() {
             <Button
               size="lg"
               className="w-full text-lg"
-              onClick={() => {
-                if (isGuest || !user) {
-                  setGuestLoginDialogOpen(true);
-                } else {
-                  setOrderDialogOpen(true);
-                }
-              }}
+              onClick={() => setOrderDialogOpen(true)}
               data-testid="button-create-order"
             >
               <ShoppingCart className="ml-2 h-5 w-5" />
@@ -400,12 +394,25 @@ export default function SheepDetail() {
               >
                 إلغاء
               </Button>
-              <Button
-                type="submit"
-                disabled={creatingOrder}
-              >
-                {creatingOrder ? "جاري الإنشاء..." : "تأكيد الطلب"}
-              </Button>
+              {isGuest ? (
+                <Button
+                  type="button"
+                  onClick={() => {
+                    localStorage.removeItem("guestMode");
+                    setOrderDialogOpen(false);
+                    setLocation("/login");
+                  }}
+                >
+                  سجل الدخول أولاً
+                </Button>
+              ) : (
+                <Button
+                  type="submit"
+                  disabled={creatingOrder}
+                >
+                  {creatingOrder ? "جاري الإنشاء..." : "تأكيد الطلب"}
+                </Button>
+              )}
             </DialogFooter>
           </form>
         </DialogContent>

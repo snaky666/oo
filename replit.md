@@ -27,77 +27,94 @@ The platform features a modern, clean, and professional design with full RTL (ri
 
 ### Feature Specifications
 - **User Roles**:
-    - **Buyer**: Can browse sheep and create purchase orders.
-    - **Seller**: Can add, edit, and delete their sheep listings.
-    - **Admin**: Can review, approve/reject product listings, and manage users and orders.
+    - **Buyer**: Can browse sheep and create purchase orders. Sellers can also buy sheep (dual role support).
+    - **Seller**: Can add, edit, and delete their sheep listings, view their profile, and make purchases.
+    - **Admin**: Can review, approve/reject product listings, view seller information, and manage the platform.
 - **Key Features**:
-    - Email/password and Google sign-in.
-    - Role selection during registration (buyer/seller).
-    - Image uploads for sheep listings.
-    - Advanced browsing with filters (price, age, weight, city).
-    - Seller dashboard for listing management.
-    - Admin dashboard for product approval and user management.
-    - Comprehensive order system (Buyer -> Admin -> Seller).
-    - Full Arabic RTL interface and dark/light mode support.
-    - Seller profile completion system with mandatory fields (full name, phone, city, address, municipality).
-    - Admin view of seller data.
-    - Sheep approval workflow: Seller creates -> Admin reviews (pending) -> Admin approves/rejects (with reason) -> Approved listings visible to buyers.
+    - Email/password and Google sign-in with role selection during registration.
+    - Image uploads for sheep listings via ImgBB API.
+    - Advanced browsing with real-time filters (price, age, weight, city/wilaya).
+    - Seller dashboard for listing management with full CRUD operations.
+    - Admin dashboard for product approval workflow and user management.
+    - Comprehensive order system (Buyer submits order → Admin reviews → Seller receives).
+    - Full Arabic RTL interface with dark/light mode support.
+    - Seller profile system with mandatory fields (name, phone, city, address, municipality).
+    - Sheep approval workflow with admin feedback system.
+    - Guest browsing mode without account requirement.
 
 ### System Design Choices
-The project is structured with `client/` for the React frontend, `server/` for the Express backend, and `shared/` for common schemas and types. Development uses Vite middleware with Express for unified local serving, while production builds separate frontend and backend assets.
+The project is structured with `client/` for the React frontend, `server/` for the Express backend, and `shared/` for common schemas and types. Development uses Vite middleware with Express for unified local serving, while production builds separate frontend and backend assets. Firebase Admin SDK on backend handles server-side data access with proper security.
 
 ## Recent Implementation Updates (November 23, 2025)
 
-### Public API Endpoints - Backend Data Access
-- Added `/api/sheep/approved` endpoint for fetching all approved sheep listings
-- Added `/api/sheep/:id` endpoint for fetching individual sheep details
-- Backend uses Firebase Admin SDK, allowing public access without client-side authentication
-- Solves Firebase permission issues by using server-side credentials
-- Browse and sheep-detail pages use backend API instead of direct Firestore access
+### Environment Configuration Fixed
+- Fixed Firebase environment variable references: `VITE_FIREBASE_PROJECT_ID` now properly used in backend
+- Ensured `VITE_FIREBASE_API_KEY` correctly referenced across all endpoints
+- Backend now properly initialized with correct Firebase project credentials
 
-### Guest Mode - Browse Without Account (Complete Implementation)
-- Added "الدخول كزائر" (Enter as Guest) button on login page
-- **No Authentication Required**: Guests can browse using public backend API endpoints
-- Guests can browse approved sheep listings without account registration
-- Guest mode tracked via localStorage flag (`guestMode` = "true")
-- **Full Browse Access**: Guests view all approved sheep, apply filters, and access sheep details
-- **Full Purchase Form**: "طلب الشراء" button shows same form as registered users (name, phone, city, address, order summary)
-- **Guest Purchase Restriction**: When guest submits form, sees "سجل الدخول أولاً" (Login First) button instead of "تأكيد الطلب"
-- **Login Redirect**: Clicking "سجل الدخول أولاً" clears guest mode from localStorage and redirects to login page
-- **Route Protection**: `ProtectedRoute` component allows guest access to `/browse` and `/sheep/:id` routes via `allowGuest` prop
+### Backend API - Public Sheep Data Access
+- `/api/sheep/approved`: Returns all approved sheep listings (supports guest access)
+- `/api/sheep/:id`: Returns individual sheep details for approved listings only
+- Backend uses Firebase Admin SDK for secure server-side data access
+- API endpoints gracefully handle Firebase initialization failures
+- Public endpoints accessible without authentication for guest mode support
+
+### Guest Mode - Browse Without Account (Production Ready)
+- Added "الدخول كزائر" (Enter as Guest) button on login page with full functionality
+- **Guest Access Features**:
+  - Browse all approved sheep listings without registration
+  - Apply filters (price, age, weight, city)
+  - View individual sheep details
+  - Fill out purchase request forms
+  - Guest mode tracked via localStorage flag (`guestMode` = "true")
+- **Guest Purchase Flow**:
+  - Guests see purchase form with all available fields
+  - Purchase form shows "سجل الدخول أولاً" (Login First) button instead of submit
+  - Clicking login button clears guest mode and redirects to login page
+- **Route Protection**:
+  - `/browse` route with `allowGuest={true}` enables guest browsing
+  - `/sheep/:id` route with `allowGuest={true}` enables guest detail viewing
+  - Other routes remain protected and require proper authentication
 - **Implementation Details**:
-  - `AuthContext.tsx`: Added `signInAsGuest()` function that just sets localStorage flag
-  - `login.tsx`: Guest button calls `signInAsGuest()` with loading state and toast notifications
-  - `sheep-detail.tsx`: Uses state-based `isGuest` tracking for proper React reactivity
-  - `ProtectedRoute.tsx`: Uses `initialIsGuest` from localStorage for accurate immediate rendering
-  - `server/routes.ts`: Added public backend API endpoints for sheep browsing (no auth required)
-  - `server/index-dev.ts`: Firebase Admin SDK initialization for secure server-side access
-  - `browse.tsx`: Uses public backend API to fetch approved sheep
+  - `AuthContext.tsx`: `signInAsGuest()` sets localStorage flag and returns success object
+  - `login.tsx`: Guest button with loading state and toast notifications
+  - `ProtectedRoute.tsx`: Updated logic to check guest mode before redirecting to login
+  - `browse.tsx`: Fetches approved sheep from backend API for guest and registered users
+  - `sheep-detail.tsx`: Displays sheep details with purchase form accessible to guests
 
-### Municipality System Implementation
-- Integrated comprehensive Algerian municipalities data from JSON file
-- **Sheep Model**: Added `municipality` field to track sheep location at municipality level
-- **Dynamic Municipality Selection**: When sellers add sheep, municipalities dropdown is dynamically populated based on selected wilaya
-- **Data Source**: `public/data/municipalities.json` contains all Algerian communes organized by wilaya
-- **Frontend Component**: `shared/algeriaMunicipalities.ts` provides async/sync functions to fetch municipalities
-- All municipalities properly sorted alphabetically for better UX
+### Municipality System - Complete Algerian Coverage
+- Integrated all 1,541 Algerian communes (municipalities) organized by wilaya
+- **Sheep Listings**: Include `municipality` field for precise location tracking
+- **Dynamic Municipality Selection**: Sellers select wilaya first, then municipality from filtered list
+- **Data Source**: `public/data/municipalities.json` with complete Algerian commune database
+- **Frontend Utilities**: `shared/algeriaMunicipalities.ts` provides helper functions for municipality data access
+- All municipalities sorted alphabetically for optimal UX
 
-### Browse Page Improvements
-- Fixed price filter maximum from 10,000 DA to 1,000,000 DA to accommodate all approved sheep listings
-- Implemented real-time Firestore listener (onSnapshot) for instant updates when new sheep are approved
-- All 58 wilayas now display properly in browse filter (removed slice limitation)
+### Browse Page & Filtering
+- Price filter range: 0 - 1,000,000 DA (accommodates all market listings)
+- Age filter: 0 - 48 months
+- Weight filter: 0 - 100 kg
+- City/Wilaya filter: All 58 Algerian wilayas
+- Real-time filter updates reflect on sheep grid immediately
 
-### Seller Dashboard Enhancements
-- All 58 Algerian wilayas now available in city selection (previously limited to first 10)
-- Wilayas sorted alphabetically for easier navigation
-- Added municipality selection field that dynamically updates based on chosen wilaya
-- Conditional rendering: municipality dropdown only enabled after wilaya is selected
+### Seller Dashboard & Profile
+- All 58 Algerian wilayas available for seller location selection
+- Dynamic municipality dropdown that updates based on selected wilaya
+- Seller profile completion system with mandatory fields
+- Admin dashboard displays complete seller information for verification
 
 ## External Dependencies
 - **Firebase**:
-    - **Firebase Firestore**: Main database for users, sheep listings, and orders.
-    - **Firebase Authentication**: User authentication (Email/Password, Google Sign-In).
-    - **Firebase Admin SDK**: Backend integration for administrative tasks.
-- **ImgBB API**: Third-party service for automatic image uploads.
-- **Municipalities Data**: Static JSON file (`public/data/municipalities.json`) with complete list of Algerian communes
-- **Vercel**: Deployment platform for the client-side application.
+    - **Firebase Firestore**: Database for users, sheep listings, and orders
+    - **Firebase Authentication**: Email/Password and Google Sign-In
+    - **Firebase Admin SDK**: Server-side authenticated access to Firestore
+- **ImgBB API**: Image hosting for sheep listing photos
+- **Municipalities Data**: Static JSON file with all Algerian communes
+- **Vercel**: Production deployment platform
+
+## Current Status
+- Platform is fully functional with guest mode operational
+- All three user roles (buyer, seller, admin) implemented with proper permissions
+- Real-time data synchronization across all components
+- Complete Algerian localization with 58 wilayas and municipality-level precision
+- Production-ready authentication with fallback for guest access

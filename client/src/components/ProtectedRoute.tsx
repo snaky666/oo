@@ -34,6 +34,7 @@ export default function ProtectedRoute({
       // السماح للزائرين بدخول صفحة browse و sheep-detail إذا كانت الخاصية allowGuest مفعلة
       const canAccessAsGuest = allowGuest && initialIsGuest;
 
+      // Check auth requirement
       if (requireAuth && !user && !canAccessAsGuest) {
         // إذا لم يكن مسجل دخول وليس زائر، وحاول الوصول إلى صفحة محمية، أعده إلى login
         setLocation("/login");
@@ -48,7 +49,7 @@ export default function ProtectedRoute({
         }
       }
     }
-  }, [user, loading, requireAuth, allowedRoles, setLocation, isGuest, allowGuest]);
+  }, [user, loading, allowGuest, initialIsGuest]);
 
   if (loading) {
     return (

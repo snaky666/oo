@@ -46,6 +46,10 @@ localPort = 41209
 externalPort = 3002
 
 [[ports]]
+localPort = 44561
+externalPort = 4200
+
+[[ports]]
 localPort = 46555
 externalPort = 3003
 
@@ -56,7 +60,6 @@ VITE_FIREBASE_API_KEY = "AIzaSyB73bZRKxOv2SpzHQk0-NOG4dtoAXjOo7E"
 VITE_FIREBASE_PROJECT_ID = "odhya-e7cca"
 VITE_FIREBASE_APP_ID = "1:377136777872:web:e768a6c9672ec05293e615"
 VITE_IMGBB_API_KEY = "f30a25e224eb3837f4a52429f09abe11"
-FIREBASE_PROJECT_ID = "odhya-e7cca"
 
 [deployment]
 deploymentTarget = "autoscale"

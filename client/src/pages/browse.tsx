@@ -21,24 +21,34 @@ export default function BrowseSheep() {
   const [filtersOpen, setFiltersOpen] = useState(false);
 
   useEffect(() => {
-    setLoading(true);
-    // Try backend API first
-    fetch("/api/sheep/approved")
-      .then(res => res.json())
-      .then(sheepData => {
-        if (Array.isArray(sheepData)) {
-          console.log("✅ Fetched", sheepData.length, "approved sheep from backend");
-          const sortedSheep = sheepData.sort((a: any, b: any) => (b.createdAt || 0) - (a.createdAt || 0));
-          setSheep(sortedSheep as Sheep[]);
+    const fetchApprovedSheep = async () => {
+      setLoading(true);
+      try {
+        console.log("🐑 Fetching approved sheep from backend...");
+        const response = await fetch("/api/sheep/approved", {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+          }
+        });
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
         }
-        setLoading(false);
-      })
-      .catch(error => {
-        console.error("❌ Backend API error, trying Firestore...", error);
-        setLoading(false);
-        // If backend fails, don't retry - just show empty
+        
+        let sheepData = await response.json() as Sheep[];
+        
+        console.log("✅ Fetched", sheepData.length, "approved sheep");
+        setSheep(sheepData);
+      } catch (error: any) {
+        console.error("❌ Error fetching sheep:", error);
         setSheep([]);
-      });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchApprovedSheep();
   }, []);
 
   const filteredSheep = sheep.filter(s => {

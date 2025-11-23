@@ -14,8 +14,8 @@ async function initFirebase() {
   const admin = await import("firebase-admin");
   if (!admin.default.apps.length) {
     admin.default.initializeApp({
-      projectId: process.env.FIREBASE_PROJECT_ID,
-      databaseURL: `https://${process.env.FIREBASE_PROJECT_ID}.firebaseio.com`,
+      projectId: process.env.VITE_FIREBASE_PROJECT_ID,
+      databaseURL: `https://${process.env.VITE_FIREBASE_PROJECT_ID}.firebaseio.com`,
     });
   }
 }

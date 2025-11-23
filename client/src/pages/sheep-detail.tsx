@@ -96,12 +96,15 @@ export default function SheepDetail() {
   const fetchSheep = async (id: string) => {
     setLoading(true);
     try {
-      // Try backend API
-      const response = await fetch(`/api/sheep/${id}`);
-      
-      if (response.ok) {
-        const sheepData = await response.json();
-        setSheep(sheepData as Sheep);
+      const sheepDoc = await getDoc(doc(db, "sheep", id));
+      if (sheepDoc.exists()) {
+        const data = sheepDoc.data();
+        // Only allow viewing if approved
+        if (data?.status === "approved") {
+          setSheep({ id: sheepDoc.id, ...data } as Sheep);
+        } else {
+          throw new Error("Sheep not approved");
+        }
       } else {
         throw new Error("Sheep not found");
       }

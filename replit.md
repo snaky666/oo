@@ -48,15 +48,31 @@ The project is structured with `client/` for the React frontend, `server/` for t
 
 ## Recent Implementation Updates (November 23, 2025)
 
-### Guest Mode - Browse Without Account
+### Public API Endpoints - Backend Data Access
+- Added `/api/sheep/approved` endpoint for fetching all approved sheep listings
+- Added `/api/sheep/:id` endpoint for fetching individual sheep details
+- Backend uses Firebase Admin SDK, allowing public access without client-side authentication
+- Solves Firebase permission issues by using server-side credentials
+- Browse and sheep-detail pages use backend API instead of direct Firestore access
+
+### Guest Mode - Browse Without Account (Complete Implementation)
 - Added "الدخول كزائر" (Enter as Guest) button on login page
+- **Firebase Anonymous Sign-In**: When guest clicks button, uses `signInAnonymously()` to authenticate with Firebase, enabling data access
 - Guests can browse approved sheep listings without account registration
-- Guest mode stored in localStorage (`guestMode` flag)
-- **Full Browse Access**: Guests can view all approved sheep, apply filters, and access sheep details
-- **Full Purchase Form**: "طلب الشراء" button shows same form as registered users with all fields (name, phone, city, address)
-- **Guest Purchase Restriction**: When guest submits form, instead of "تأكيد الطلب" (Confirm Order) button, they see "سجل الدخول أولاً" (Login First) button
+- Guest mode tracked via state (`isGuest`) with localStorage flag (`guestMode` = "true")
+- **Full Browse Access**: Guests view all approved sheep, apply filters, and access sheep details
+- **Full Purchase Form**: "طلب الشراء" button shows same form as registered users (name, phone, city, address, order summary)
+- **Guest Purchase Restriction**: When guest submits form, sees "سجل الدخول أولاً" (Login First) button instead of "تأكيد الطلب"
 - **Login Redirect**: Clicking "سجل الدخول أولاً" clears guest mode from localStorage and redirects to login page
-- **Route Protection**: Modified `ProtectedRoute` component to allow guest access to `/browse` and `/sheep/:id` routes via `allowGuest` prop
+- **Route Protection**: `ProtectedRoute` component allows guest access to `/browse` and `/sheep/:id` routes via `allowGuest` prop
+- **Implementation Details**:
+  - `AuthContext.tsx`: Added `signInAsGuest()` function for anonymous Firebase authentication
+  - `login.tsx`: Guest button now calls `signInAsGuest()` with loading state and toast notifications
+  - `sheep-detail.tsx`: Uses state-based `isGuest` tracking for proper React reactivity
+  - `ProtectedRoute.tsx`: Uses `initialIsGuest` from localStorage for accurate immediate rendering
+  - `server/routes.ts`: Added backend API endpoints for public sheep browsing
+  - `server/index-dev.ts`: Firebase Admin SDK initialization for backend access
+  - `browse.tsx`: Uses backend API instead of Firestore queries
 
 ### Municipality System Implementation
 - Integrated comprehensive Algerian municipalities data from JSON file

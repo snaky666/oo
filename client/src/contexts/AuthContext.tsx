@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState } from "react";
-import { User as FirebaseUser, onAuthStateChanged, signOut as firebaseSignOut, signInWithPopup, setPersistence, browserLocalPersistence } from "firebase/auth";
+import { User as FirebaseUser, onAuthStateChanged, signOut as firebaseSignOut, signInWithPopup, setPersistence, browserLocalPersistence, signInAnonymously } from "firebase/auth";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { auth, db, googleProvider } from "@/lib/firebase";
 import { User, UserRole } from "@shared/schema";
@@ -11,6 +11,7 @@ interface AuthContextType {
   signOut: () => Promise<void>;
   refreshUser: () => Promise<void>;
   signInWithGoogle: (role?: UserRole) => Promise<{ success: boolean; error?: string; userExists?: boolean }>;
+  signInAsGuest: () => Promise<{ success: boolean; error?: string }>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -130,8 +131,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const signInAsGuest = async (): Promise<{ success: boolean; error?: string }> => {
+    try {
+      await signInAnonymously(auth);
+      localStorage.setItem("guestMode", "true");
+      console.log("✅ Guest signed in anonymously");
+      return { success: true };
+    } catch (error: any) {
+      console.error("Guest sign-in error:", error);
+      return { success: false, error: "فشل دخول الزائر" };
+    }
+  };
+
   return (
-    <AuthContext.Provider value={{ user, firebaseUser, loading, signOut, refreshUser, signInWithGoogle }}>
+    <AuthContext.Provider value={{ user, firebaseUser, loading, signOut, refreshUser, signInWithGoogle, signInAsGuest }}>
       {children}
     </AuthContext.Provider>
   );

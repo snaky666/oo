@@ -28,9 +28,10 @@ export default function Login() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const auth = useAuth();
-  const { signInWithGoogle, user } = auth;
+  const { signInWithGoogle, user, signInAsGuest } = auth;
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
+  const [guestLoading, setGuestLoading] = useState(false);
   const [waitingForGoogleRedirect, setWaitingForGoogleRedirect] = useState(false);
   const [showAdminLogin, setShowAdminLogin] = useState(false);
 
@@ -265,13 +266,36 @@ export default function Login() {
               type="button"
               variant="outline"
               className="w-full text-amber-700 border-amber-700/30 hover:bg-amber-700/5"
-              onClick={() => {
-                localStorage.setItem("guestMode", "true");
-                setLocation("/browse");
+              onClick={async () => {
+                setGuestLoading(true);
+                const result = await signInAsGuest();
+                setGuestLoading(false);
+                
+                if (result.success) {
+                  toast({
+                    title: "مرحباً بك كزائر",
+                    description: "يمكنك الآن تصفح الأغنام المتاحة",
+                  });
+                  setLocation("/browse");
+                } else {
+                  toast({
+                    title: "خطأ",
+                    description: result.error,
+                    variant: "destructive",
+                  });
+                }
               }}
+              disabled={loading || googleLoading || guestLoading}
               data-testid="button-guest-login"
             >
-              الدخول كزائر
+              {guestLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                  جاري...
+                </>
+              ) : (
+                "الدخول كزائر"
+              )}
             </Button>
 
             {/* Register Link */}

@@ -1,6 +1,4 @@
 import { useState, useEffect } from "react";
-import { collection, query, where, orderBy, getDocs, Query, DocumentData, onSnapshot } from "firebase/firestore";
-import { db } from "@/lib/firebase";
 import { Sheep, algeriaCities } from "@shared/schema";
 import Header from "@/components/Header";
 import SheepCard from "@/components/SheepCard";
@@ -23,43 +21,37 @@ export default function BrowseSheep() {
   const [filtersOpen, setFiltersOpen] = useState(false);
 
   useEffect(() => {
-    setLoading(true);
-    const sheepQuery = query(
-      collection(db, "sheep"),
-      where("status", "==", "approved")
-    );
-    
-    // Real-time listener for approved sheep
-    const unsubscribe = onSnapshot(
-      sheepQuery,
-      (snapshot) => {
-        console.log("📦 Sheep Listener - Snapshot received with", snapshot.docs.length, "approved sheep");
+    const fetchApprovedSheep = async () => {
+      setLoading(true);
+      try {
+        const response = await fetch("/api/sheep/approved");
         
-        let sheepData = snapshot.docs.map(doc => {
-          const data = doc.data();
-          console.log("🐑 Sheep ID:", doc.id, "Status:", data.status, "Price:", data.price);
-          return {
-            id: doc.id,
-            ...data
-          };
-        }) as Sheep[];
+        if (!response.ok) {
+          throw new Error("Failed to fetch sheep");
+        }
+        
+        const sheepData = await response.json();
+        
+        console.log("✅ Fetched", sheepData.length, "approved sheep from backend");
         
         // Sort by createdAt in descending order on client side
-        sheepData = sheepData.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+        const sortedSheep = sheepData.sort((a: any, b: any) => (b.createdAt || 0) - (a.createdAt || 0));
         
-        console.log("✅ Setting sheep state with", sheepData.length, "items");
-        setSheep(sheepData);
-        setLoading(false);
-      },
-      (error) => {
-        console.error("❌ Error listening to sheep:", error);
+        setSheep(sortedSheep as Sheep[]);
+      } catch (error) {
+        console.error("❌ Error fetching sheep:", error);
         setSheep([]);
+      } finally {
         setLoading(false);
       }
-    );
+    };
 
-    // Cleanup listener when component unmounts
-    return () => unsubscribe();
+    fetchApprovedSheep();
+    
+    // Optional: Poll for updates every 30 seconds
+    const interval = setInterval(fetchApprovedSheep, 30000);
+    
+    return () => clearInterval(interval);
   }, []);
 
   const filteredSheep = sheep.filter(s => {

@@ -9,6 +9,17 @@ import { createServer as createViteServer, createLogger } from "vite";
 import viteConfig from "../vite.config";
 import runApp from "./app";
 
+// Initialize Firebase Admin SDK BEFORE anything else
+async function initFirebase() {
+  const admin = await import("firebase-admin");
+  if (!admin.default.apps.length) {
+    admin.default.initializeApp({
+      projectId: process.env.FIREBASE_PROJECT_ID,
+      databaseURL: `https://${process.env.FIREBASE_PROJECT_ID}.firebaseio.com`,
+    });
+  }
+}
+
 export async function setupVite(app: Express, server: Server) {
   const viteLogger = createLogger();
   const serverOptions = {
@@ -59,5 +70,6 @@ export async function setupVite(app: Express, server: Server) {
 }
 
 (async () => {
+  await initFirebase();
   await runApp(setupVite);
 })();

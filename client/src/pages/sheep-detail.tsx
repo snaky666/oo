@@ -54,7 +54,13 @@ export default function SheepDetail() {
   const [orderDialogOpen, setOrderDialogOpen] = useState(false);
   const [creatingOrder, setCreatingOrder] = useState(false);
   const [guestLoginDialogOpen, setGuestLoginDialogOpen] = useState(false);
-  const isGuest = localStorage.getItem("guestMode") === "true";
+  const [isGuest, setIsGuest] = useState(false);
+
+  useEffect(() => {
+    const guestMode = localStorage.getItem("guestMode") === "true";
+    setIsGuest(guestMode);
+    console.log("🚀 Guest Mode Status:", guestMode);
+  }, []);
 
   const {
     register,
@@ -90,24 +96,22 @@ export default function SheepDetail() {
   const fetchSheep = async (id: string) => {
     setLoading(true);
     try {
-      const sheepDoc = await getDoc(doc(db, "sheep", id));
-      if (sheepDoc.exists()) {
-        setSheep({ id: sheepDoc.id, ...sheepDoc.data() } as Sheep);
-      } else {
-        toast({
-          title: "خطأ",
-          description: "لم يتم العثور على الخروف",
-          variant: "destructive",
-        });
-        setLocation("/browse");
+      const response = await fetch(`/api/sheep/${id}`);
+      
+      if (!response.ok) {
+        throw new Error("Failed to fetch sheep");
       }
+      
+      const sheepData = await response.json();
+      setSheep(sheepData as Sheep);
     } catch (error) {
       console.error("Error fetching sheep:", error);
       toast({
         title: "خطأ",
-        description: "حدث خطأ أثناء تحميل البيانات",
+        description: "لم يتم العثور على الخروف أو غير متاح",
         variant: "destructive",
       });
+      setLocation("/browse");
     } finally {
       setLoading(false);
     }

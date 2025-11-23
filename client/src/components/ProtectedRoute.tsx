@@ -19,12 +19,20 @@ export default function ProtectedRoute({
 }: ProtectedRouteProps) {
   const { user, loading } = useAuth();
   const [, setLocation] = useLocation();
-  const isGuest = typeof window !== "undefined" ? localStorage.getItem("guestMode") === "true" : false;
+  const [isGuest, setIsGuest] = useState(false);
+
+  useEffect(() => {
+    const guestMode = typeof window !== "undefined" ? localStorage.getItem("guestMode") === "true" : false;
+    setIsGuest(guestMode);
+  }, []);
+
+  // For initial render, check localStorage directly to avoid redirect
+  const initialIsGuest = typeof window !== "undefined" ? localStorage.getItem("guestMode") === "true" : false;
 
   useEffect(() => {
     if (!loading) {
       // السماح للزائرين بدخول صفحة browse و sheep-detail إذا كانت الخاصية allowGuest مفعلة
-      const canAccessAsGuest = allowGuest && isGuest;
+      const canAccessAsGuest = allowGuest && initialIsGuest;
 
       if (requireAuth && !user && !canAccessAsGuest) {
         // إذا لم يكن مسجل دخول وليس زائر، وحاول الوصول إلى صفحة محمية، أعده إلى login
@@ -51,7 +59,7 @@ export default function ProtectedRoute({
   }
 
   // السماح للزائرين بالوصول إلى browse و sheep detail إذا كانت allowGuest مفعلة
-  const canAccessAsGuest = allowGuest && isGuest;
+  const canAccessAsGuest = allowGuest && initialIsGuest;
 
   if (requireAuth && !user && !canAccessAsGuest) {
     return null;

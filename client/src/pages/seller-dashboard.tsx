@@ -387,7 +387,7 @@ export default function SellerDashboard() {
                   <SelectValue placeholder="اختر المدينة" />
                 </SelectTrigger>
                 <SelectContent>
-                  {algeriaCities.slice(0, 10).map(city => (
+                  {algeriaCities.map(city => (
                     <SelectItem key={city} value={city}>
                       {city}
                     </SelectItem>
@@ -396,6 +396,21 @@ export default function SellerDashboard() {
               </Select>
               {errors.city && (
                 <p className="text-sm text-destructive">{errors.city.message}</p>
+              )}
+            </div>
+
+            {/* Municipality */}
+            <div className="space-y-2">
+              <Label htmlFor="municipality">البلدية *</Label>
+              <Input
+                id="municipality"
+                type="text"
+                placeholder="مثال: البليدة"
+                {...register("municipality")}
+                data-testid="input-municipality"
+              />
+              {errors.municipality && (
+                <p className="text-sm text-destructive">{errors.municipality.message}</p>
               )}
             </div>
 

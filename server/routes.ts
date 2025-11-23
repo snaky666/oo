@@ -147,7 +147,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            "Authorization": `Bearer ${FIREBASE_API_KEY}`
+            "X-Goog-Api-Key": FIREBASE_API_KEY || ""
           },
           body: JSON.stringify(body)
         }

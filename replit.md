@@ -52,9 +52,10 @@ The project is structured with `client/` for the React frontend, `server/` for t
 - Added "الدخول كزائر" (Enter as Guest) button on login page
 - Guests can browse approved sheep listings without account registration
 - Guest mode stored in localStorage (`guestMode` flag)
-- **Browse Access**: Guests can view all approved sheep and access sheep details
-- **Purchase Restriction**: When guests attempt to purchase, they see "سجل الدخول أولاً" (Register first) button
-- **Login Redirect**: Clicking "Register first" clears guest mode and redirects to login page
+- **Full Browse Access**: Guests can view all approved sheep, apply filters, and access sheep details
+- **Purchase Dialog**: "طلب الشراء" button visible to guests and all users - displays dialog when clicked
+- **Guest Purchase Prompt**: When guest clicks "طلب الشراء", dialog appears with "سجل الدخول أولاً" button
+- **Login Redirect**: Clicking "سجل الدخول أولاً" clears guest mode and redirects to login page
 - **Route Protection**: Modified `ProtectedRoute` component to allow guest access to `/browse` and `/sheep/:id` routes via `allowGuest` prop
 
 ### Municipality System Implementation

@@ -282,33 +282,21 @@ export default function SheepDetail() {
             </div>
 
             {/* Order Button */}
-            {user && (user.role === "buyer" || user.role === "seller") && (
-              <Button
-                size="lg"
-                className="w-full text-lg"
-                onClick={() => setOrderDialogOpen(true)}
-                data-testid="button-create-order"
-              >
-                <ShoppingCart className="ml-2 h-5 w-5" />
-                طلب الشراء
-              </Button>
-            )}
-
-            {(!user || isGuest) && (
-              <Card className="bg-muted/50">
-                <CardContent className="p-6 text-center">
-                  <p className="text-muted-foreground mb-4">
-                    يجب تسجيل الدخول لإنشاء طلب شراء
-                  </p>
-                  <Button onClick={() => {
-                    localStorage.removeItem("guestMode");
-                    setLocation("/login");
-                  }}>
-                    سجل الدخول أولاً
-                  </Button>
-                </CardContent>
-              </Card>
-            )}
+            <Button
+              size="lg"
+              className="w-full text-lg"
+              onClick={() => {
+                if (isGuest || !user) {
+                  setGuestLoginDialogOpen(true);
+                } else {
+                  setOrderDialogOpen(true);
+                }
+              }}
+              data-testid="button-create-order"
+            >
+              <ShoppingCart className="ml-2 h-5 w-5" />
+              طلب الشراء
+            </Button>
           </div>
         </div>
       </div>
@@ -420,6 +408,44 @@ export default function SheepDetail() {
               </Button>
             </DialogFooter>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Guest Login Dialog */}
+      <Dialog open={guestLoginDialogOpen} onOpenChange={setGuestLoginDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>تسجيل الدخول مطلوب</DialogTitle>
+            <DialogDescription>
+              يجب تسجيل الدخول أو إنشاء حساب لإنشاء طلب شراء
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="py-4">
+            <p className="text-center text-muted-foreground mb-4">
+              هل تريد متابعة التسوق كمستخدم مسجل؟
+            </p>
+          </div>
+
+          <DialogFooter className="gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setGuestLoginDialogOpen(false)}
+            >
+              العودة للمتصفح
+            </Button>
+            <Button
+              type="button"
+              onClick={() => {
+                localStorage.removeItem("guestMode");
+                setGuestLoginDialogOpen(false);
+                setLocation("/login");
+              }}
+            >
+              سجل الدخول أولاً
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

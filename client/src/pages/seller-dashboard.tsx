@@ -5,6 +5,7 @@ import { uploadMultipleImagesToImgBB } from "@/lib/imgbb";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLocation } from "wouter";
 import { Sheep, insertSheepSchema, InsertSheep, algeriaCities } from "@shared/schema";
+import { getMunicipalitiesForWilaya, getMunicipalitiesForWilayaSync } from "@shared/algeriaMunicipalities";
 import Header from "@/components/Header";
 import SheepCard from "@/components/SheepCard";
 import { Button } from "@/components/ui/button";
@@ -43,6 +44,7 @@ export default function SellerDashboard() {
   const [submitting, setSubmitting] = useState(false);
   const [selectedImages, setSelectedImages] = useState<File[]>([]);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
+  const [municipalities, setMunicipalities] = useState<string[]>([]);
 
   // Check if user profile is complete
   useEffect(() => {
@@ -57,15 +59,33 @@ export default function SellerDashboard() {
     formState: { errors },
     reset,
     setValue,
+    watch,
   } = useForm<InsertSheep>({
     resolver: zodResolver(insertSheepSchema),
   });
+
+  const selectedCity = watch("city");
 
   useEffect(() => {
     if (user) {
       fetchSheep();
     }
   }, [user]);
+
+  // Load municipalities when selected city changes
+  useEffect(() => {
+    if (selectedCity) {
+      const muni = getMunicipalitiesForWilayaSync(selectedCity);
+      if (muni.length > 0) {
+        setMunicipalities(muni);
+      } else {
+        // Try async loading if sync doesn't have data yet
+        getMunicipalitiesForWilaya(selectedCity).then(setMunicipalities);
+      }
+    } else {
+      setMunicipalities([]);
+    }
+  }, [selectedCity]);
 
   const fetchSheep = async () => {
     if (!user) return;
@@ -402,13 +422,25 @@ export default function SellerDashboard() {
             {/* Municipality */}
             <div className="space-y-2">
               <Label htmlFor="municipality">البلدية *</Label>
-              <Input
-                id="municipality"
-                type="text"
-                placeholder="مثال: البليدة"
-                {...register("municipality")}
-                data-testid="input-municipality"
-              />
+              <Select 
+                onValueChange={(value) => setValue("municipality", value)}
+                disabled={!selectedCity}
+              >
+                <SelectTrigger data-testid="select-municipality">
+                  <SelectValue placeholder={selectedCity ? "اختر البلدية" : "اختر الولاية أولاً"} />
+                </SelectTrigger>
+                <SelectContent>
+                  {municipalities.length > 0 ? (
+                    municipalities.map(municipality => (
+                      <SelectItem key={municipality} value={municipality}>
+                        {municipality}
+                      </SelectItem>
+                    ))
+                  ) : selectedCity ? (
+                    <div className="p-2 text-sm text-muted-foreground">جاري التحميل...</div>
+                  ) : null}
+                </SelectContent>
+              </Select>
               {errors.municipality && (
                 <p className="text-sm text-destructive">{errors.municipality.message}</p>
               )}

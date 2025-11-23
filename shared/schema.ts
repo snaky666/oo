@@ -70,8 +70,8 @@ export const insertSheepSchema = z.object({
   price: z.number().min(1, "السعر يجب أن يكون أكبر من صفر"),
   age: z.number().min(1, "العمر يجب أن يكون أكبر من صفر"),
   weight: z.number().min(1, "الوزن يجب أن يكون أكبر من صفر"),
-  city: z.string().min(2, "يجب اختيار المدينة"),
-  municipality: z.string().min(2, "يجب إدخال البلدية"),
+  city: z.string().min(2, "يجب اختيار الولاية"),
+  municipality: z.string().min(2, "يجب اختيار البلدية"),
   description: z.string().min(10, "الوصف يجب أن يكون 10 أحرف على الأقل"),
 });
 

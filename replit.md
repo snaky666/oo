@@ -46,10 +46,32 @@ The platform features a modern, clean, and professional design with full RTL (ri
 ### System Design Choices
 The project is structured with `client/` for the React frontend, `server/` for the Express backend, and `shared/` for common schemas and types. Development uses Vite middleware with Express for unified local serving, while production builds separate frontend and backend assets.
 
+## Recent Implementation Updates (November 23, 2025)
+
+### Municipality System Implementation
+- Integrated comprehensive Algerian municipalities data from JSON file
+- **Sheep Model**: Added `municipality` field to track sheep location at municipality level
+- **Dynamic Municipality Selection**: When sellers add sheep, municipalities dropdown is dynamically populated based on selected wilaya
+- **Data Source**: `public/data/municipalities.json` contains all Algerian communes organized by wilaya
+- **Frontend Component**: `shared/algeriaMunicipalities.ts` provides async/sync functions to fetch municipalities
+- All municipalities properly sorted alphabetically for better UX
+
+### Browse Page Improvements
+- Fixed price filter maximum from 10,000 DA to 1,000,000 DA to accommodate all approved sheep listings
+- Implemented real-time Firestore listener (onSnapshot) for instant updates when new sheep are approved
+- All 58 wilayas now display properly in browse filter (removed slice limitation)
+
+### Seller Dashboard Enhancements
+- All 58 Algerian wilayas now available in city selection (previously limited to first 10)
+- Wilayas sorted alphabetically for easier navigation
+- Added municipality selection field that dynamically updates based on chosen wilaya
+- Conditional rendering: municipality dropdown only enabled after wilaya is selected
+
 ## External Dependencies
 - **Firebase**:
     - **Firebase Firestore**: Main database for users, sheep listings, and orders.
     - **Firebase Authentication**: User authentication (Email/Password, Google Sign-In).
     - **Firebase Admin SDK**: Backend integration for administrative tasks.
 - **ImgBB API**: Third-party service for automatic image uploads.
+- **Municipalities Data**: Static JSON file (`public/data/municipalities.json`) with complete list of Algerian communes
 - **Vercel**: Deployment platform for the client-side application.

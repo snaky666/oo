@@ -25,7 +25,7 @@ export default function BrowseSheep() {
       setLoading(true);
       try {
         console.log("🐑 Fetching approved sheep from backend...");
-        const response = await fetch("/api/sheep/approved", {
+        const response = await fetch("/api/sheep?approved=true", {
           method: "GET",
           headers: {
             "Content-Type": "application/json",

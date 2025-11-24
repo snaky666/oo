@@ -45,7 +45,25 @@ The platform features a modern, clean, and professional design with full RTL (ri
 ### System Design Choices
 The project is structured with `client/` for the React frontend, `server/` for the Express backend, and `shared/` for common schemas and types. Development uses Vite middleware with Express for unified local serving, while production builds separate frontend and backend assets. Firebase Admin SDK on backend handles server-side data access with proper security.
 
-## Recent Implementation Updates (November 23, 2025)
+## Recent Implementation Updates (November 24, 2025)
+
+### Vercel Deployment Configuration Fixed
+- **vercel.json**: Properly configured with:
+  - `outputDirectory: "dist/public"` - Frontend static files only
+  - `rewrites` - All routes redirect to index.html for SPA routing
+  - `headers` - Cache control for assets and no-cache for index.html
+- **API Endpoints**: Migrated to Vercel Serverless Functions (`api/` folder)
+  - `api/sheep.ts` - Returns approved sheep listings
+  - CORS-enabled for cross-origin requests
+  - Direct Firestore REST API access
+- **Frontend Updates**: `browse.tsx` updated to use new API endpoint (`/api/sheep?approved=true`)
+- **Build Process**: 
+  - `npm run build` creates separate frontend (dist/public) and backend (dist/index.js)
+  - Vite builds to `dist/public/` with proper assets
+  - esbuild creates `dist/index.js` for legacy backend (not needed on Vercel)
+- **Status**: Ready for Vercel deployment with serverless API functions
+
+## Previous Implementation Updates (November 23, 2025)
 
 ### Environment Configuration Fixed
 - Fixed Firebase environment variable references: `VITE_FIREBASE_PROJECT_ID` now properly used in backend

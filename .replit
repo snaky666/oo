@@ -62,6 +62,6 @@ VITE_FIREBASE_APP_ID = "1:377136777872:web:e768a6c9672ec05293e615"
 VITE_IMGBB_API_KEY = "f30a25e224eb3837f4a52429f09abe11"
 
 [deployment]
-deploymentTarget = "autoscale"
+deploymentTarget = "vm"
 run = ["npm", "start"]
 build = ["npm", "run", "build"]

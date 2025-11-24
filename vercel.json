@@ -1,7 +1,14 @@
 {
   "buildCommand": "npm run build",
-  "startCommand": "npm start",
-  "env": {
-    "NODE_ENV": "production"
-  }
+  "outputDirectory": "dist",
+  "routes": [
+    {
+      "src": "/api/(.*)",
+      "dest": "/index.js"
+    },
+    {
+      "src": "/.*",
+      "dest": "/public/index.html"
+    }
+  ]
 }

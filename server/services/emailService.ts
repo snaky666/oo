@@ -1,12 +1,24 @@
 import nodemailer from 'nodemailer';
 
+// Detect environment
+const isProduction = process.env.NODE_ENV === 'production';
+const getBaseUrl = () => {
+  if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`;
+  if (isProduction) return `https://${process.env.DOMAIN || 'odhiyaty.com'}`;
+  if (process.env.REPLIT_DEV_DOMAIN) return `https://${process.env.REPLIT_DEV_DOMAIN}`;
+  return 'http://localhost:5000';
+};
+
 const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST,
+  host: process.env.SMTP_HOST || 'mail.odhiyaty.com',
   port: parseInt(process.env.SMTP_PORT || '465'),
   secure: true,
   auth: {
-    user: process.env.SMTP_USER,
+    user: process.env.SMTP_USER || 'verification@odhiyaty.com',
     pass: process.env.SMTP_PASSWORD,
+  },
+  tls: {
+    rejectUnauthorized: false,
   },
 });
 
@@ -20,22 +32,27 @@ export interface EmailOptions {
 export async function sendEmail(options: EmailOptions) {
   try {
     const info = await transporter.sendMail({
-      from: process.env.SMTP_FROM_EMAIL,
+      from: process.env.SMTP_FROM_EMAIL || 'verification@odhiyaty.com',
       to: options.to,
       subject: options.subject,
       html: options.html,
       text: options.text,
     });
-    console.log('✅ Email sent:', info.messageId);
+    console.log('✅ Email sent successfully:', info.messageId);
     return { success: true, messageId: info.messageId };
   } catch (error: any) {
     console.error('❌ Email error:', error?.message);
+    console.error('Full error:', error);
     return { success: false, error: error?.message };
   }
 }
 
 export async function sendVerificationEmail(email: string, token: string) {
-  const verificationLink = `${process.env.REPLIT_DOMAINS}/verify?token=${token}&email=${encodeURIComponent(email)}`;
+  const baseUrl = getBaseUrl();
+  const verificationLink = `${baseUrl}/verify?token=${token}&email=${encodeURIComponent(email)}`;
+  
+  console.log('📧 Sending verification to:', email);
+  console.log('🔗 Verification link:', verificationLink);
   
   return sendEmail({
     to: email,
@@ -71,7 +88,11 @@ export async function sendVerificationEmail(email: string, token: string) {
 }
 
 export async function sendResetPasswordEmail(email: string, token: string) {
-  const resetLink = `${process.env.REPLIT_DOMAINS}/reset-password?token=${token}&email=${encodeURIComponent(email)}`;
+  const baseUrl = getBaseUrl();
+  const resetLink = `${baseUrl}/reset-password?token=${token}&email=${encodeURIComponent(email)}`;
+  
+  console.log('📧 Sending reset to:', email);
+  console.log('🔗 Reset link:', resetLink);
   
   return sendEmail({
     to: email,

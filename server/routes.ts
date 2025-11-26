@@ -1,6 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
+import { sendVerificationEmail, sendResetPasswordEmail, sendOrderConfirmationEmail, sendAdminNotificationEmail } from "./services/emailService";
 
 const FIREBASE_PROJECT_ID = process.env.VITE_FIREBASE_PROJECT_ID;
 const FIREBASE_API_KEY = process.env.VITE_FIREBASE_API_KEY;
@@ -214,6 +215,58 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error: any) {
       console.error(`❌ Error fetching sheep ${req.params.id}:`, error?.message || error);
       res.status(500).json({ error: "Failed to fetch sheep", details: error?.message });
+    }
+  });
+
+  // Send verification email
+  app.post("/api/auth/send-verification", async (req, res) => {
+    try {
+      const { email, token } = req.body;
+      if (!email || !token) {
+        return res.status(400).json({ error: "Email and token required" });
+      }
+
+      const result = await sendVerificationEmail(email, token);
+      res.json(result);
+    } catch (error: any) {
+      console.error("❌ Send verification error:", error?.message);
+      res.status(500).json({ error: error?.message });
+    }
+  });
+
+  // Send password reset email
+  app.post("/api/auth/send-reset", async (req, res) => {
+    try {
+      const { email, token } = req.body;
+      if (!email || !token) {
+        return res.status(400).json({ error: "Email and token required" });
+      }
+
+      const result = await sendResetPasswordEmail(email, token);
+      res.json(result);
+    } catch (error: any) {
+      console.error("❌ Send reset error:", error?.message);
+      res.status(500).json({ error: error?.message });
+    }
+  });
+
+  // Send order confirmation
+  app.post("/api/orders/send-confirmation", async (req, res) => {
+    try {
+      const { email, orderData } = req.body;
+      if (!email || !orderData) {
+        return res.status(400).json({ error: "Email and order data required" });
+      }
+
+      const result = await sendOrderConfirmationEmail(email, orderData);
+      
+      // Also send notification to admin
+      await sendAdminNotificationEmail(orderData);
+      
+      res.json(result);
+    } catch (error: any) {
+      console.error("❌ Send confirmation error:", error?.message);
+      res.status(500).json({ error: error?.message });
     }
   });
 

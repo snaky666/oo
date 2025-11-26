@@ -130,9 +130,26 @@ The project is structured with `client/` for the React frontend, `server/` for t
 - **Municipalities Data**: Static JSON file with all Algerian communes
 - **Vercel**: Production deployment platform
 
+## Email System Integration (November 26, 2025)
+- **Email Service**: Nodemailer integration with SMTP configuration
+  - SMTP Host: mail.odhiyaty.com (Port 465, SSL/TLS)
+  - Authentication: verification@odhiyaty.com
+- **Email Endpoints**:
+  - `POST /api/auth/send-verification` - Send email verification
+  - `POST /api/auth/send-reset` - Send password reset link
+  - `POST /api/orders/send-confirmation` - Send order confirmation + admin notification
+- **Email Templates**: 
+  - Professional Arabic RTL HTML templates
+  - Verification emails with token-based links
+  - Password reset emails with 1-hour expiry
+  - Order confirmation emails to buyers and admins
+- **Environment Variables**: SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASSWORD, SMTP_FROM_EMAIL
+
 ## Current Status
 - Platform is fully functional with guest mode operational
+- Email system integrated and ready for authentication workflows
 - All three user roles (buyer, seller, admin) implemented with proper permissions
 - Real-time data synchronization across all components
 - Complete Algerian localization with 58 wilayas and municipality-level precision
 - Production-ready authentication with fallback for guest access
+- Vercel deployment configured with serverless API functions

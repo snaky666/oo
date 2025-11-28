@@ -2,7 +2,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import ThemeToggle from "@/components/ThemeToggle";
 import { Link, useLocation } from "wouter";
-import { LogOut, Menu, X, Home, MessageSquare } from "lucide-react";
+import { LogOut, Menu, X, Home, MessageSquare, ShoppingBag } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import {
@@ -101,6 +101,21 @@ export default function Header() {
                 الأضاحي
               </Button>
             </Link>
+
+            {/* طلباتي - فقط للمشترين والبائعين */}
+            {user && (user.role === "buyer" || user.role === "seller") && (
+              <Link href="/orders" className={cn("rounded-md hover-elevate", isActive("/orders") && "bg-accent/10")}>
+                <Button 
+                  variant="ghost" 
+                  size="icon"
+                  title="طلباتي"
+                  data-testid="link-orders"
+                  className={cn(isActive("/orders") && "text-primary")}
+                >
+                  <ShoppingBag className="h-5 w-5" />
+                </Button>
+              </Link>
+            )}
 
             {/* لوحة تحكم البائع - فقط للبائعين */}
             {user?.role === "seller" && (
@@ -225,6 +240,20 @@ export default function Header() {
                 الأضاحي
               </Button>
             </Link>
+
+            {/* طلباتي - فقط للمشترين والبائعين */}
+            {user && (user.role === "buyer" || user.role === "seller") && (
+              <Link href="/orders">
+                <Button
+                  variant="ghost"
+                  className={cn("w-full justify-start", isActive("/orders") && "bg-accent/10 text-primary font-semibold")}
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  <ShoppingBag className="mr-2 h-5 w-5" />
+                  طلباتي
+                </Button>
+              </Link>
+            )}
 
             {/* لوحة تحكم البائع - فقط للبائعين */}
             {user?.role === "seller" && (

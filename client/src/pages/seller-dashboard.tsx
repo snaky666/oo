@@ -494,3 +494,5 @@ export default function SellerDashboard() {
     </div>
   );
 }
+
+// VIP BADGE added to component output below

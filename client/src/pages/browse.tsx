@@ -9,9 +9,13 @@ import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { Filter, X } from "lucide-react";
+import { Filter, X, Crown } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
+import { useLocation } from "wouter";
 
 export default function BrowseSheep() {
+  const { user } = useAuth();
+  const [, setLocation] = useLocation();
   const [sheep, setSheep] = useState<Sheep[]>([]);
   const [loading, setLoading] = useState(true);
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 1000000]);
@@ -57,6 +61,9 @@ export default function BrowseSheep() {
     if (s.weight < weightRange[0] || s.weight > weightRange[1]) return false;
     if (selectedCities.length > 0 && !selectedCities.includes(s.city)) return false;
     return true;
+  }).sort((a, b) => {
+    // Sort VIP sellers to the top
+    return b.sellerVIP ? 1 : a.sellerVIP ? -1 : 0;
   });
 
   // Log the state for debugging

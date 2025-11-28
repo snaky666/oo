@@ -14,7 +14,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Package, Clock, CheckCircle2, XCircle, Loader2, Upload, X } from "lucide-react";
+import { Plus, Package, Clock, CheckCircle2, XCircle, Loader2, Upload, X, Crown } from "lucide-react";
+import { useLocation } from "wouter";
 import {
   Dialog,
   DialogContent,
@@ -215,13 +216,24 @@ export default function SellerDashboard() {
         {/* Page Header */}
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-3xl md:text-4xl font-semibold mb-2">لوحة تحكم البائع</h1>
+            <h1 className="text-3xl md:text-4xl font-semibold mb-2 flex items-center gap-2">
+              لوحة تحكم البائع
+              {user?.vipStatus === "vip" && (
+                <Crown className="h-6 w-6 text-amber-500" />
+              )}
+            </h1>
             <p className="text-muted-foreground">إدارة قوائم الأغنام الخاصة بك</p>
           </div>
-          <Button onClick={() => setAddDialogOpen(true)} data-testid="button-add-sheep">
-            <Plus className="ml-2 h-4 w-4" />
-            إضافة خروف
-          </Button>
+          <div className="flex gap-2">
+            <Button onClick={() => setLocation("/vip-upgrade")} variant="outline" className="border-amber-500 text-amber-700 hover:bg-amber-50">
+              <Crown className="ml-2 h-4 w-4" />
+              {user?.vipStatus === "vip" ? "أنت VIP ⭐" : "ترقية إلى VIP"}
+            </Button>
+            <Button onClick={() => setAddDialogOpen(true)} data-testid="button-add-sheep">
+              <Plus className="ml-2 h-4 w-4" />
+              إضافة خروف
+            </Button>
+          </div>
         </div>
 
         {/* Stats Cards */}

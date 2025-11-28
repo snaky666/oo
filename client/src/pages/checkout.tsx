@@ -206,8 +206,8 @@ export default function Checkout() {
             </CardContent>
           </Card>
 
-          {/* تقسيط - يظهر فقط عند شراء الاضاحي */}
-          {localStorage.getItem("pendingOrderId") && (
+          {/* تقسيط - يظهر فقط عند شراء الاضاحي وليس VIP */}
+          {localStorage.getItem("pendingOrderId") && !localStorage.getItem("pendingVIPUpgrade") && (
             <Card
               className={`cursor-pointer transition ${
                 paymentMethod === "installment"

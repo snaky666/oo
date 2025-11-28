@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { useAuth } from "@/contexts/AuthContext";
 import Header from "@/components/Header";
@@ -11,17 +11,10 @@ import { Label } from "@/components/ui/label";
 import { Loader2, CreditCard, Banknote, Percent, Check } from "lucide-react";
 import { doc, addDoc, collection, updateDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-
-interface CheckoutProps {
-  amount: number;
-  description: string;
-  orderId?: string;
-  isVIPUpgrade?: boolean;
-  onSuccess?: () => void;
-}
+import { useAuth as useAuthContext } from "@/contexts/AuthContext";
 
 export default function Checkout() {
-  const { user } = useAuth();
+  const { user, refreshUser } = useAuthContext();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
 
@@ -32,7 +25,23 @@ export default function Checkout() {
   const [cardCVC, setCardCVC] = useState("");
   const [installmentMonths, setInstallmentMonths] = useState(3);
 
-  const amount = 50000; // مثال
+  const [orderId, setOrderId] = useState<string | null>(null);
+  const [isVIPUpgrade, setIsVIPUpgrade] = useState(false);
+  const [amount, setAmount] = useState(0);
+
+  useEffect(() => {
+    const pending = localStorage.getItem("pendingOrderId");
+    const vipUpgrade = localStorage.getItem("pendingVIPUpgrade");
+    
+    if (pending) {
+      setOrderId(pending);
+      const orderAmount = localStorage.getItem("pendingOrderAmount");
+      setAmount(parseInt(orderAmount || "0"));
+    } else if (vipUpgrade) {
+      setIsVIPUpgrade(true);
+      setAmount(9999);
+    }
+  }, []);
   const downPayment = Math.ceil(amount * 0.3);
   const monthlyPayment = Math.ceil((amount - downPayment) / installmentMonths);
 
@@ -51,11 +60,23 @@ export default function Checkout() {
         amount: amount,
         method: paymentMethod,
         status: paymentMethod === "cash" ? "pending" : "completed",
+        orderId: orderId || undefined,
+        vipUpgrade: isVIPUpgrade,
         createdAt: Date.now(),
         updatedAt: Date.now(),
       };
 
       const paymentRef = await addDoc(collection(db, "payments"), paymentData);
+
+      // إذا كان VIP upgrade
+      if (isVIPUpgrade && paymentMethod !== "cash") {
+        await updateDoc(doc(db, "users", user.uid), {
+          vipStatus: "vip",
+          vipUpgradedAt: Date.now(),
+          updatedAt: Date.now(),
+        });
+        await refreshUser();
+      }
 
       // إذا كان تقسيط
       if (paymentMethod === "installment") {
@@ -74,12 +95,18 @@ export default function Checkout() {
         });
       }
 
+      // تنظيف localStorage
+      localStorage.removeItem("pendingOrderId");
+      localStorage.removeItem("pendingOrderAmount");
+      localStorage.removeItem("pendingVIPUpgrade");
+      localStorage.removeItem("vipAmount");
+
       toast({
         title: "نجح الدفع",
         description: `تم ${paymentMethod === "card" ? "معالجة الدفع بنجاح" : paymentMethod === "cash" ? "تسجيل الطلب للدفع عند الاستلام" : "تسجيل الأقساط"}`,
       });
 
-      setLocation("/browse");
+      setLocation(isVIPUpgrade ? (user?.role === "seller" ? "/seller" : "/browse") : "/orders");
     } catch (error) {
       console.error("Payment error:", error);
       toast({

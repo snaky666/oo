@@ -27,32 +27,9 @@ export default function VIPUpgrade() {
   const isVIP = user.vipStatus === "vip" || user.vipStatus === "premium";
 
   const handleUpgradeToVIP = async () => {
-    setUpgrading(true);
-    try {
-      await updateDoc(doc(db, "users", user.uid), {
-        vipStatus: "vip",
-        vipUpgradedAt: Date.now(),
-        updatedAt: Date.now(),
-      });
-
-      await refreshUser();
-
-      toast({
-        title: "مبروك! 🎉",
-        description: "تم ترقية حسابك إلى VIP بنجاح",
-      });
-
-      setLocation(user.role === "seller" ? "/seller" : "/browse");
-    } catch (error) {
-      console.error("Error upgrading to VIP:", error);
-      toast({
-        title: "خطأ",
-        description: "حدث خطأ أثناء الترقية",
-        variant: "destructive",
-      });
-    } finally {
-      setUpgrading(false);
-    }
+    localStorage.setItem("pendingVIPUpgrade", "true");
+    localStorage.setItem("vipAmount", "9999"); // يمكن تغيير السعر
+    setLocation("/checkout");
   };
 
   return (

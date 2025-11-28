@@ -145,15 +145,18 @@ export default function SheepDetail() {
         createdAt: Date.now(),
       };
 
-      await addDoc(collection(db, "orders"), orderData);
+      const orderRef = await addDoc(collection(db, "orders"), orderData);
+
+      localStorage.setItem("pendingOrderId", orderRef.id);
+      localStorage.setItem("pendingOrderAmount", sheep.price.toString());
 
       toast({
-        title: "تم إنشاء الطلب بنجاح",
-        description: "سيتم التواصل معك قريباً من قبل الإدارة",
+        title: "تم إنشاء الطلب",
+        description: "اختر طريقة الدفع لإكمال الطلب",
       });
 
       setOrderDialogOpen(false);
-      setLocation("/browse");
+      setLocation("/checkout");
     } catch (error) {
       console.error("Error creating order:", error);
       toast({

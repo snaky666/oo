@@ -15,7 +15,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { MapPin, Calendar, Weight, ArrowRight, ShoppingCart, Crown } from "lucide-react";
+import { MapPin, Calendar, Weight, ArrowRight, ShoppingCart } from "lucide-react";
 import { useLocation } from "wouter";
 import {
   Dialog,
@@ -188,11 +188,6 @@ export default function SheepDetail() {
   if (!sheep) return null;
 
   const images = sheep.images && sheep.images.length > 0 ? sheep.images : [placeholderImage];
-  
-  // Calculate VIP discount (10% off)
-  const isVIP = user?.isVIP;
-  const vipDiscount = isVIP ? sheep.price * 0.1 : 0;
-  const finalPrice = sheep.price - vipDiscount;
 
   return (
     <div className="min-h-screen bg-background">
@@ -258,26 +253,9 @@ export default function SheepDetail() {
           <div className="space-y-6">
             {/* Price */}
             <div>
-              {isVIP && vipDiscount > 0 ? (
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2">
-                    <Badge className="text-2xl font-bold px-4 py-2 bg-green-600 hover:bg-green-700">
-                      {finalPrice.toLocaleString()} DA
-                    </Badge>
-                    <Crown className="w-5 h-5 text-green-600" />
-                  </div>
-                  <p className="text-sm text-gray-500 line-through">
-                    السعر الأصلي: {sheep.price.toLocaleString()} DA
-                  </p>
-                  <p className="text-sm text-green-600 font-semibold">
-                    ✅ خصم VIP 10% = توفير {vipDiscount.toLocaleString()} DA
-                  </p>
-                </div>
-              ) : (
-                <Badge className="text-2xl font-bold px-4 py-2">
-                  {sheep.price.toLocaleString()} DA
-                </Badge>
-              )}
+              <Badge className="text-2xl font-bold px-4 py-2">
+                {sheep.price.toLocaleString()} DA
+              </Badge>
             </div>
 
             {/* Metadata */}

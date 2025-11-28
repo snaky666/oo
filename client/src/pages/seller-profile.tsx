@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, AlertCircle, Crown } from "lucide-react";
+import { Loader2, AlertCircle } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -25,7 +25,6 @@ export default function SellerProfile() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const [submitting, setSubmitting] = useState(false);
-  const [upgradingVIP, setUpgradingVIP] = useState(false);
 
   const {
     register,
@@ -96,34 +95,6 @@ export default function SellerProfile() {
     }
   };
 
-  const handleUpgradeVIP = async () => {
-    if (!user) return;
-
-    setUpgradingVIP(true);
-    try {
-      await updateDoc(doc(db, "users", user.uid), {
-        isVIP: true,
-        updatedAt: Date.now(),
-      });
-
-      await refreshUser();
-
-      toast({
-        title: "🎉 مرحباً بك في VIP",
-        description: "تم ترقية حسابك بنجاح! ستحصل على تخفيضات حصرية الآن",
-      });
-    } catch (error) {
-      console.error("Error upgrading to VIP:", error);
-      toast({
-        title: "❌ خطأ",
-        description: "فشل تحديث حالة VIP. حاول مرة أخرى",
-        variant: "destructive",
-      });
-    } finally {
-      setUpgradingVIP(false);
-    }
-  };
-
   if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -163,59 +134,6 @@ export default function SellerProfile() {
             </div>
           </CardContent>
         </Card>
-
-        {/* VIP Card */}
-        {!user?.isVIP && (
-          <Card className="mb-6 border-amber-300 bg-gradient-to-r from-amber-50 to-yellow-50 dark:from-amber-950/30 dark:to-yellow-950/30">
-            <CardContent className="pt-6">
-              <div className="flex gap-4 items-start">
-                <Crown className="w-6 h-6 text-amber-600 flex-shrink-0 mt-0.5" />
-                <div className="flex-1 text-right">
-                  <p className="font-semibold text-amber-900 dark:text-amber-100 mb-2">
-                    ⭐ ترقية إلى حساب VIP
-                  </p>
-                  <p className="text-sm text-amber-800 dark:text-amber-200 mb-4">
-                    احصل على تخفيضات خاصة 10% على جميع الأغنام المباعة!
-                  </p>
-                  <Button
-                    onClick={handleUpgradeVIP}
-                    disabled={upgradingVIP}
-                    className="bg-amber-600 hover:bg-amber-700 text-white"
-                  >
-                    {upgradingVIP ? (
-                      <>
-                        <Loader2 className="w-4 h-4 animate-spin ml-2" />
-                        جاري الترقية...
-                      </>
-                    ) : (
-                      <>
-                        <Crown className="w-4 h-4 ml-2" />
-                        ترقية إلى VIP الآن
-                      </>
-                    )}
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* VIP Status Badge */}
-        {user?.isVIP && (
-          <Card className="mb-6 border-green-300 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-950/30 dark:to-emerald-950/30">
-            <CardContent className="pt-6 flex gap-4 text-right">
-              <Crown className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
-              <div>
-                <p className="font-semibold text-green-900 dark:text-green-100">
-                  ✅ أنت عضو VIP
-                </p>
-                <p className="text-sm text-green-800 dark:text-green-200">
-                  تستمتع بتخفيضات خاصة 10% على جميع الأغنام
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-        )}
 
         {/* Form */}
         <Card>

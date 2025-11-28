@@ -65,7 +65,7 @@ service cloud.firestore {
       // Public: Anyone can read user profile (basic info only)
       allow read: if true;
       
-      // Owner only: Can update/delete own profile (including VIP upgrades)
+      // Owner only: Can update/delete own profile
       allow update, delete: if owns(userId);
       
       // Anyone authenticated: Can create own user

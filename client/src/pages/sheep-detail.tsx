@@ -258,9 +258,26 @@ export default function SheepDetail() {
           <div className="space-y-6">
             {/* Price */}
             <div>
-              <Badge className="text-2xl font-bold px-4 py-2">
-                {sheep.price.toLocaleString()} DA
-              </Badge>
+              {isVIP && vipDiscount > 0 ? (
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <Badge className="text-2xl font-bold px-4 py-2 bg-green-600 hover:bg-green-700">
+                      {finalPrice.toLocaleString()} DA
+                    </Badge>
+                    <Crown className="w-5 h-5 text-green-600" />
+                  </div>
+                  <p className="text-sm text-gray-500 line-through">
+                    السعر الأصلي: {sheep.price.toLocaleString()} DA
+                  </p>
+                  <p className="text-sm text-green-600 font-semibold">
+                    ✅ خصم VIP 10% = توفير {vipDiscount.toLocaleString()} DA
+                  </p>
+                </div>
+              ) : (
+                <Badge className="text-2xl font-bold px-4 py-2">
+                  {sheep.price.toLocaleString()} DA
+                </Badge>
+              )}
             </div>
 
             {/* Metadata */}

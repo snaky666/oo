@@ -21,8 +21,15 @@ import VIPBenefits from "@/pages/vip-benefits";
 import SheepCheckout from "@/pages/sheep-checkout";
 import VIPCheckout from "@/pages/vip-checkout";
 import OrdersPage from "@/pages/orders";
+import OrderDetailPage from "@/pages/order-detail";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import PublicRoute from "@/components/PublicRoute";
+
+const OrderDetailPageWrapper = (params: any) => (
+  <ProtectedRoute allowedRoles={["buyer", "seller", "admin"]}>
+    <OrderDetailPage params={params} />
+  </ProtectedRoute>
+);
 
 function Router() {
   return (
@@ -99,6 +106,7 @@ function Router() {
           <OrdersPage />
         </ProtectedRoute>
       </Route>
+      <Route path="/order/:id" component={OrderDetailPageWrapper} />
       
       {/* Admin routes */}
       <Route path="/admin">

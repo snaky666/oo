@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { collection, query, getDocs, doc, updateDoc, deleteDoc, where, orderBy } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import { Sheep, Order, User } from "@shared/schema";
+import { Sheep, Order, User, VIPStatus, VIP_PACKAGES } from "@shared/schema";
 import Header from "@/components/Header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -54,7 +54,7 @@ export default function AdminDashboard() {
   const [rejectionReason, setRejectionReason] = useState("");
   const [selectedUserVIP, setSelectedUserVIP] = useState<User | null>(null);
   const [vipExpiryDate, setVipExpiryDate] = useState("");
-  const [vipStatus, setVipStatus] = useState<"none" | "vip" | "premium">("none");
+  const [vipStatus, setVipStatus] = useState<VIPStatus>("none");
   const [updatingVIP, setUpdatingVIP] = useState(false);
 
   // Helper function to format date as Gregorian (Miladi)
@@ -402,7 +402,9 @@ export default function AdminDashboard() {
                             ) : (
                               <Badge className="bg-amber-500/10 text-amber-700">
                                 <Crown className="h-3 w-3 ml-1" />
-                                {user.vipStatus === "premium" ? "بريميوم" : "VIP"}
+                                {user.vipStatus && VIP_PACKAGES[user.vipStatus as keyof typeof VIP_PACKAGES] 
+                                  ? VIP_PACKAGES[user.vipStatus as keyof typeof VIP_PACKAGES].nameAr 
+                                  : "VIP"}
                               </Badge>
                             )}
                           </TableCell>

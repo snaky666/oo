@@ -215,6 +215,7 @@ export interface CIBReceipt {
   amount: number;
   orderId?: string;
   vipUpgrade?: boolean;
+  vipPackage?: VIPPackage;
   status: "pending" | "verified" | "rejected";
   rejectionReason?: string;
   verifiedBy?: string;

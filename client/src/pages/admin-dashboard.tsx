@@ -8,6 +8,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   CheckCircle,
   XCircle,
@@ -17,6 +19,8 @@ import {
   Clock,
   Loader2,
   Trash2,
+  Crown,
+  Edit2,
 } from "lucide-react";
 import {
   Dialog,
@@ -46,6 +50,10 @@ export default function AdminDashboard() {
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [reviewing, setReviewing] = useState(false);
   const [rejectionReason, setRejectionReason] = useState("");
+  const [selectedUserVIP, setSelectedUserVIP] = useState<User | null>(null);
+  const [vipExpiryDate, setVipExpiryDate] = useState("");
+  const [vipStatus, setVipStatus] = useState<"none" | "vip" | "premium">("none");
+  const [updatingVIP, setUpdatingVIP] = useState(false);
 
   // Helper function to format date as Gregorian (Miladi)
   const formatGregorianDate = (date: any) => {
@@ -223,6 +231,47 @@ export default function AdminDashboard() {
     }
   };
 
+  const handleVIPUpdate = async () => {
+    if (!selectedUserVIP) return;
+    
+    setUpdatingVIP(true);
+    try {
+      const updateData: any = {
+        vipStatus: vipStatus,
+        updatedAt: Date.now(),
+      };
+
+      if (vipStatus !== "none") {
+        updateData.vipUpgradedAt = selectedUserVIP.vipUpgradedAt || Date.now();
+        if (vipExpiryDate) {
+          const expiryTime = new Date(vipExpiryDate).getTime();
+          updateData.vipExpiresAt = expiryTime;
+        }
+      } else {
+        updateData.vipExpiresAt = null;
+      }
+
+      await updateDoc(doc(db, "users", selectedUserVIP.uid), updateData);
+
+      toast({
+        title: "تم التحديث بنجاح",
+        description: `تم تحديث حالة VIP للمستخدم ${selectedUserVIP.email}`,
+      });
+
+      setSelectedUserVIP(null);
+      fetchUsers();
+    } catch (error) {
+      console.error("Error updating VIP:", error);
+      toast({
+        title: "خطأ",
+        description: "حدث خطأ أثناء تحديث حالة VIP",
+        variant: "destructive",
+      });
+    } finally {
+      setUpdatingVIP(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <Header />
@@ -284,7 +333,7 @@ export default function AdminDashboard() {
 
         {/* Tabs */}
         <Tabs defaultValue="pending" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-5">
+          <TabsList className="grid w-full grid-cols-6">
             <TabsTrigger value="pending" data-testid="tab-pending">
               قيد المراجعة ({pendingSheep.length})
             </TabsTrigger>
@@ -297,10 +346,83 @@ export default function AdminDashboard() {
             <TabsTrigger value="users" data-testid="tab-users">
               المستخدمون
             </TabsTrigger>
+            <TabsTrigger value="vip" data-testid="tab-vip">
+              إدارة VIP ({users.filter(u => u.vipStatus === "vip" || u.vipStatus === "premium").length})
+            </TabsTrigger>
             <TabsTrigger value="orders" data-testid="tab-orders">
               الطلبات
             </TabsTrigger>
           </TabsList>
+
+          {/* VIP Management Tab */}
+          <TabsContent value="vip">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Crown className="h-5 w-5 text-amber-500" />
+                  إدارة ميزة VIP
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {loading ? (
+                  <p className="text-center text-muted-foreground">جاري التحميل...</p>
+                ) : (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>البريد الإلكتروني</TableHead>
+                        <TableHead>الاسم</TableHead>
+                        <TableHead>نوع الحساب</TableHead>
+                        <TableHead>حالة VIP</TableHead>
+                        <TableHead>تاريخ البداية</TableHead>
+                        <TableHead>تاريخ الانتهاء</TableHead>
+                        <TableHead>الإجراءات</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {users.map(user => (
+                        <TableRow key={user.uid}>
+                          <TableCell className="font-medium">{user.email}</TableCell>
+                          <TableCell>{user.fullName || "-"}</TableCell>
+                          <TableCell>{getRoleBadge(user.role)}</TableCell>
+                          <TableCell>
+                            {user.vipStatus === "none" || !user.vipStatus ? (
+                              <Badge variant="outline">عادي</Badge>
+                            ) : (
+                              <Badge className="bg-amber-500/10 text-amber-700">
+                                <Crown className="h-3 w-3 ml-1" />
+                                {user.vipStatus === "premium" ? "بريميوم" : "VIP"}
+                              </Badge>
+                            )}
+                          </TableCell>
+                          <TableCell className="text-sm text-muted-foreground">
+                            {user.vipUpgradedAt ? formatGregorianDate(user.vipUpgradedAt) : "-"}
+                          </TableCell>
+                          <TableCell className="text-sm text-muted-foreground">
+                            {user.vipExpiresAt ? formatGregorianDate(user.vipExpiresAt) : "-"}
+                          </TableCell>
+                          <TableCell>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                setSelectedUserVIP(user);
+                                setVipStatus(user.vipStatus || "none");
+                                setVipExpiryDate(user.vipExpiresAt ? new Date(user.vipExpiresAt).toISOString().split("T")[0] : "");
+                              }}
+                              data-testid={`button-edit-vip-${user.uid}`}
+                            >
+                              <Edit2 className="h-4 w-4" />
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
 
           {/* Pending Reviews Tab */}
           <TabsContent value="pending">
@@ -575,6 +697,79 @@ export default function AdminDashboard() {
           </TabsContent>
         </Tabs>
       </div>
+
+      {/* VIP Management Dialog */}
+      {selectedUserVIP && (
+        <Dialog open={!!selectedUserVIP} onOpenChange={() => setSelectedUserVIP(null)}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>إدارة VIP للمستخدم</DialogTitle>
+              <DialogDescription>
+                {selectedUserVIP.email}
+              </DialogDescription>
+            </DialogHeader>
+            
+            <div className="space-y-4">
+              <div>
+                <Label className="block mb-2 font-semibold">حالة VIP</Label>
+                <div className="grid grid-cols-3 gap-2">
+                  {(["none", "vip", "premium"] as const).map(status => (
+                    <Button
+                      key={status}
+                      variant={vipStatus === status ? "default" : "outline"}
+                      onClick={() => setVipStatus(status)}
+                      className="text-xs"
+                    >
+                      {status === "none" ? "عادي" : status === "premium" ? "بريميوم" : "VIP"}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+
+              {vipStatus !== "none" && (
+                <div>
+                  <Label htmlFor="vip-expiry" className="block mb-2 font-semibold">
+                    تاريخ انتهاء الاشتراك
+                  </Label>
+                  <Input
+                    id="vip-expiry"
+                    type="date"
+                    value={vipExpiryDate}
+                    onChange={(e) => setVipExpiryDate(e.target.value)}
+                    className="w-full"
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    اتركه فارغاً للاشتراك المدى الطويل
+                  </p>
+                </div>
+              )}
+
+              {selectedUserVIP.vipUpgradedAt && (
+                <div className="bg-muted p-3 rounded-lg text-sm">
+                  <p className="text-muted-foreground">تاريخ الترقية:</p>
+                  <p className="font-semibold">{formatGregorianDate(selectedUserVIP.vipUpgradedAt)}</p>
+                </div>
+              )}
+            </div>
+
+            <DialogFooter className="gap-2">
+              <Button
+                variant="outline"
+                onClick={() => setSelectedUserVIP(null)}
+              >
+                إلغاء
+              </Button>
+              <Button
+                onClick={handleVIPUpdate}
+                disabled={updatingVIP}
+              >
+                {updatingVIP ? <Loader2 className="ml-2 h-4 w-4 animate-spin" /> : <CheckCircle className="ml-2 h-4 w-4" />}
+                تحديث
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
 
       {/* Order Review Dialog */}
       {selectedOrder && (

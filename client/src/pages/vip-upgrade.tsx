@@ -24,12 +24,10 @@ export default function VIPUpgrade() {
 
   if (!user) return null;
 
-  const isVIP = user.vipStatus === "vip" || user.vipStatus === "premium";
+  const isVIP = user.vipStatus !== "none" && user.vipStatus !== undefined;
 
   const handleUpgradeToVIP = async () => {
-    localStorage.setItem("pendingVIPUpgrade", "true");
-    localStorage.setItem("vipAmount", "9999"); // يمكن تغيير السعر
-    setLocation("/checkout/vip");
+    setLocation("/vip-packages");
   };
 
   return (

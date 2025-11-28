@@ -16,6 +16,7 @@ import SellerProfile from "@/pages/seller-profile";
 import AdminDashboard from "@/pages/admin-dashboard";
 import ContactPage from "@/pages/contact";
 import VIPUpgrade from "@/pages/vip-upgrade";
+import VIPPackages from "@/pages/vip-packages";
 import SheepCheckout from "@/pages/sheep-checkout";
 import VIPCheckout from "@/pages/vip-checkout";
 import OrdersPage from "@/pages/orders";
@@ -70,6 +71,11 @@ function Router() {
       <Route path="/vip-upgrade">
         <ProtectedRoute allowedRoles={["buyer", "seller"]}>
           <VIPUpgrade />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/vip-packages">
+        <ProtectedRoute allowedRoles={["buyer", "seller"]}>
+          <VIPPackages />
         </ProtectedRoute>
       </Route>
       <Route path="/checkout/sheep">

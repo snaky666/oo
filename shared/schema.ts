@@ -13,8 +13,64 @@ export const orderStatuses = ["pending", "confirmed", "rejected", "delivered"] a
 export type OrderStatus = typeof orderStatuses[number];
 
 // VIP status type
-export const vipStatuses = ["none", "vip", "premium"] as const;
+export const vipStatuses = ["none", "silver", "gold", "platinum"] as const;
 export type VIPStatus = typeof vipStatuses[number];
+
+// VIP Package types
+export const vipPackages = ["silver", "gold", "platinum"] as const;
+export type VIPPackage = typeof vipPackages[number];
+
+export interface VIPPackageDetails {
+  id: VIPPackage;
+  name: string;
+  nameAr: string;
+  price: number;
+  duration: number; // in days
+  buyerDiscount: number; // percentage
+  sellerPriority: "low" | "medium" | "high";
+  features: string[];
+  featuresAr: string[];
+  color: string;
+}
+
+export const VIP_PACKAGES: Record<VIPPackage, VIPPackageDetails> = {
+  silver: {
+    id: "silver",
+    name: "Silver",
+    nameAr: "فضية",
+    price: 2999,
+    duration: 30,
+    buyerDiscount: 5,
+    sellerPriority: "low",
+    color: "silver",
+    features: ["5% discount on all purchases", "Basic seller priority", "Email support"],
+    featuresAr: ["تخفيف 5% على جميع المشتريات", "أولوية أساسية للبائع", "دعم عبر البريد الإلكتروني"],
+  },
+  gold: {
+    id: "gold",
+    name: "Gold",
+    nameAr: "ذهبية",
+    price: 7999,
+    duration: 90,
+    buyerDiscount: 10,
+    sellerPriority: "medium",
+    color: "amber",
+    features: ["10% discount on all purchases", "Medium seller priority", "Premium support", "Exclusive deals"],
+    featuresAr: ["تخفيف 10% على جميع المشتريات", "أولوية متوسطة للبائع", "دعم ممتاز", "عروض حصرية"],
+  },
+  platinum: {
+    id: "platinum",
+    name: "Platinum",
+    nameAr: "بلاتينيوم",
+    price: 19999,
+    duration: 365,
+    buyerDiscount: 15,
+    sellerPriority: "high",
+    color: "slate",
+    features: ["15% discount on all purchases", "Top seller priority", "24/7 priority support", "Exclusive deals", "Reward points", "Special events access"],
+    featuresAr: ["تخفيف 15% على جميع المشتريات", "أولوية عليا للبائع", "دعم 24/7", "عروض حصرية", "نقاط مكافآت", "الوصول إلى أحداث خاصة"],
+  },
+};
 
 // User schema (Firestore)
 export interface User {

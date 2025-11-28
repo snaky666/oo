@@ -100,8 +100,8 @@ service cloud.firestore {
     // ================== ORDERS COLLECTION ==================
     
     match /orders/{orderId} {
-      // Buyer: Can create orders
-      allow create: if isBuyer() && request.resource.data.buyerId == uid();
+      // Buyer or Seller: Can create orders (sellers can buy too)
+      allow create: if (isBuyer() || isSeller()) && request.resource.data.buyerId == uid();
       
       // Buyer: Can read own orders
       allow read: if owns(resource.data.buyerId);

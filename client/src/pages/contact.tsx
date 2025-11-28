@@ -60,8 +60,8 @@ export default function ContactPage() {
                 <p className="text-muted-foreground mb-4">
                   اتصل بنا مباشرة للحصول على الدعم الفوري.
                 </p>
-                <a href="tel:+213771832971" className="text-primary font-bold text-lg hover:underline">
-                  0771832971
+                <a href="tel:+213794769766" className="text-primary font-bold text-lg hover:underline">
+                  0794769766
                 </a>
               </CardContent>
             </Card>

@@ -55,11 +55,11 @@ export default function Header() {
       <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8">
         <div className="flex h-16 md:h-20 items-center justify-between gap-4">
           {/* Logo */}
-          <Link href="/landing" className="flex items-center gap-2 hover-elevate px-2 py-1 rounded-md" data-testid="link-home">
+          <Link href="/landing" className="flex items-center gap-2 px-2 py-1 rounded-md" data-testid="link-home">
             <img 
               src="/logo.png" 
               alt="أضحيتي" 
-              className="h-14 md:h-16 w-auto object-contain"
+              className="h-14 md:h-16 w-auto object-contain animate-bounce hover:animate-spin transition-all duration-300 cursor-pointer drop-shadow-lg hover:drop-shadow-2xl"
             />
           </Link>
 

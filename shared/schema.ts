@@ -147,6 +147,24 @@ export interface Installment {
   updatedAt?: number;
 }
 
+// CIB Receipt schema
+export interface CIBReceipt {
+  id: string;
+  paymentId: string;
+  userId: string;
+  userEmail: string;
+  receiptImageUrl: string;
+  amount: number;
+  orderId?: string;
+  vipUpgrade?: boolean;
+  status: "pending" | "verified" | "rejected";
+  rejectionReason?: string;
+  verifiedBy?: string;
+  verifiedAt?: number;
+  createdAt: number;
+  updatedAt?: number;
+}
+
 // Checkout form schema
 export const checkoutFormSchema = z.object({
   paymentMethod: z.enum(paymentMethods),

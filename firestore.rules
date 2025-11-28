@@ -237,6 +237,25 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
     
+    // ================== CIB RECEIPTS COLLECTION ==================
+    
+    match /cibReceipts/{receiptId} {
+      // User: Can read own receipts
+      allow read: if owns(resource.data.userId);
+      
+      // Admin: Can read all receipts
+      allow read: if isAdmin();
+      
+      // User: Can create own receipt
+      allow create: if isAuth() && request.resource.data.userId == uid();
+      
+      // Admin: Can update receipt status
+      allow update: if isAdmin();
+      
+      // Admin: Can delete receipts
+      allow delete: if isAdmin();
+    }
+    
     // ================== SYSTEM CONFIG COLLECTION ==================
     
     match /config/{document=**} {

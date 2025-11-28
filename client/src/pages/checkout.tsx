@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
-import { useAuth } from "@/contexts/AuthContext";
 import Header from "@/components/Header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,21 +7,21 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Loader2, CreditCard, Banknote, Percent, Check } from "lucide-react";
+import { Loader2, CreditCard, Banknote, Percent, Check, Upload } from "lucide-react";
 import { doc, addDoc, collection, updateDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import { useAuth as useAuthContext } from "@/contexts/AuthContext";
+import { useAuth } from "@/contexts/AuthContext";
+import { uploadToImgBB } from "@/lib/imgbb";
 
 export default function Checkout() {
-  const { user, refreshUser } = useAuthContext();
+  const { user, refreshUser } = useAuth();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
 
   const [paymentMethod, setPaymentMethod] = useState<"card" | "cash" | "installment">("card");
   const [processing, setProcessing] = useState(false);
-  const [cardNumber, setCardNumber] = useState("");
-  const [cardExpiry, setCardExpiry] = useState("");
-  const [cardCVC, setCardCVC] = useState("");
+  const [receiptFile, setReceiptFile] = useState<File | null>(null);
+  const [receiptPreview, setReceiptPreview] = useState<string>("");
   const [installmentMonths, setInstallmentMonths] = useState(3);
 
   const [orderId, setOrderId] = useState<string | null>(null);
@@ -42,6 +41,16 @@ export default function Checkout() {
       setAmount(9999);
     }
   }, []);
+
+  const handleReceiptUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setReceiptFile(file);
+      const reader = new FileReader();
+      reader.onload = (e) => setReceiptPreview(e.target?.result as string);
+      reader.readAsDataURL(file);
+    }
+  };
   const downPayment = Math.ceil(amount * 0.3);
   const monthlyPayment = Math.ceil((amount - downPayment) / installmentMonths);
 
@@ -51,15 +60,31 @@ export default function Checkout() {
       return;
     }
 
+    if (paymentMethod === "card" && !receiptFile) {
+      toast({
+        title: "تنبيه",
+        description: "يجب رفع صورة الوصل",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setProcessing(true);
     try {
+      let receiptUrl = "";
+      
+      // رفع الوصل على imgBB إذا كان CIB
+      if (paymentMethod === "card" && receiptFile) {
+        receiptUrl = await uploadToImgBB(receiptFile);
+      }
+
       // إنشاء سجل الدفع
       const paymentData = {
         userId: user.uid,
         userEmail: user.email,
         amount: amount,
         method: paymentMethod,
-        status: paymentMethod === "cash" ? "pending" : "completed",
+        status: paymentMethod === "cash" ? "pending" : paymentMethod === "card" ? "pending" : "completed",
         orderId: orderId || undefined,
         vipUpgrade: isVIPUpgrade,
         createdAt: Date.now(),
@@ -67,6 +92,22 @@ export default function Checkout() {
       };
 
       const paymentRef = await addDoc(collection(db, "payments"), paymentData);
+
+      // إذا كان CIB، أنشئ سجل الوصل
+      if (paymentMethod === "card") {
+        await addDoc(collection(db, "cibReceipts"), {
+          paymentId: paymentRef.id,
+          userId: user.uid,
+          userEmail: user.email,
+          receiptImageUrl: receiptUrl,
+          amount: amount,
+          orderId: orderId || undefined,
+          vipUpgrade: isVIPUpgrade,
+          status: "pending",
+          createdAt: Date.now(),
+          updatedAt: Date.now(),
+        });
+      }
 
       // إذا كان VIP upgrade
       if (isVIPUpgrade && paymentMethod !== "cash") {
@@ -102,8 +143,8 @@ export default function Checkout() {
       localStorage.removeItem("vipAmount");
 
       toast({
-        title: "نجح الدفع",
-        description: `تم ${paymentMethod === "card" ? "معالجة الدفع بنجاح" : paymentMethod === "cash" ? "تسجيل الطلب للدفع عند الاستلام" : "تسجيل الأقساط"}`,
+        title: paymentMethod === "card" ? "تم استلام الوصل" : "نجح الدفع",
+        description: paymentMethod === "card" ? "سيتم التحقق من الوصل خلال ساعات" : paymentMethod === "cash" ? "تسجيل الطلب للدفع عند الاستلام" : "تسجيل الأقساط",
       });
 
       setLocation(isVIPUpgrade ? (user?.role === "seller" ? "/seller" : "/browse") : "/orders");
@@ -192,30 +233,36 @@ export default function Checkout() {
           <CardContent className="space-y-4">
             {paymentMethod === "card" && (
               <>
-                <div>
-                  <Label>رقم البطاقة</Label>
-                  <Input
-                    placeholder="1234 5678 9012 3456"
-                    value={cardNumber}
-                    onChange={(e) => setCardNumber(e.target.value)}
-                  />
+                <div className="bg-blue-50 dark:bg-blue-950 p-4 rounded-lg mb-4">
+                  <p className="text-sm text-blue-900 dark:text-blue-100 font-semibold mb-2">🏦 تحويل بنكي:</p>
+                  <p className="text-sm text-blue-900 dark:text-blue-100">رقم الحساب: <strong>123 456 789</strong></p>
+                  <p className="text-sm text-blue-900 dark:text-blue-100">البنك: CIB الجزائر</p>
+                  <p className="text-sm text-blue-900 dark:text-blue-100 mt-2">حوّل المبلغ ثم ارفع صورة الوصل أدناه</p>
                 </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label>تاريخ الانتهاء</Label>
-                    <Input
-                      placeholder="MM/YY"
-                      value={cardExpiry}
-                      onChange={(e) => setCardExpiry(e.target.value)}
+
+                <div>
+                  <Label>صورة الوصل</Label>
+                  <div className="border-2 border-dashed rounded-lg p-4 text-center cursor-pointer hover:bg-muted/50 transition">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleReceiptUpload}
+                      className="hidden"
+                      id="receipt-input"
                     />
-                  </div>
-                  <div>
-                    <Label>رمز الأمان</Label>
-                    <Input
-                      placeholder="CVC"
-                      value={cardCVC}
-                      onChange={(e) => setCardCVC(e.target.value)}
-                    />
+                    <label htmlFor="receipt-input" className="cursor-pointer block">
+                      {receiptPreview ? (
+                        <div>
+                          <img src={receiptPreview} alt="Preview" className="h-32 mx-auto mb-2 rounded" />
+                          <p className="text-sm text-green-600">✓ تم تحديد الصورة</p>
+                        </div>
+                      ) : (
+                        <div>
+                          <Upload className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
+                          <p className="text-sm">اضغط لرفع صورة الوصل</p>
+                        </div>
+                      )}
+                    </label>
                   </div>
                 </div>
               </>
@@ -285,7 +332,7 @@ export default function Checkout() {
           <Button onClick={handlePayment} disabled={processing} className="flex-1">
             {processing ? <Loader2 className="ml-2 h-4 w-4 animate-spin" /> : null}
             {paymentMethod === "card"
-              ? "دفع الآن"
+              ? "إرسال الوصل"
               : paymentMethod === "cash"
               ? "تأكيد الدفع عند الاستلام"
               : "تطبيق الأقساط"}

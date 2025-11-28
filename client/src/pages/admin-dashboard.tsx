@@ -725,15 +725,17 @@ export default function AdminDashboard() {
             <div className="space-y-4">
               <div>
                 <Label className="block mb-2 font-semibold">حالة VIP</Label>
-                <div className="grid grid-cols-3 gap-2">
-                  {(["none", "vip", "premium"] as const).map(status => (
+                <div className="grid grid-cols-2 gap-2">
+                  {(["none", "silver", "gold", "platinum"] as const).map(status => (
                     <Button
                       key={status}
                       variant={vipStatus === status ? "default" : "outline"}
                       onClick={() => setVipStatus(status)}
                       className="text-xs"
                     >
-                      {status === "none" ? "عادي" : status === "premium" ? "بريميوم" : "VIP"}
+                      {status === "none" 
+                        ? "عادي" 
+                        : VIP_PACKAGES[status as keyof typeof VIP_PACKAGES]?.nameAr}
                     </Button>
                   ))}
                 </div>

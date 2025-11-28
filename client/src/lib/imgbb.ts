@@ -42,6 +42,14 @@ interface ImgBBResponse {
   status: number;
 }
 
+interface ImgBBErrorResponse {
+  success: boolean;
+  error?: {
+    code: number;
+    message: string;
+  };
+}
+
 /**
  * رفع صورة واحدة إلى ImgBB
  * @param file - ملف الصورة
@@ -49,27 +57,45 @@ interface ImgBBResponse {
  */
 export const uploadToImgBB = async (file: File): Promise<string> => {
   try {
+    const apiKey = import.meta.env.VITE_IMGBB_API_KEY;
+    
+    if (!apiKey) {
+      throw new Error("❌ VITE_IMGBB_API_KEY غير موجود في متغيرات البيئة");
+    }
+
+    // تحقق من أن حجم الملف معقول (5MB max)
+    if (file.size > 5 * 1024 * 1024) {
+      throw new Error("حجم الملف يجب أن يكون أقل من 5MB");
+    }
+
     const formData = new FormData();
     formData.append("image", file);
+    formData.append("expiration", "31536000"); // سنة واحدة
 
-    const response = await fetch("https://api.imgbb.com/1/upload?key=a055310e5a26ecb1f3c62707fbda3bcf", {
+    const url = `https://api.imgbb.com/1/upload?key=${apiKey}`;
+    
+    console.log("📤 يتم رفع الملف إلى ImgBB...");
+    
+    const response = await fetch(url, {
       method: "POST",
       body: formData,
     });
 
-    if (!response.ok) {
-      throw new Error(`ImgBB Error: ${response.statusText}`);
+    const responseData: ImgBBResponse | ImgBBErrorResponse = await response.json();
+
+    if (!response.ok || !('data' in responseData) || !responseData.success) {
+      const errorMsg = 'error' in responseData ? responseData.error?.message : `HTTP ${response.status}`;
+      throw new Error(`❌ ImgBB Error: ${errorMsg}`);
     }
 
-    const data: ImgBBResponse = await response.json();
-
-    if (!data.success) {
-      throw new Error("فشل رفع الصورة إلى ImgBB");
+    if (!('data' in responseData)) {
+      throw new Error("❌ استجابة ImgBB غير صحيحة");
     }
 
-    return data.data.url;
+    console.log("✅ تم رفع الملف بنجاح:", responseData.data.url);
+    return responseData.data.url;
   } catch (error) {
-    console.error("خطأ في رفع الصورة إلى ImgBB:", error);
+    console.error("❌ خطأ في رفع الصورة إلى ImgBB:", error);
     throw error;
   }
 };

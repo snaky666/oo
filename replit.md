@@ -145,11 +145,114 @@ The project is structured with `client/` for the React frontend, `server/` for t
   - Order confirmation emails to buyers and admins
 - **Environment Variables**: SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASSWORD, SMTP_FROM_EMAIL
 
+## VIP System Implementation (November 28, 2025)
+
+### Three-Tier VIP Package System
+- **Packages**:
+  - 🥈 **Silver**: 2,999 DA / 30 days - 5% discount, basic seller priority
+  - 🥇 **Gold**: 7,999 DA / 90 days - 10% discount, medium seller priority
+  - 🏆 **Platinum**: 19,999 DA / 365 days - 15% discount, high seller priority
+
+### VIP Benefits System
+- **Buyer Benefits**:
+  - Exclusive discounts (5-15% based on package)
+  - First access to special offers and rare products
+  - Reward points on each purchase
+  - Free/fast shipping on select items
+  - 24/7 priority support
+  - VIP badge display on profile
+  - Early notifications for new listings
+  - Priority booking on limited products
+
+- **Seller Benefits**:
+  - Top product visibility in search results
+  - Exclusive offers section access
+  - Instant order notifications
+  - Advanced dashboard with analytics
+  - Commission discounts (2-10%)
+  - Premium technical support
+  - VIP seller badge on listings
+  - Accelerated payment processing
+
+### Payment System (VIP & Orders)
+- **Payment Methods**:
+  - CIB Bank Transfer (with ImgBB receipt upload)
+  - Cash on Delivery
+  - Installments (sheep purchases only, not VIP)
+
+- **Payment Collections**:
+  - `payments`: All payment transactions
+  - `cibReceipts`: Bank transfer receipts with verification status
+  - `installments`: Monthly installment schedules
+  - `vipSubscriptions`: VIP subscription tracking
+
+### Admin Payment Management
+- **Payment Management Dashboard** (`/admin` → Payments tab):
+  - View all CIB receipts with status (pending, verified, rejected)
+  - Review and verify uploaded receipt images
+  - Accept or reject payments with rejection reasons
+  - Auto-activate VIP on payment verification
+  - Complete payment history with transaction details
+  - Statistics: pending receipts, verified, rejected counts
+
+### Database Schema Updates
+- **User Model** now includes:
+  - `vipStatus`: 'none' | 'silver' | 'gold' | 'platinum'
+  - `vipPackage`: Type of VIP subscription
+  - `vipUpgradedAt`: Subscription start date
+  - `vipExpiresAt`: Subscription expiry date
+  - `rewardPoints`: Accumulated reward points
+
+- **CIB Receipt Model**:
+  - `vipPackage`: Stores which VIP package was purchased
+  - `status`: Verification status (pending/verified/rejected)
+  - `rejectionReason`: Reason if rejected
+  - `verifiedBy`: Admin who verified
+
+### Routes & Pages
+- `/vip-upgrade` - VIP upgrade entry point
+- `/vip-packages` - Package selection with comparison table
+- `/vip-benefits` - Detailed benefits explanation (buyers & sellers)
+- `/checkout/vip` - VIP payment checkout
+- `/checkout/sheep` - Sheep purchase checkout
+
+## Firestore Security Rules (Updated November 28, 2025)
+
+### Helper Functions
+```firestore
+function isAuth() { return request.auth != null; }
+function isAdmin() { return isAuth() && get(/users/{uid}).data.role == 'admin'; }
+function isSeller() { return isAuth() && get(/users/{uid}).data.role == 'seller'; }
+function isBuyer() { return isAuth() && (role == 'buyer' || role == 'seller'); }
+function owns(userId) { return request.auth.uid == userId; }
+```
+
+### Collection-Level Security
+- **Users**: Owner or admin can read/update, self-registration only
+- **Sheep**: Approved visible to all, sellers manage own, admins manage all
+- **Orders**: Buyer sees own, seller sees for their sheep, admin sees all
+- **Payments**: User sees own, admin sees all and can update status
+- **CIB Receipts**: User uploads own, admin verifies/rejects only
+- **Installments**: User reads own, admin manages
+- **Reviews/Favorites/Notifications**: User-specific with admin override
+- **Support**: User manages own, admin manages all
+- **Admin Logs**: Admin only
+
+### Rules Principles
+- Default DENY: All collections default to deny unless explicitly allowed
+- Role-Based Access: Different permissions for admin, seller, buyer
+- Ownership Verification: Users can only modify their own data
+- Admin Override: Admins have full access for management operations
+- Data Validation: Foreign key relationships verified before operations
+
 ## Current Status
-- Platform is fully functional with guest mode operational
-- Email system integrated and ready for authentication workflows
-- All three user roles (buyer, seller, admin) implemented with proper permissions
+- Platform is fully functional with complete VIP system
+- Payment processing integrated with CIB bank transfers and receipts
+- Admin payment dashboard operational with verification workflows
+- Email system integrated for authentication and notifications
+- All three user roles (buyer, seller, admin) with VIP integration
 - Real-time data synchronization across all components
-- Complete Algerian localization with 58 wilayas and municipality-level precision
-- Production-ready authentication with fallback for guest access
-- Vercel deployment configured with serverless API functions
+- Complete Algerian localization with 58 wilayas and 1,541 municipalities
+- Production-ready authentication with guest browsing support
+- Firestore security rules updated for payment and VIP systems
+- Ready for production deployment with complete feature set

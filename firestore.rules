@@ -1,272 +1,196 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    
-    // ================== HELPER FUNCTIONS ==================
-    
-    // Check if user is authenticated
+
+    // ================= HELPER FUNCTIONS =================
     function isAuth() {
       return request.auth != null;
     }
-    
-    // Check if user is in guest mode
-    function isGuest() {
-      return !isAuth();
-    }
-    
-    // Get current user ID
-    function uid() {
-      return request.auth.uid;
-    }
-    
-    // Get current user document
-    function getUserDoc() {
-      return get(/databases/$(database)/documents/users/$(uid())).data;
-    }
-    
-    // Check user role
-    function hasRole(role) {
-      return isAuth() && getUserDoc().role == role;
-    }
-    
-    // Check if user is admin
+
     function isAdmin() {
-      return hasRole('admin');
+      return isAuth() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
     }
-    
-    // Check if user is seller
+
     function isSeller() {
-      return hasRole('seller') || hasRole('seller_buyer');
+      return isAuth() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'seller';
     }
-    
-    // Check if user is buyer
+
     function isBuyer() {
-      return hasRole('buyer') || hasRole('seller_buyer');
+      return isAuth() && (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'buyer' || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'seller');
     }
-    
-    // Check if user owns the document
+
     function owns(userId) {
-      return isAuth() && uid() == userId;
+      return isAuth() && request.auth.uid == userId;
     }
-    
-    // Check if document is approved
+
     function isApproved() {
       return resource.data.status == 'approved';
     }
-    
-    // Get resource approval status
-    function resourceStatus() {
-      return resource.data.status;
-    }
-    
-    // ================== USERS COLLECTION ==================
-    
+
+    // ================= USERS COLLECTION =================
     match /users/{userId} {
-      // Public: Anyone can read user profile (basic info only)
-      allow read: if true;
+      // Read: Public basic info OR owner OR admin
+      allow read: if isAdmin() || owns(userId);
       
-      // Owner only: Can update/delete own profile
-      allow update, delete: if owns(userId);
+      // Create: Self registration only
+      allow create: if owns(userId) && request.resource.data.uid == userId;
       
-      // Admin: Can update any user (for VIP management and other admin tasks)
-      allow update: if isAdmin();
+      // Update: Owner or admin (admin can manage VIP)
+      allow update: if isAdmin() || owns(userId);
       
-      // Anyone authenticated: Can create own user
-      allow create: if owns(userId) && request.resource.data.role in ['buyer', 'seller', 'seller_buyer', 'admin'];
-    }
-    
-    // ================== SHEEP COLLECTION ==================
-    
-    match /sheep/{sheepId} {
-      // Guest: Can only read approved sheep
-      allow read: if isGuest() && isApproved();
-      
-      // Auth: Can read all sheep (own or approved)
-      allow read: if isAuth() && (owns(resource.data.sellerId) || isApproved() || isAdmin());
-      
-      // Seller: Can create new sheep listings
-      allow create: if isSeller() && request.resource.data.sellerId == uid() && 
-                       request.resource.data.status == 'pending';
-      
-      // Seller: Can update own sheep (status determined by admin only)
-      allow update: if isSeller() && owns(resource.data.sellerId) &&
-                       request.resource.data.sellerId == resource.data.sellerId;
-      
-      // Seller: Can delete own pending/rejected sheep
-      allow delete: if isSeller() && owns(resource.data.sellerId) &&
-                       (resource.data.status == 'pending' || resource.data.status == 'rejected');
-      
-      // Admin: Full CRUD on all sheep
-      allow read, write, delete: if isAdmin();
-    }
-    
-    // ================== ORDERS COLLECTION ==================
-    
-    match /orders/{orderId} {
-      // Buyer or Seller: Can create orders (sellers can buy too)
-      allow create: if (isBuyer() || isSeller()) && request.resource.data.buyerId == uid();
-      
-      // Buyer: Can read own orders
-      allow read: if owns(resource.data.buyerId);
-      
-      // Seller: Can read orders for their sheep
-      allow read: if isSeller() && 
-                     exists(/databases/$(database)/documents/sheep/$(resource.data.sheepId)) &&
-                     get(/databases/$(database)/documents/sheep/$(resource.data.sheepId)).data.sellerId == uid();
-      
-      // Admin: Can read all orders
-      allow read: if isAdmin();
-      
-      // Buyer: Can update own orders
-      allow update: if owns(resource.data.buyerId) && resource.data.buyerId == request.resource.data.buyerId;
-      
-      // Admin: Can update order status
-      allow update: if isAdmin() && resource.data.orderId == request.resource.data.orderId;
-      
-      // Buyer: Can delete own cancelled orders
-      allow delete: if owns(resource.data.buyerId) && resource.data.status == 'cancelled';
-      
-      // Admin: Can delete any order
+      // Delete: Admin only
       allow delete: if isAdmin();
     }
-    
-    // ================== REVIEWS COLLECTION ==================
-    
+
+    // ================= SHEEP COLLECTION =================
+    match /sheep/{sheepId} {
+      // Read: Approved sheep visible to all, sellers see their own, admin sees all
+      allow read: if isApproved() || isAdmin() || (isAuth() && resource.data.sellerId == request.auth.uid);
+      
+      // Create: Sellers only with their own ID
+      allow create: if isSeller() && request.resource.data.sellerId == request.auth.uid;
+      
+      // Update: Sellers update their own (status set by admin), admins update any
+      allow update: if isAdmin() || (isSeller() && resource.data.sellerId == request.auth.uid);
+      
+      // Delete: Sellers delete their own, admins delete any
+      allow delete: if isAdmin() || (isSeller() && resource.data.sellerId == request.auth.uid);
+    }
+
+    // ================= ORDERS COLLECTION =================
+    match /orders/{orderId} {
+      // Read: Buyer reads own, seller reads for their sheep, admin reads all
+      allow read: if isAdmin() || owns(resource.data.buyerId) || 
+                     (isSeller() && get(/databases/$(database)/documents/sheep/$(resource.data.sheepId)).data.sellerId == request.auth.uid);
+      
+      // Create: Buyers create orders
+      allow create: if isBuyer() && request.resource.data.buyerId == request.auth.uid;
+      
+      // Update: Admin updates orders
+      allow update: if isAdmin();
+      
+      // Delete: Admin only
+      allow delete: if isAdmin();
+    }
+
+    // ================= PAYMENTS COLLECTION =================
+    match /payments/{paymentId} {
+      // Read: User reads own, admin reads all
+      allow read: if owns(resource.data.userId) || isAdmin();
+      
+      // Create: Authenticated user creates own payment
+      allow create: if isAuth() && request.resource.data.userId == request.auth.uid;
+      
+      // Update: Admin only
+      allow update: if isAdmin();
+      
+      // Delete: Admin only
+      allow delete: if isAdmin();
+    }
+
+    // ================= CIB RECEIPTS COLLECTION =================
+    match /cibReceipts/{receiptId} {
+      // Read: User reads own, admin reads all
+      allow read: if owns(resource.data.userId) || isAdmin();
+      
+      // Create: User uploads own receipt
+      allow create: if isAuth() && request.resource.data.userId == request.auth.uid;
+      
+      // Update: Admin only (verification/rejection)
+      allow update: if isAdmin();
+      
+      // Delete: Admin only
+      allow delete: if isAdmin();
+    }
+
+    // ================= INSTALLMENTS COLLECTION =================
+    match /installments/{installmentId} {
+      // Read: User reads own, admin reads all
+      allow read: if owns(resource.data.userId) || isAdmin();
+      
+      // Create: Authenticated users can create (backend handles)
+      allow create: if isAuth();
+      
+      // Update: Admin only
+      allow update: if isAdmin();
+      
+      // Delete: Admin only
+      allow delete: if isAdmin();
+    }
+
+    // ================= VIP SUBSCRIPTIONS COLLECTION =================
+    match /vipSubscriptions/{subId} {
+      // Read: User reads own, admin reads all
+      allow read: if owns(resource.data.userId) || isAdmin();
+      
+      // Create: Authenticated users can create
+      allow create: if isAuth();
+      
+      // Update: Admin only
+      allow update: if isAdmin();
+      
+      // Delete: Admin only
+      allow delete: if isAdmin();
+    }
+
+    // ================= REVIEWS COLLECTION =================
     match /reviews/{reviewId} {
-      // Anyone: Can read reviews
+      // Read: Anyone can read reviews
       allow read: if true;
       
-      // Buyer: Can create review for completed orders
-      allow create: if isBuyer() && request.resource.data.buyerId == uid();
+      // Create: Buyers create reviews
+      allow create: if isBuyer() && request.resource.data.buyerId == request.auth.uid;
       
-      // Reviewer: Can update own review
+      // Update: Reviewer updates own review
       allow update: if owns(resource.data.reviewerId);
       
-      // Reviewer: Can delete own review
-      allow delete: if owns(resource.data.reviewerId);
-      
-      // Admin: Can delete any review
-      allow delete: if isAdmin();
+      // Delete: Reviewer deletes own or admin deletes
+      allow delete: if owns(resource.data.reviewerId) || isAdmin();
     }
-    
-    // ================== FAVORITES COLLECTION ==================
-    
+
+    // ================= FAVORITES COLLECTION =================
     match /favorites/{userId}/{sheepId=**} {
-      // User: Can manage own favorites
-      allow read, write, delete: if owns(userId);
+      // Read: User reads own or admin reads
+      allow read: if owns(userId) || isAdmin();
       
-      // Admin: Can read all favorites
-      allow read: if isAdmin();
+      // Write: User manages own
+      allow write, delete: if owns(userId);
     }
-    
-    // ================== NOTIFICATIONS COLLECTION ==================
-    
+
+    // ================= NOTIFICATIONS COLLECTION =================
     match /notifications/{userId}/{notificationId=**} {
-      // User: Can read own notifications
+      // Read: User reads own
       allow read: if owns(userId);
       
-      // System: Can create notifications
-      allow create: if request.auth.token.firebase.sign_in_provider == 'custom' ||
-                       request.auth.uid == userId;
+      // Create: System or user
+      allow create: if owns(userId) || request.auth.token.firebase.sign_in_provider == 'custom';
       
-      // User: Can delete own notifications
+      // Delete: User deletes own
       allow delete: if owns(userId);
     }
-    
-    // ================== SUPPORT COLLECTION ==================
-    
+
+    // ================= SUPPORT COLLECTION =================
     match /support/{ticketId} {
-      // User: Can create support tickets
-      allow create: if isAuth() && request.resource.data.userId == uid();
+      // Read: User reads own or admin reads all
+      allow read: if owns(resource.data.userId) || isAdmin();
       
-      // User: Can read own tickets
-      allow read: if owns(resource.data.userId);
+      // Create: User creates own ticket
+      allow create: if isAuth() && request.resource.data.userId == request.auth.uid;
       
-      // Admin: Can read all tickets
-      allow read: if isAdmin();
+      // Update: User updates own or admin updates
+      allow update: if owns(resource.data.userId) || isAdmin();
       
-      // User: Can update own tickets
-      allow update: if owns(resource.data.userId);
-      
-      // Admin: Can update any ticket
-      allow update: if isAdmin();
-      
-      // Admin: Can delete tickets
+      // Delete: Admin only
       allow delete: if isAdmin();
     }
-    
-    // ================== ADMIN LOGS COLLECTION ==================
-    
+
+    // ================= ADMIN LOGS COLLECTION =================
     match /adminLogs/{logId} {
       // Admin only
-      allow read, write: if isAdmin();
+      allow read, write, delete: if isAdmin();
     }
-    
-    // ================== PAYMENTS COLLECTION ==================
-    
-    match /payments/{paymentId} {
-      // User: Can create own payments
-      allow create: if isAuth() && request.resource.data.userId == uid();
-      
-      // User: Can read own payments
-      allow read: if owns(resource.data.userId);
-      
-      // Admin: Can read all payments
-      allow read: if isAdmin();
-      
-      // Admin: Can update payment status
-      allow update: if isAdmin();
-      
-      // Admin: Can delete payments
-      allow delete: if isAdmin();
-    }
-    
-    // ================== INSTALLMENTS COLLECTION ==================
-    
-    match /installments/{installmentId} {
-      // User: Can read own installments
-      allow read: if owns(resource.data.userId);
-      
-      // Admin: Can read all installments
-      allow read: if isAdmin();
-      
-      // Admin: Can create and update installments
-      allow create, update: if isAdmin();
-      
-      // Admin: Can delete installments
-      allow delete: if isAdmin();
-    }
-    
-    // ================== CIB RECEIPTS COLLECTION ==================
-    
-    match /cibReceipts/{receiptId} {
-      // User: Can read own receipts
-      allow read: if owns(resource.data.userId);
-      
-      // Admin: Can read all receipts
-      allow read: if isAdmin();
-      
-      // User: Can create own receipt
-      allow create: if isAuth() && request.resource.data.userId == uid();
-      
-      // Admin: Can update receipt status
-      allow update: if isAdmin();
-      
-      // Admin: Can delete receipts
-      allow delete: if isAdmin();
-    }
-    
-    // ================== SYSTEM CONFIG COLLECTION ==================
-    
-    match /config/{document=**} {
-      // Public: Read system config
-      allow read: if true;
-      
-      // Admin: Can update config
-      allow write, delete: if isAdmin();
-    }
-    
-    // ================== DENY ALL BY DEFAULT ==================
+
+    // ================= DEFAULT DENY =================
     match /{document=**} {
       allow read, write, delete: if false;
     }

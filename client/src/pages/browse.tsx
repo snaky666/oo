@@ -247,15 +247,15 @@ export default function BrowseSheep() {
                 </Button>
               </SheetTrigger>
               <SheetContent side="right" className="w-80">
-              <SheetHeader>
-                <SheetTitle>الفلاتر</SheetTitle>
-              </SheetHeader>
-              <div className="mt-6">
-                <FiltersContent />
-              </div>
-            </SheetContent>
-          </Sheet>
-        </div>
+                <SheetHeader>
+                  <SheetTitle>الفلاتر</SheetTitle>
+                </SheetHeader>
+                <div className="mt-6">
+                  <FiltersContent />
+                </div>
+              </SheetContent>
+            </Sheet>
+          </div>
 
         <div className="flex gap-8">
           {/* Desktop Filters Sidebar */}

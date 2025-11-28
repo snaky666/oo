@@ -24,6 +24,7 @@ export interface User {
   city?: string;
   municipality?: string; // البلدية/الحي
   profileComplete?: boolean; // هل ملأ البائع بيانات كاملة
+  isVIP?: boolean; // VIP status
   createdAt: number;
   updatedAt?: number;
 }

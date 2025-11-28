@@ -15,7 +15,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { MapPin, Calendar, Weight, ArrowRight, ShoppingCart } from "lucide-react";
+import { MapPin, Calendar, Weight, ArrowRight, ShoppingCart, Crown } from "lucide-react";
 import { useLocation } from "wouter";
 import {
   Dialog,
@@ -188,6 +188,11 @@ export default function SheepDetail() {
   if (!sheep) return null;
 
   const images = sheep.images && sheep.images.length > 0 ? sheep.images : [placeholderImage];
+  
+  // Calculate VIP discount (10% off)
+  const isVIP = user?.isVIP;
+  const vipDiscount = isVIP ? sheep.price * 0.1 : 0;
+  const finalPrice = sheep.price - vipDiscount;
 
   return (
     <div className="min-h-screen bg-background">

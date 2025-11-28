@@ -12,6 +12,10 @@ export type SheepStatus = typeof sheepStatuses[number];
 export const orderStatuses = ["pending", "confirmed", "rejected", "delivered"] as const;
 export type OrderStatus = typeof orderStatuses[number];
 
+// VIP status type
+export const vipStatuses = ["none", "vip", "premium"] as const;
+export type VIPStatus = typeof vipStatuses[number];
+
 // User schema (Firestore)
 export interface User {
   uid: string;
@@ -24,6 +28,10 @@ export interface User {
   city?: string;
   municipality?: string; // البلدية/الحي
   profileComplete?: boolean; // هل ملأ البائع بيانات كاملة
+  // VIP fields
+  vipStatus?: VIPStatus; // none | vip | premium
+  vipUpgradedAt?: number; // تاريخ الترقية إلى VIP
+  vipExpiresAt?: number; // تاريخ انتهاء الاشتراك VIP (optional)
   createdAt: number;
   updatedAt?: number;
 }

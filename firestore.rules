@@ -68,6 +68,9 @@ service cloud.firestore {
       // Owner only: Can update/delete own profile
       allow update, delete: if owns(userId);
       
+      // Admin: Can update any user (for VIP management and other admin tasks)
+      allow update: if isAdmin();
+      
       // Anyone authenticated: Can create own user
       allow create: if owns(userId) && request.resource.data.role in ['buyer', 'seller', 'seller_buyer', 'admin'];
     }

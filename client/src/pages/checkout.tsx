@@ -39,6 +39,7 @@ export default function Checkout() {
     } else if (vipUpgrade) {
       setIsVIPUpgrade(true);
       setAmount(9999);
+      setPaymentMethod("card"); // VIP لا يدعم التقسيط
     }
   }, []);
 
@@ -166,7 +167,7 @@ export default function Checkout() {
       <div className="max-w-2xl mx-auto px-4 md:px-6 lg:px-8 py-12">
         <h1 className="text-3xl font-bold mb-8">الدفع</h1>
 
-        <div className="grid md:grid-cols-3 gap-4 mb-8">
+        <div className={`grid ${isVIPUpgrade ? "md:grid-cols-2" : "md:grid-cols-3"} gap-4 mb-8`}>
           {/* بطاقة CIB */}
           <Card
             className={`cursor-pointer transition ${
@@ -198,31 +199,33 @@ export default function Checkout() {
             <CardContent className="p-6 text-center">
               <Banknote className="h-8 w-8 mx-auto mb-3 text-green-500" />
               <h3 className="font-semibold mb-2">دفع نقدي</h3>
-              <p className="text-sm text-muted-foreground">عند الاستلام</p>
+              <p className="text-sm text-muted-foreground">{isVIPUpgrade ? "الدفع عند التفعيل" : "عند الاستلام"}</p>
               {paymentMethod === "cash" && (
                 <Check className="h-5 w-5 mx-auto mt-2 text-green-500" />
               )}
             </CardContent>
           </Card>
 
-          {/* تقسيط */}
-          <Card
-            className={`cursor-pointer transition ${
-              paymentMethod === "installment"
-                ? "border-primary bg-primary/5"
-                : "hover:border-primary/50"
-            }`}
-            onClick={() => setPaymentMethod("installment")}
-          >
-            <CardContent className="p-6 text-center">
-              <Percent className="h-8 w-8 mx-auto mb-3 text-orange-500" />
-              <h3 className="font-semibold mb-2">تقسيط</h3>
-              <p className="text-sm text-muted-foreground">أقساط مرنة</p>
-              {paymentMethod === "installment" && (
-                <Check className="h-5 w-5 mx-auto mt-2 text-green-500" />
-              )}
-            </CardContent>
-          </Card>
+          {/* تقسيط - يظهر فقط للطلبات العادية */}
+          {!isVIPUpgrade && (
+            <Card
+              className={`cursor-pointer transition ${
+                paymentMethod === "installment"
+                  ? "border-primary bg-primary/5"
+                  : "hover:border-primary/50"
+              }`}
+              onClick={() => setPaymentMethod("installment")}
+            >
+              <CardContent className="p-6 text-center">
+                <Percent className="h-8 w-8 mx-auto mb-3 text-orange-500" />
+                <h3 className="font-semibold mb-2">تقسيط</h3>
+                <p className="text-sm text-muted-foreground">أقساط مرنة</p>
+                {paymentMethod === "installment" && (
+                  <Check className="h-5 w-5 mx-auto mt-2 text-green-500" />
+                )}
+              </CardContent>
+            </Card>
+          )}
         </div>
 
         {/* تفاصيل الدفع */}

@@ -107,11 +107,9 @@ export default function SheepCard({ sheep, showStatus = false }: SheepCardProps)
 
         {/* View Button */}
         <Link href={`/sheep/${sheep.id}`}>
-          <a className="block">
-            <Button className="w-full" data-testid={`button-view-${sheep.id}`}>
-              عرض التفاصيل
-            </Button>
-          </a>
+          <Button className="w-full" data-testid={`button-view-${sheep.id}`}>
+            عرض التفاصيل
+          </Button>
         </Link>
       </CardContent>
     </Card>

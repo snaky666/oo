@@ -16,6 +16,7 @@ import SellerProfile from "@/pages/seller-profile";
 import AdminDashboard from "@/pages/admin-dashboard";
 import ContactPage from "@/pages/contact";
 import VIPUpgrade from "@/pages/vip-upgrade";
+import Checkout from "@/pages/checkout";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import PublicRoute from "@/components/PublicRoute";
 
@@ -67,6 +68,11 @@ function Router() {
       <Route path="/vip-upgrade">
         <ProtectedRoute allowedRoles={["buyer", "seller"]}>
           <VIPUpgrade />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/checkout">
+        <ProtectedRoute allowedRoles={["buyer", "seller"]}>
+          <Checkout />
         </ProtectedRoute>
       </Route>
       

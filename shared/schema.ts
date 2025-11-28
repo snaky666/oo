@@ -85,9 +85,11 @@ export interface User {
   municipality?: string; // البلدية/الحي
   profileComplete?: boolean; // هل ملأ البائع بيانات كاملة
   // VIP fields
-  vipStatus?: VIPStatus; // none | vip | premium
+  vipStatus?: VIPStatus; // none | silver | gold | platinum
+  vipPackage?: VIPPackage; // نوع الباقة
   vipUpgradedAt?: number; // تاريخ الترقية إلى VIP
-  vipExpiresAt?: number; // تاريخ انتهاء الاشتراك VIP (optional)
+  vipExpiresAt?: number; // تاريخ انتهاء الاشتراك VIP
+  rewardPoints?: number; // نقاط المكافآت
   createdAt: number;
   updatedAt?: number;
 }

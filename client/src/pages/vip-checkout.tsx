@@ -11,6 +11,7 @@ import { addDoc, collection, updateDoc, doc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
 import { uploadToImgBB } from "@/lib/imgbb";
+import { VIP_PACKAGES, VIPPackage } from "@shared/schema";
 
 export default function VIPCheckout() {
   const { user, refreshUser } = useAuth();
@@ -21,13 +22,21 @@ export default function VIPCheckout() {
   const [processing, setProcessing] = useState(false);
   const [receiptFile, setReceiptFile] = useState<File | null>(null);
   const [receiptPreview, setReceiptPreview] = useState<string>("");
-  const [amount] = useState(9999);
+  const [vipPackage, setVipPackage] = useState<VIPPackage | null>(null);
+  const [amount, setAmount] = useState(0);
 
   useEffect(() => {
     const vipUpgrade = localStorage.getItem("pendingVIPUpgrade");
-    if (!vipUpgrade) {
-      setLocation("/vip-upgrade");
+    const pkg = localStorage.getItem("vipPackage") as VIPPackage | null;
+    const amt = localStorage.getItem("vipAmount");
+    
+    if (!vipUpgrade || !pkg) {
+      setLocation("/vip-packages");
+      return;
     }
+    
+    setVipPackage(pkg);
+    setAmount(parseInt(amt || "0"));
   }, [setLocation]);
 
   const handleReceiptUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -63,6 +72,11 @@ export default function VIPCheckout() {
         receiptUrl = await uploadToImgBB(receiptFile);
       }
 
+      if (!vipPackage) return;
+      
+      const pkg = VIP_PACKAGES[vipPackage];
+      const expiresAt = Date.now() + pkg.duration * 24 * 60 * 60 * 1000;
+      
       const paymentData = {
         userId: user.uid,
         userEmail: user.email,
@@ -71,6 +85,7 @@ export default function VIPCheckout() {
         status: paymentMethod === "cash" ? "pending" : "pending",
         orderId: undefined,
         vipUpgrade: true,
+        vipPackage: vipPackage,
         createdAt: Date.now(),
         updatedAt: Date.now(),
       };
@@ -86,6 +101,7 @@ export default function VIPCheckout() {
           amount: amount,
           orderId: undefined,
           vipUpgrade: true,
+          vipPackage: vipPackage,
           status: "pending",
           createdAt: Date.now(),
           updatedAt: Date.now(),
@@ -94,7 +110,6 @@ export default function VIPCheckout() {
 
       // إذا كان التحويل البنكي، يتم التفعيل بعد التحقق من قبل الإدارة
       if (paymentMethod === "card") {
-        // الانتظار حتى يتحقق الإدارة من الوصل
         toast({
           title: "تم استلام الوصل",
           description: "سيتم تفعيل VIP الخاص بك خلال ساعات بعد التحقق من الوصل",
@@ -102,14 +117,17 @@ export default function VIPCheckout() {
       } else {
         // للدفع النقدي، يتم التفعيل مباشرة
         await updateDoc(doc(db, "users", user.uid), {
-          vipStatus: "vip",
+          vipStatus: vipPackage,
+          vipPackage: vipPackage,
           vipUpgradedAt: Date.now(),
+          vipExpiresAt: expiresAt,
+          rewardPoints: (user.rewardPoints || 0) + 100,
           updatedAt: Date.now(),
         });
         await refreshUser();
         toast({
           title: "مبروك!",
-          description: "تم تفعيل حسابك VIP بنجاح",
+          description: `تم تفعيل باقة ${pkg.nameAr} بنجاح حتى ${new Date(expiresAt).toLocaleDateString("ar-DZ")}`,
         });
       }
 
@@ -133,7 +151,7 @@ export default function VIPCheckout() {
     <div className="min-h-screen bg-background">
       <Header />
       <div className="max-w-2xl mx-auto px-4 md:px-6 lg:px-8 py-12">
-        <h1 className="text-3xl font-bold mb-8">ترقية VIP</h1>
+        <h1 className="text-3xl font-bold mb-8">ترقية VIP - باقة {vipPackage && VIP_PACKAGES[vipPackage]?.nameAr}</h1>
 
         <div className="grid md:grid-cols-2 gap-4 mb-8">
           <Card className={`cursor-pointer transition ${paymentMethod === "card" ? "border-primary bg-primary/5" : "hover:border-primary/50"}`} onClick={() => setPaymentMethod("card")}>

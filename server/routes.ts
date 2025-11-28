@@ -123,7 +123,61 @@ function extractFieldValue(value: any): any {
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Get approved sheep listings (public endpoint for guests and users)
+  // Get sheep listings (public endpoint for guests and users)
+  app.get("/api/sheep", async (req, res) => {
+    try {
+      const approved = req.query.approved === "true";
+      console.log(`🐑 Fetching ${approved ? "approved" : "all"} sheep...`);
+      
+      // Use REST API with a direct Firestore query
+      const body: any = {
+        structuredQuery: {
+          from: [{ collectionId: "sheep" }]
+        }
+      };
+
+      if (approved) {
+        body.structuredQuery.where = {
+          fieldFilter: {
+            field: { fieldPath: "status" },
+            op: "EQUAL",
+            value: { stringValue: "approved" }
+          }
+        };
+      }
+
+      const response = await fetch(
+        `https://firestore.googleapis.com/v1/projects/${FIREBASE_PROJECT_ID}/databases/(default)/documents:runQuery`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-Goog-Api-Key": FIREBASE_API_KEY || ""
+          },
+          body: JSON.stringify(body)
+        }
+      );
+
+      let data = [];
+      if (response.ok) {
+        const result = await response.json();
+        if (Array.isArray(result)) {
+          data = result.filter((item: any) => item.document).map((item: any) => ({
+            id: item.document.name.split('/').pop(),
+            ...extractDocumentData(item.document.fields)
+          }));
+        }
+      }
+
+      console.log(`✅ Found ${data.length} ${approved ? "approved" : ""} sheep`);
+      res.json(data);
+    } catch (error: any) {
+      console.error("❌ Error:", error?.message);
+      res.json([]);
+    }
+  });
+
+  // Backward compatibility: Get approved sheep listings
   app.get("/api/sheep/approved", async (req, res) => {
     try {
       console.log("🐑 Fetching approved sheep...");

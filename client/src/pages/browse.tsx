@@ -256,6 +256,7 @@ export default function BrowseSheep() {
               </SheetContent>
             </Sheet>
           </div>
+        </div>
 
         <div className="flex gap-8">
           {/* Desktop Filters Sidebar */}

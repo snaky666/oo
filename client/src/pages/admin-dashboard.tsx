@@ -10,6 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import AdminPaymentTab from "@/components/admin-payment-tab";
 import {
   CheckCircle,
   XCircle,
@@ -21,6 +22,7 @@ import {
   Trash2,
   Crown,
   Edit2,
+  CreditCard,
 } from "lucide-react";
 import {
   Dialog,
@@ -333,7 +335,7 @@ export default function AdminDashboard() {
 
         {/* Tabs */}
         <Tabs defaultValue="pending" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-6">
+          <TabsList className="grid w-full grid-cols-7">
             <TabsTrigger value="pending" data-testid="tab-pending">
               قيد المراجعة ({pendingSheep.length})
             </TabsTrigger>
@@ -347,12 +349,21 @@ export default function AdminDashboard() {
               المستخدمون
             </TabsTrigger>
             <TabsTrigger value="vip" data-testid="tab-vip">
-              إدارة VIP ({users.filter(u => u.vipStatus === "vip" || u.vipStatus === "premium").length})
+              إدارة VIP ({users.filter(u => u.vipStatus && u.vipStatus !== "none").length})
             </TabsTrigger>
             <TabsTrigger value="orders" data-testid="tab-orders">
               الطلبات
             </TabsTrigger>
+            <TabsTrigger value="payments" data-testid="tab-payments">
+              <CreditCard className="h-4 w-4 ml-1" />
+              الدفع
+            </TabsTrigger>
           </TabsList>
+
+          {/* Payments Management Tab */}
+          <TabsContent value="payments">
+            <AdminPaymentTab />
+          </TabsContent>
 
           {/* VIP Management Tab */}
           <TabsContent value="vip">

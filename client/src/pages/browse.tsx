@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useLocation } from "wouter";
 import { Sheep, algeriaCities } from "@shared/schema";
 import Header from "@/components/Header";
 import SheepCard from "@/components/SheepCard";
@@ -9,9 +10,10 @@ import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { Filter, X } from "lucide-react";
+import { Filter, X, Home } from "lucide-react";
 
 export default function BrowseSheep() {
+  const [, navigate] = useLocation();
   const [sheep, setSheep] = useState<Sheep[]>([]);
   const [loading, setLoading] = useState(true);
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 1000000]);
@@ -215,11 +217,22 @@ export default function BrowseSheep() {
       <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8 py-8">
         {/* Page Header */}
         <div className="flex items-center justify-between mb-8">
-          <div>
-            <h1 className="text-3xl md:text-4xl font-semibold mb-2">تصفح الأغنام</h1>
-            <p className="text-muted-foreground">
-              {loading ? "جاري التحميل..." : `${filteredSheep.length} خروف متاح`}
-            </p>
+          <div className="flex items-center gap-4">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => navigate("/")}
+              title="الصفحة الرئيسية"
+              className="hover:bg-amber-100 dark:hover:bg-amber-900"
+            >
+              <Home className="h-5 w-5 text-amber-700" />
+            </Button>
+            <div>
+              <h1 className="text-3xl md:text-4xl font-semibold mb-2">تصفح الأغنام</h1>
+              <p className="text-muted-foreground">
+                {loading ? "جاري التحميل..." : `${filteredSheep.length} خروف متاح`}
+              </p>
+            </div>
           </div>
 
           {/* Mobile Filter Button */}

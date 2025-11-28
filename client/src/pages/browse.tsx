@@ -61,9 +61,6 @@ export default function BrowseSheep() {
     if (s.weight < weightRange[0] || s.weight > weightRange[1]) return false;
     if (selectedCities.length > 0 && !selectedCities.includes(s.city)) return false;
     return true;
-  }).sort((a, b) => {
-    // Sort VIP sellers to the top
-    return b.sellerVIP ? 1 : a.sellerVIP ? -1 : 0;
   });
 
   // Log the state for debugging

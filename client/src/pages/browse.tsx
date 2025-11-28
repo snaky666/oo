@@ -220,21 +220,33 @@ export default function BrowseSheep() {
         {/* Page Header */}
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-3xl md:text-4xl font-semibold mb-2">تصفح الأغنام</h1>
+            <h1 className="text-3xl md:text-4xl font-semibold mb-2 flex items-center gap-2">
+              تصفح الأغنام
+              {user?.vipStatus === "vip" && (
+                <Crown className="h-6 w-6 text-amber-500" />
+              )}
+            </h1>
             <p className="text-muted-foreground">
               {loading ? "جاري التحميل..." : `${filteredSheep.length} خروف متاح`}
             </p>
           </div>
 
-          {/* Mobile Filter Button */}
-          <Sheet open={filtersOpen} onOpenChange={setFiltersOpen}>
-            <SheetTrigger asChild>
-              <Button variant="outline" className="lg:hidden" data-testid="button-open-filters">
-                <Filter className="ml-2 h-4 w-4" />
-                الفلاتر
+          <div className="flex gap-2 items-center">
+            {user && (
+              <Button onClick={() => setLocation("/vip-upgrade")} variant="outline" className="border-amber-500 text-amber-700 hover:bg-amber-50">
+                <Crown className="ml-2 h-4 w-4" />
+                {user?.vipStatus === "vip" ? "أنت VIP ⭐" : "ترقية إلى VIP"}
               </Button>
-            </SheetTrigger>
-            <SheetContent side="right" className="w-80">
+            )}
+            {/* Mobile Filter Button */}
+            <Sheet open={filtersOpen} onOpenChange={setFiltersOpen}>
+              <SheetTrigger asChild>
+                <Button variant="outline" className="lg:hidden" data-testid="button-open-filters">
+                  <Filter className="ml-2 h-4 w-4" />
+                  الفلاتر
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="right" className="w-80">
               <SheetHeader>
                 <SheetTitle>الفلاتر</SheetTitle>
               </SheetHeader>

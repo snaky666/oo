@@ -156,7 +156,7 @@ export default function SheepDetail() {
       });
 
       setOrderDialogOpen(false);
-      setLocation("/checkout");
+      setLocation("/checkout/sheep");
     } catch (error) {
       console.error("Error creating order:", error);
       toast({

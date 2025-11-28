@@ -29,7 +29,7 @@ export default function VIPUpgrade() {
   const handleUpgradeToVIP = async () => {
     localStorage.setItem("pendingVIPUpgrade", "true");
     localStorage.setItem("vipAmount", "9999"); // يمكن تغيير السعر
-    setLocation("/checkout");
+    setLocation("/checkout/vip");
   };
 
   return (

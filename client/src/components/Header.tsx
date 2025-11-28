@@ -19,6 +19,7 @@ export default function Header() {
   const { user, signOut } = useAuth();
   const [location, setLocation] = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const isGuest = typeof window !== 'undefined' && localStorage.getItem("guestMode") === "true";
 
   const handleSignOut = async () => {
     await signOut();
@@ -65,7 +66,7 @@ export default function Header() {
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center gap-1">
             {/* Home Icon - متاح للجميع */}
-            {user && (
+            {(user || isGuest) && (
               <Link href="/landing" className={cn("rounded-md hover-elevate", isActive("/landing") && "bg-accent/10")}>
                 <Button 
                   variant="ghost" 
@@ -189,7 +190,7 @@ export default function Header() {
         {mobileMenuOpen && (
           <div className="md:hidden border-t py-4 space-y-2">
             {/* Home Icon - متاح للجميع */}
-            {user && (
+            {(user || isGuest) && (
               <Link href="/landing">
                 <Button
                   variant="ghost"

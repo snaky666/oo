@@ -1,0 +1,217 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // ================== HELPER FUNCTIONS ==================
+    
+    // Check if user is authenticated
+    function isAuth() {
+      return request.auth != null;
+    }
+    
+    // Check if user is in guest mode
+    function isGuest() {
+      return !isAuth();
+    }
+    
+    // Get current user ID
+    function uid() {
+      return request.auth.uid;
+    }
+    
+    // Get current user document
+    function getUserDoc() {
+      return get(/databases/$(database)/documents/users/$(uid())).data;
+    }
+    
+    // Check user role
+    function hasRole(role) {
+      return isAuth() && getUserDoc().role == role;
+    }
+    
+    // Check if user is admin
+    function isAdmin() {
+      return hasRole('admin');
+    }
+    
+    // Check if user is seller
+    function isSeller() {
+      return hasRole('seller') || hasRole('seller_buyer');
+    }
+    
+    // Check if user is buyer
+    function isBuyer() {
+      return hasRole('buyer') || hasRole('seller_buyer');
+    }
+    
+    // Check if user owns the document
+    function owns(userId) {
+      return isAuth() && uid() == userId;
+    }
+    
+    // Check if document is approved
+    function isApproved() {
+      return resource.data.status == 'approved';
+    }
+    
+    // Get resource approval status
+    function resourceStatus() {
+      return resource.data.status;
+    }
+    
+    // ================== USERS COLLECTION ==================
+    
+    match /users/{userId} {
+      // Public: Anyone can read user profile (basic info only)
+      allow read: if true;
+      
+      // Owner only: Can update/delete own profile
+      allow update, delete: if owns(userId);
+      
+      // Anyone authenticated: Can create own user
+      allow create: if owns(userId) && request.resource.data.role in ['buyer', 'seller', 'seller_buyer', 'admin'];
+    }
+    
+    // ================== SHEEP COLLECTION ==================
+    
+    match /sheep/{sheepId} {
+      // Guest: Can only read approved sheep
+      allow read: if isGuest() && isApproved();
+      
+      // Auth: Can read all sheep (own or approved)
+      allow read: if isAuth() && (owns(resource.data.sellerId) || isApproved() || isAdmin());
+      
+      // Seller: Can create new sheep listings
+      allow create: if isSeller() && request.resource.data.sellerId == uid() && 
+                       request.resource.data.status == 'pending';
+      
+      // Seller: Can update own sheep (status determined by admin only)
+      allow update: if isSeller() && owns(resource.data.sellerId) &&
+                       request.resource.data.sellerId == resource.data.sellerId;
+      
+      // Seller: Can delete own pending/rejected sheep
+      allow delete: if isSeller() && owns(resource.data.sellerId) &&
+                       (resource.data.status == 'pending' || resource.data.status == 'rejected');
+      
+      // Admin: Full CRUD on all sheep
+      allow read, write, delete: if isAdmin();
+    }
+    
+    // ================== ORDERS COLLECTION ==================
+    
+    match /orders/{orderId} {
+      // Buyer: Can create orders
+      allow create: if isBuyer() && request.resource.data.buyerId == uid();
+      
+      // Buyer: Can read own orders
+      allow read: if owns(resource.data.buyerId);
+      
+      // Seller: Can read orders for their sheep
+      allow read: if isSeller() && 
+                     exists(/databases/$(database)/documents/sheep/$(resource.data.sheepId)) &&
+                     get(/databases/$(database)/documents/sheep/$(resource.data.sheepId)).data.sellerId == uid();
+      
+      // Admin: Can read all orders
+      allow read: if isAdmin();
+      
+      // Buyer: Can update own orders
+      allow update: if owns(resource.data.buyerId) && resource.data.buyerId == request.resource.data.buyerId;
+      
+      // Admin: Can update order status
+      allow update: if isAdmin() && resource.data.orderId == request.resource.data.orderId;
+      
+      // Buyer: Can delete own cancelled orders
+      allow delete: if owns(resource.data.buyerId) && resource.data.status == 'cancelled';
+      
+      // Admin: Can delete any order
+      allow delete: if isAdmin();
+    }
+    
+    // ================== REVIEWS COLLECTION ==================
+    
+    match /reviews/{reviewId} {
+      // Anyone: Can read reviews
+      allow read: if true;
+      
+      // Buyer: Can create review for completed orders
+      allow create: if isBuyer() && request.resource.data.buyerId == uid();
+      
+      // Reviewer: Can update own review
+      allow update: if owns(resource.data.reviewerId);
+      
+      // Reviewer: Can delete own review
+      allow delete: if owns(resource.data.reviewerId);
+      
+      // Admin: Can delete any review
+      allow delete: if isAdmin();
+    }
+    
+    // ================== FAVORITES COLLECTION ==================
+    
+    match /favorites/{userId}/{sheepId=**} {
+      // User: Can manage own favorites
+      allow read, write, delete: if owns(userId);
+      
+      // Admin: Can read all favorites
+      allow read: if isAdmin();
+    }
+    
+    // ================== NOTIFICATIONS COLLECTION ==================
+    
+    match /notifications/{userId}/{notificationId=**} {
+      // User: Can read own notifications
+      allow read: if owns(userId);
+      
+      // System: Can create notifications
+      allow create: if request.auth.token.firebase.sign_in_provider == 'custom' ||
+                       request.auth.uid == userId;
+      
+      // User: Can delete own notifications
+      allow delete: if owns(userId);
+    }
+    
+    // ================== SUPPORT COLLECTION ==================
+    
+    match /support/{ticketId} {
+      // User: Can create support tickets
+      allow create: if isAuth() && request.resource.data.userId == uid();
+      
+      // User: Can read own tickets
+      allow read: if owns(resource.data.userId);
+      
+      // Admin: Can read all tickets
+      allow read: if isAdmin();
+      
+      // User: Can update own tickets
+      allow update: if owns(resource.data.userId);
+      
+      // Admin: Can update any ticket
+      allow update: if isAdmin();
+      
+      // Admin: Can delete tickets
+      allow delete: if isAdmin();
+    }
+    
+    // ================== ADMIN LOGS COLLECTION ==================
+    
+    match /adminLogs/{logId} {
+      // Admin only
+      allow read, write: if isAdmin();
+    }
+    
+    // ================== SYSTEM CONFIG COLLECTION ==================
+    
+    match /config/{document=**} {
+      // Public: Read system config
+      allow read: if true;
+      
+      // Admin: Can update config
+      allow write, delete: if isAdmin();
+    }
+    
+    // ================== DENY ALL BY DEFAULT ==================
+    match /{document=**} {
+      allow read, write, delete: if false;
+    }
+  }
+}

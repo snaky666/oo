@@ -167,7 +167,7 @@ export default function Checkout() {
       <div className="max-w-2xl mx-auto px-4 md:px-6 lg:px-8 py-12">
         <h1 className="text-3xl font-bold mb-8">الدفع</h1>
 
-        <div className={`grid ${localStorage.getItem("pendingVIPUpgrade") ? "md:grid-cols-2" : "md:grid-cols-3"} gap-4 mb-8`}>
+        <div className={`grid ${localStorage.getItem("pendingOrderId") ? "md:grid-cols-3" : "md:grid-cols-2"} gap-4 mb-8`}>
           {/* بطاقة CIB */}
           <Card
             className={`cursor-pointer transition ${
@@ -206,8 +206,8 @@ export default function Checkout() {
             </CardContent>
           </Card>
 
-          {/* تقسيط - يظهر فقط للطلبات العادية */}
-          {!localStorage.getItem("pendingVIPUpgrade") && (
+          {/* تقسيط - يظهر فقط عند شراء الاضاحي */}
+          {localStorage.getItem("pendingOrderId") && (
             <Card
               className={`cursor-pointer transition ${
                 paymentMethod === "installment"

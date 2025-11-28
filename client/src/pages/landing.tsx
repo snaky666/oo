@@ -326,7 +326,7 @@ export default function LandingPage() {
           </div>
           <div className="mt-8 pt-8 border-t space-y-3 text-center text-sm text-muted-foreground">
             <p>&copy; 2025 أضحيتي. جميع الحقوق محفوظة.</p>
-            <p>Developed by <a href="https://novawebdv.com" target="_blank" rel="noopener noreferrer" className="font-semibold text-foreground hover:text-primary transition-colors cursor-pointer">NovaWeb</a></p>
+            <p>Developed by <a href="https://novawebdv.vercel.app" target="_blank" rel="noopener noreferrer" className="font-semibold text-foreground hover:text-primary transition-colors cursor-pointer">NovaWeb</a></p>
           </div>
         </div>
       </footer>

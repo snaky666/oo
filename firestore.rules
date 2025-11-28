@@ -202,6 +202,41 @@ service cloud.firestore {
       allow read, write: if isAdmin();
     }
     
+    // ================== PAYMENTS COLLECTION ==================
+    
+    match /payments/{paymentId} {
+      // User: Can create own payments
+      allow create: if isAuth() && request.resource.data.userId == uid();
+      
+      // User: Can read own payments
+      allow read: if owns(resource.data.userId);
+      
+      // Admin: Can read all payments
+      allow read: if isAdmin();
+      
+      // Admin: Can update payment status
+      allow update: if isAdmin();
+      
+      // Admin: Can delete payments
+      allow delete: if isAdmin();
+    }
+    
+    // ================== INSTALLMENTS COLLECTION ==================
+    
+    match /installments/{installmentId} {
+      // User: Can read own installments
+      allow read: if owns(resource.data.userId);
+      
+      // Admin: Can read all installments
+      allow read: if isAdmin();
+      
+      // Admin: Can create and update installments
+      allow create, update: if isAdmin();
+      
+      // Admin: Can delete installments
+      allow delete: if isAdmin();
+    }
+    
     // ================== SYSTEM CONFIG COLLECTION ==================
     
     match /config/{document=**} {

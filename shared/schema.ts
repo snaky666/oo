@@ -107,6 +107,57 @@ export const insertOrderSchema = z.object({
 
 export type InsertOrder = z.infer<typeof insertOrderSchema>;
 
+// Payment method type
+export const paymentMethods = ["card", "cash", "installment"] as const;
+export type PaymentMethod = typeof paymentMethods[number];
+
+// Payment status type
+export const paymentStatuses = ["pending", "completed", "failed", "cancelled"] as const;
+export type PaymentStatus = typeof paymentStatuses[number];
+
+// Payment schema (Firestore)
+export interface Payment {
+  id: string;
+  orderId?: string;
+  userId: string;
+  userEmail: string;
+  amount: number;
+  method: PaymentMethod;
+  status: PaymentStatus;
+  vipUpgrade?: boolean; // whether this is for VIP upgrade
+  stripePaymentIntentId?: string;
+  createdAt: number;
+  updatedAt?: number;
+}
+
+// Installment schema
+export interface Installment {
+  id: string;
+  paymentId: string;
+  userId: string;
+  totalAmount: number;
+  downPayment: number;
+  remainingAmount: number;
+  monthlyInstallment: number;
+  numberOfMonths: number;
+  paidInstallments: number;
+  nextDueDate: number;
+  status: "active" | "completed" | "defaulted";
+  createdAt: number;
+  updatedAt?: number;
+}
+
+// Checkout form schema
+export const checkoutFormSchema = z.object({
+  paymentMethod: z.enum(paymentMethods),
+  cardNumber: z.string().optional(),
+  cardExpiry: z.string().optional(),
+  cardCVC: z.string().optional(),
+  installmentMonths: z.number().min(1).max(12).optional(),
+});
+
+export type CheckoutFormData = z.infer<typeof checkoutFormSchema>;
+
 // Filter schema for sheep browsing
 export const sheepFilterSchema = z.object({
   minPrice: z.number().optional(),

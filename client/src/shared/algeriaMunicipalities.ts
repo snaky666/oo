@@ -15,15 +15,35 @@ export async function loadMunicipalitiesData(): Promise<Municipality[]> {
   }
 
   try {
-    const response = await fetch('/data/municipalities.json');
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+    // Try multiple paths for flexibility
+    const paths = [
+      '/data/municipalities.json',
+      '/public/data/municipalities.json',
+      './data/municipalities.json'
+    ];
+    
+    let response: Response | null = null;
+    let lastError: Error | null = null;
+    
+    for (const path of paths) {
+      try {
+        response = await fetch(path);
+        if (response.ok) break;
+      } catch (err) {
+        lastError = err as Error;
+      }
     }
+    
+    if (!response?.ok) {
+      throw lastError || new Error('Failed to fetch municipalities data');
+    }
+    
     const data = await response.json();
     municipalitiesCache = data;
     return data;
   } catch (error) {
     console.error('❌ Error loading municipalities:', error);
+    // Return empty array but don't break the app
     return [];
   }
 }

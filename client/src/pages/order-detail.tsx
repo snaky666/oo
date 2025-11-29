@@ -149,9 +149,9 @@ export default function OrderDetailPage({ params }: { params: { id: string } }) 
         }
 
         setOrder({
-          id: orderSnap.id,
           ...orderData,
-        });
+          id: orderSnap.id,
+        } as Order);
       } catch (error) {
         console.error("Error fetching order:", error);
         toast({

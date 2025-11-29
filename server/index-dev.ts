@@ -38,9 +38,16 @@ export async function setupVite(app: Express, server: Server) {
     appType: "custom",
   });
 
-  // Serve static files from public directory
+  // Serve static files from public directory with proper MIME types
   const publicDir = path.resolve(import.meta.dirname, "..", "public");
-  app.use(express.static(publicDir));
+  app.use(express.static(publicDir, {
+    setHeaders: (res, filepath) => {
+      // Ensure JSON files have correct content type
+      if (filepath.endsWith('.json')) {
+        res.setHeader('Content-Type', 'application/json; charset=utf-8');
+      }
+    }
+  }));
 
   app.use(vite.middlewares);
   app.use("*", async (req, res, next) => {

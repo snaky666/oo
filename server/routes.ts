@@ -1,6 +1,8 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
+import fs from "fs";
+import path from "path";
 import { sendVerificationEmail, sendResetPasswordEmail, sendOrderConfirmationEmail, sendAdminNotificationEmail } from "./services/emailService";
 
 const FIREBASE_PROJECT_ID = process.env.VITE_FIREBASE_PROJECT_ID;
@@ -321,6 +323,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error: any) {
       console.error("❌ Send confirmation error:", error?.message);
       res.status(500).json({ error: error?.message });
+    }
+  });
+
+  // Serve municipalities data with proper JSON content-type
+  app.get("/api/municipalities", async (req, res) => {
+    try {
+      const filePath = path.resolve(import.meta.dirname, "..", "public", "data", "municipalities.json");
+      const data = await fs.promises.readFile(filePath, "utf-8");
+      
+      res.set("Content-Type", "application/json");
+      res.send(data);
+    } catch (error: any) {
+      console.error("❌ Error loading municipalities:", error?.message);
+      res.status(500).json({ error: "Failed to load municipalities data" });
     }
   });
 

@@ -16,7 +16,6 @@ interface NavItem {
 export default function BottomNavigation() {
   const { user, signOut } = useAuth();
   const [location, setLocation] = useLocation();
-  const [profileOpen, setProfileOpen] = useState(false);
   const isGuest = typeof window !== 'undefined' && localStorage.getItem("guestMode") === "true";
 
   const isActive = (path: string) => {
@@ -24,7 +23,6 @@ export default function BottomNavigation() {
   };
 
   const handleSignOut = async () => {
-    setProfileOpen(false);
     await signOut();
     setLocation("/");
   };
@@ -79,8 +77,8 @@ export default function BottomNavigation() {
   return (
     <>
       {/* Bottom Navigation */}
-      <nav className="fixed bottom-0 left-0 right-0 z-40 border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 md:hidden overflow-y-visible overflow-x-hidden">
-        <div className="flex items-center justify-around h-16 px-2 gap-1 overflow-visible">
+      <nav className="fixed bottom-0 left-0 right-0 z-40 border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 md:hidden">
+        <div className="flex items-center justify-around h-16 px-2 gap-1">
           {navItems.map((item, idx) => {
             if (item.divider) {
               return (
@@ -93,37 +91,29 @@ export default function BottomNavigation() {
 
             if (item.label === "الحساب") {
               return (
-                <div key={`profile-${idx}`} className="relative">
-                  <button 
-                    onClick={() => setProfileOpen(!profileOpen)}
-                    className="p-2 rounded-lg hover:bg-accent/10 transition-all duration-300 hover:scale-110 relative"
-                  >
+                <div key={`profile-${idx}`} className="relative group">
+                  <button className="p-2 rounded-lg hover:bg-accent/10 transition-all duration-300 group-hover:scale-110">
                     {item.icon}
                   </button>
                   {/* Profile Dropdown */}
-                  {profileOpen && (
-                    <div className="fixed bottom-20 right-4 w-48 bg-background border rounded-lg shadow-xl z-50 animate-in fade-in slide-in-from-bottom-2 duration-200">
-                      {user && (
-                        <>
-                          <Link href="/seller/profile">
-                            <button 
-                              onClick={() => setProfileOpen(false)}
-                              className="w-full text-right px-4 py-2 hover:bg-accent/10 rounded-t-lg text-sm transition-colors"
-                            >
-                              الملف الشخصي
-                            </button>
-                          </Link>
-                          <button
-                            onClick={handleSignOut}
-                            className="w-full text-right px-4 py-2 hover:bg-destructive/10 text-destructive rounded-b-lg text-sm transition-colors flex items-center justify-end gap-2"
-                          >
-                            <LogOut className="h-4 w-4" />
-                            خروج
+                  <div className="absolute bottom-full right-0 mb-2 w-32 bg-background border rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 origin-bottom">
+                    {user && (
+                      <>
+                        <Link href="/seller/profile">
+                          <button className="w-full text-right px-4 py-2 hover:bg-accent/10 rounded-t-lg text-sm transition-colors">
+                            الملف الشخصي
                           </button>
-                        </>
-                      )}
-                    </div>
-                  )}
+                        </Link>
+                        <button
+                          onClick={handleSignOut}
+                          className="w-full text-right px-4 py-2 hover:bg-destructive/10 text-destructive rounded-b-lg text-sm transition-colors flex items-center justify-end gap-2"
+                        >
+                          <LogOut className="h-4 w-4" />
+                          خروج
+                        </button>
+                      </>
+                    )}
+                  </div>
                 </div>
               );
             }

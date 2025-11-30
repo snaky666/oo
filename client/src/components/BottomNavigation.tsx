@@ -79,8 +79,8 @@ export default function BottomNavigation() {
   return (
     <>
       {/* Bottom Navigation */}
-      <nav className="fixed bottom-0 left-0 right-0 z-40 border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 md:hidden overflow-visible">
-        <div className="flex items-center justify-around h-16 px-2 gap-1">
+      <nav className="fixed bottom-0 left-0 right-0 z-40 border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 md:hidden overflow-y-visible overflow-x-hidden">
+        <div className="flex items-center justify-around h-16 px-2 gap-1 overflow-visible">
           {navItems.map((item, idx) => {
             if (item.divider) {
               return (
@@ -93,7 +93,7 @@ export default function BottomNavigation() {
 
             if (item.label === "الحساب") {
               return (
-                <div key={`profile-${idx}`} className="relative">
+                <div key={`profile-${idx}`} className="relative z-50 overflow-visible">
                   <button 
                     onClick={() => setProfileOpen(!profileOpen)}
                     className="p-2 rounded-lg hover:bg-accent/10 transition-all duration-300 hover:scale-110 z-40 relative"
@@ -102,7 +102,7 @@ export default function BottomNavigation() {
                   </button>
                   {/* Profile Dropdown */}
                   {profileOpen && (
-                    <div className="absolute bottom-full -left-12 mb-2 w-44 bg-background border rounded-lg shadow-xl z-50 animate-in fade-in slide-in-from-bottom-2 duration-200">
+                    <div className="absolute bottom-full -left-12 mb-2 w-48 bg-background border rounded-lg shadow-xl z-50 animate-in fade-in slide-in-from-bottom-2 duration-200 overflow-visible">
                       {user && (
                         <>
                           <Link href="/seller/profile">

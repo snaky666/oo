@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Link, useLocation } from "wouter";
-import { Home, MessageSquare, Goat, LayoutDashboard, Settings, LogOut, ShoppingCart } from "lucide-react";
+import { Home, MessageSquare, Package, LayoutDashboard, Settings, LogOut, ShoppingCart } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 
@@ -40,7 +40,7 @@ export default function BottomNavigation() {
     // Logged in or guest - full nav
     navItems = [
       { icon: <Home className="h-5 w-5" />, label: "الرئيسية", href: "/landing" },
-      { icon: <Goat className="h-5 w-5" />, label: "الأضاحي", href: "/browse" },
+      { icon: <Package className="h-5 w-5" />, label: "الأضاحي", href: "/browse" },
     ];
 
     if (user && (user.role === "buyer" || user.role === "seller")) {

@@ -1,8 +1,16 @@
 import { createContext, useContext, useEffect, useState } from "react";
-import { User as FirebaseUser, onAuthStateChanged, signOut as firebaseSignOut, signInWithPopup, setPersistence, browserLocalPersistence, signInAnonymously } from "firebase/auth";
+import { User as FirebaseUser, onAuthStateChanged, signOut as firebaseSignOut, signInWithPopup, signInWithRedirect, getRedirectResult, setPersistence, browserLocalPersistence, signInAnonymously } from "firebase/auth";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { auth, db, googleProvider } from "@/lib/firebase";
 import { User, UserRole } from "@shared/schema";
+
+// Helper function to detect if device is mobile
+const isMobileDevice = (): boolean => {
+  if (typeof window === 'undefined') return false;
+  const userAgent = navigator.userAgent.toLowerCase();
+  const mobilePatterns = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i;
+  return mobilePatterns.test(userAgent) || window.innerWidth < 768;
+};
 
 interface AuthContextType {
   user: User | null;
@@ -45,6 +53,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Set Firebase persistence to browser local storage
     setPersistence(auth, browserLocalPersistence)
       .then(() => {
+        // Handle redirect result from Google Sign-In (desktop only)
+        getRedirectResult(auth)
+          .then(async (result) => {
+            if (result) {
+              // User signed in via redirect
+              const firebaseUser = result.user;
+              const userDocRef = doc(db, "users", firebaseUser.uid);
+              const userDoc = await getDoc(userDocRef);
+              
+              if (userDoc.exists()) {
+                const existingUser = userDoc.data() as User;
+                setUser(existingUser);
+              } else {
+                // New user - sign out and wait for role selection
+                await firebaseSignOut(auth);
+              }
+            }
+          })
+          .catch((error) => {
+            console.error("Error handling redirect result:", error);
+          });
+
         // Persistence set successfully
         const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
           setFirebaseUser(firebaseUser);
@@ -74,7 +104,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signInWithGoogle = async (role?: UserRole): Promise<{ success: boolean; error?: string; userExists?: boolean }> => {
     try {
-      const result = await signInWithPopup(auth, googleProvider);
+      const isMobile = isMobileDevice();
+      console.log(`📱 Google Sign-In: ${isMobile ? 'Using Popup (Mobile)' : 'Using Redirect (Desktop)'}`);
+
+      let result;
+      if (isMobile) {
+        // Use popup on mobile devices (avoids sessionStorage issues)
+        result = await signInWithPopup(auth, googleProvider);
+      } else {
+        // Use redirect on desktop (better UX on large screens)
+        await signInWithRedirect(auth, googleProvider);
+        return { success: true, error: "جاري التوجيه إلى Google..." };
+      }
+
       const firebaseUser = result.user;
       
       const userDocRef = doc(db, "users", firebaseUser.uid);
@@ -125,6 +167,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         errorMessage = "تم حظر نافذة تسجيل الدخول من قبل المتصفح";
       } else if (error.code === 'auth/cancelled-popup-request') {
         errorMessage = "تم إلغاء طلب تسجيل الدخول";
+      } else if (error.code === 'auth/missing-iframe-start') {
+        errorMessage = "خطأ في معالجة الـ Redirect، يرجى المحاولة مرة أخرى";
       }
       
       return { success: false, error: errorMessage };

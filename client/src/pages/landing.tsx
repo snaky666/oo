@@ -1,7 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import Header from "@/components/Header";
 import { Link } from "wouter";
 import { useAuth } from "@/contexts/AuthContext";
 import { 
@@ -22,7 +21,6 @@ export default function LandingPage() {
 
   return (
     <div className="bg-background w-full">
-      <Header />
 
       {/* Hero Section */}
       <section className="relative h-[500px] md:h-[600px] overflow-hidden">

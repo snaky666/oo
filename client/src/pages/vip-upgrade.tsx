@@ -3,7 +3,6 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useLocation } from "wouter";
 import { doc, updateDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import Header from "@/components/Header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -32,7 +31,6 @@ export default function VIPUpgrade() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Header />
 
       <div className="max-w-6xl mx-auto px-4 md:px-6 lg:px-8 py-12">
         {/* Back Button */}

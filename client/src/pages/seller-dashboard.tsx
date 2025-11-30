@@ -6,7 +6,6 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useLocation } from "wouter";
 import { Sheep, insertSheepSchema, InsertSheep, algeriaCities } from "@shared/schema";
 import { getMunicipalitiesForWilaya, getMunicipalitiesForWilayaSync } from "@shared/algeriaMunicipalities";
-import Header from "@/components/Header";
 import SheepCard from "@/components/SheepCard";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -209,7 +208,6 @@ export default function SellerDashboard() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Header />
 
       <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8 py-8">
         {/* Page Header */}

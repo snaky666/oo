@@ -42,9 +42,14 @@ The project uses a monorepo structure with `client/` for the React frontend, `se
 ## External Dependencies
 -   **Firebase**:
     -   **Firebase Firestore**: Database for all application data.
-    -   **Firebase Authentication**: User authentication and authorization.
+    -   **Firebase Authentication**: User authentication and authorization (supports Email/Password and Google Sign-In with WebView optimization).
     -   **Firebase Admin SDK**: Server-side access to Firebase services.
 -   **ImgBB API**: External service for hosting images uploaded by users.
 -   **Nodemailer**: For sending transactional emails (verification, password reset, order notifications).
 -   **Vercel**: Deployment platform for the application, utilizing serverless functions for the API.
 -   **Municipalities Data**: Static JSON file containing all Algerian commune data.
+
+## Recent Changes (Nov 30, 2025)
+- **UI Updates**: Changed bottom navigation icons - "الأضاحي" (Sheep) uses Cloud icon ☁️, "طلباتي" (Orders) uses ShoppingCart 🛒
+- **WebView Google OAuth Fix**: Added WebView detection and automatic redirect handling for Google Sign-In to bypass Chrome WebView user-agent restrictions (Error 403: disallowed_useragent). Now uses signInWithRedirect for WebView which opens OAuth in external browser/Custom Tabs.
+- **Navigation Fixes**: Fixed profile dropdown positioning in mobile bottom navigation to prevent content cutoff

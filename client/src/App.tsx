@@ -24,6 +24,7 @@ import OrdersPage from "@/pages/orders";
 import OrderDetailPage from "@/pages/order-detail";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import PublicRoute from "@/components/PublicRoute";
+import BottomNavigation from "@/components/BottomNavigation";
 
 const OrderDetailPageWrapper = (params: any) => (
   <ProtectedRoute allowedRoles={["buyer", "seller", "admin"]}>
@@ -128,7 +129,10 @@ function App() {
         <AuthProvider>
           <TooltipProvider>
             <Toaster />
-            <Router />
+            <div className="flex flex-col min-h-screen">
+              <Router />
+              <BottomNavigation />
+            </div>
           </TooltipProvider>
         </AuthProvider>
       </ThemeProvider>

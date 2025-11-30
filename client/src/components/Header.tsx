@@ -28,84 +28,61 @@ export default function Header() {
           </Link>
 
           {/* Desktop Navigation */}
-          <nav className="hidden lg:flex items-center gap-2 mr-auto ml-8">
-            {(!user && !isGuest) ? (
-              <>
-                <Link href="/">
-                  <Button
-                    variant={isActive("/") ? "default" : "ghost"}
-                    size="sm"
-                  >
-                    الرئيسية
-                  </Button>
-                </Link>
-                <Link href="/contact">
-                  <Button
-                    variant={isActive("/contact") ? "default" : "ghost"}
-                    size="sm"
-                  >
-                    تواصل
-                  </Button>
-                </Link>
-              </>
-            ) : (
-              <>
-                <Link href="/landing">
-                  <Button
-                    variant={isActive("/landing") ? "default" : "ghost"}
-                    size="sm"
-                  >
-                    الرئيسية
-                  </Button>
-                </Link>
-                <Link href="/browse">
-                  <Button
-                    variant={isActive("/browse") ? "default" : "ghost"}
-                    size="sm"
-                  >
-                    الأضاحي
-                  </Button>
-                </Link>
-                {user && (user.role === "buyer" || user.role === "seller") && (
-                  <Link href="/orders">
-                    <Button
-                      variant={isActive("/orders") ? "default" : "ghost"}
-                      size="sm"
-                    >
-                      طلباتي
-                    </Button>
-                  </Link>
-                )}
-                {user?.role === "seller" && (
-                  <Link href="/seller">
-                    <Button
-                      variant={isActive("/seller") ? "default" : "ghost"}
-                      size="sm"
-                    >
-                      لوحتي
-                    </Button>
-                  </Link>
-                )}
-                {user?.role === "admin" && (
-                  <Link href="/admin">
-                    <Button
-                      variant={isActive("/admin") ? "default" : "ghost"}
-                      size="sm"
-                    >
-                      الإدارة
-                    </Button>
-                  </Link>
-                )}
-                <Link href="/contact">
-                  <Button
-                    variant={isActive("/contact") ? "default" : "ghost"}
-                    size="sm"
-                  >
-                    تواصل
-                  </Button>
-                </Link>
-              </>
+          <nav className="hidden md:flex items-center gap-1 mr-auto ml-8">
+            <Link href="/">
+              <Button
+                variant={isActive("/") ? "default" : "ghost"}
+                size="sm"
+              >
+                الرئيسية
+              </Button>
+            </Link>
+            <Link href="/browse">
+              <Button
+                variant={isActive("/browse") ? "default" : "ghost"}
+                size="sm"
+              >
+                الأضاحي
+              </Button>
+            </Link>
+            {user && (user.role === "buyer" || user.role === "seller") && (
+              <Link href="/orders">
+                <Button
+                  variant={isActive("/orders") ? "default" : "ghost"}
+                  size="sm"
+                >
+                  طلباتي
+                </Button>
+              </Link>
             )}
+            {user?.role === "seller" && (
+              <Link href="/seller">
+                <Button
+                  variant={isActive("/seller") ? "default" : "ghost"}
+                  size="sm"
+                >
+                  لوحتي
+                </Button>
+              </Link>
+            )}
+            {user?.role === "admin" && (
+              <Link href="/admin">
+                <Button
+                  variant={isActive("/admin") ? "default" : "ghost"}
+                  size="sm"
+                >
+                  الإدارة
+                </Button>
+              </Link>
+            )}
+            <Link href="/contact">
+              <Button
+                variant={isActive("/contact") ? "default" : "ghost"}
+                size="sm"
+              >
+                تواصل
+              </Button>
+            </Link>
           </nav>
 
           {/* Right Actions */}

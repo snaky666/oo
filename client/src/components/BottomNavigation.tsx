@@ -93,16 +93,16 @@ export default function BottomNavigation() {
 
             if (item.label === "الحساب") {
               return (
-                <div key={`profile-${idx}`} className="relative z-50 overflow-visible">
+                <div key={`profile-${idx}`} className="relative">
                   <button 
                     onClick={() => setProfileOpen(!profileOpen)}
-                    className="p-2 rounded-lg hover:bg-accent/10 transition-all duration-300 hover:scale-110 z-40 relative"
+                    className="p-2 rounded-lg hover:bg-accent/10 transition-all duration-300 hover:scale-110 relative"
                   >
                     {item.icon}
                   </button>
                   {/* Profile Dropdown */}
                   {profileOpen && (
-                    <div className="absolute bottom-full -left-12 mb-2 w-48 bg-background border rounded-lg shadow-xl z-50 animate-in fade-in slide-in-from-bottom-2 duration-200 overflow-visible">
+                    <div className="fixed bottom-20 right-4 w-48 bg-background border rounded-lg shadow-xl z-50 animate-in fade-in slide-in-from-bottom-2 duration-200">
                       {user && (
                         <>
                           <Link href="/seller/profile">

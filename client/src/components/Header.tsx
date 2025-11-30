@@ -2,60 +2,23 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import ThemeToggle from "@/components/ThemeToggle";
 import { Link, useLocation } from "wouter";
-import { LogOut, Menu, X, Home, MessageSquare, ShoppingBag } from "lucide-react";
-import { useState } from "react";
+import { Zap } from "lucide-react";
 import { cn } from "@/lib/utils";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
 export default function Header() {
-  const { user, signOut } = useAuth();
+  const { user } = useAuth();
   const [location, setLocation] = useLocation();
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const isGuest = typeof window !== 'undefined' && localStorage.getItem("guestMode") === "true";
-
-  const handleSignOut = async () => {
-    await signOut();
-    setLocation("/");
-  };
-
-  const getInitials = (email: string) => {
-    return email.charAt(0).toUpperCase();
-  };
-
-  const getDashboardLink = () => {
-    if (!user) return "/login";
-    if (user.role === "admin") return "/admin";
-    if (user.role === "seller") return "/seller";
-    return "/browse";
-  };
 
   const isActive = (path: string) => {
     return location === path;
   };
 
-  const getRoleLabel = (role: string) => {
-    switch (role) {
-      case "admin": return "مدير";
-      case "seller": return "بائع";
-      case "buyer": return "مشتري";
-      default: return role;
-    }
-  };
-
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <header className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8">
-        <div className="flex h-16 md:h-20 items-center justify-between gap-4">
+        <div className="flex h-16 md:h-20 items-center justify-between">
           {/* Logo */}
-          <Link href="/landing" className="flex items-center gap-2 px-2 py-1 rounded-md" data-testid="link-home">
+          <Link href="/landing" className="flex items-center gap-2 px-2 py-1 rounded-md flex-1">
             <img 
               src="/logo.png" 
               alt="أضحيتي" 
@@ -63,240 +26,28 @@ export default function Header() {
             />
           </Link>
 
-          {/* Desktop Navigation */}
-          <nav className="hidden md:flex items-center gap-1">
-            {/* Home Icon - متاح للجميع */}
-            {(user || isGuest) && (
-              <Link href="/landing" className={cn("rounded-md hover-elevate", isActive("/landing") && "bg-accent/10")}>
-                <Button 
-                  variant="ghost" 
-                  size="icon"
-                  title="الصفحة الرئيسية"
-                  className={cn(isActive("/landing") && "text-primary")}
-                >
-                  <Home className="h-5 w-5" />
-                </Button>
-              </Link>
-            )}
-
-            {/* Contact Icon - متاح للجميع */}
-            <Link href="/contact" className={cn("rounded-md hover-elevate", isActive("/contact") && "bg-accent/10")}>
-              <Button 
-                variant="ghost" 
-                size="icon"
-                title="تواصل معنا"
-                className={cn(isActive("/contact") && "text-primary")}
-              >
-                <MessageSquare className="h-5 w-5" />
-              </Button>
-            </Link>
-
-            {/* الأضاحي - متاح للجميع (مسجلين وزائرين) */}
-            <Link href="/browse" className={cn("rounded-md hover-elevate", isActive("/browse") && "bg-accent/10")}>
-              <Button 
-                variant="ghost" 
-                data-testid="link-sheep"
-                className={cn(isActive("/browse") && "text-primary font-semibold")}
-              >
-                الأضاحي
-              </Button>
-            </Link>
-
-            {/* طلباتي - فقط للمشترين والبائعين */}
-            {user && (user.role === "buyer" || user.role === "seller") && (
-              <Link href="/orders" className={cn("rounded-md hover-elevate", isActive("/orders") && "bg-accent/10")}>
-                <Button 
-                  variant="ghost" 
-                  size="icon"
-                  title="طلباتي"
-                  data-testid="link-orders"
-                  className={cn(isActive("/orders") && "text-primary")}
-                >
-                  <ShoppingBag className="h-5 w-5" />
-                </Button>
-              </Link>
-            )}
-
-            {/* لوحة تحكم البائع - فقط للبائعين */}
-            {user?.role === "seller" && (
-              <Link href="/seller" className={cn("rounded-md hover-elevate", isActive("/seller") && "bg-accent/10")}>
-                <Button 
-                  variant="ghost" 
-                  data-testid="link-seller-dashboard"
-                  className={cn(isActive("/seller") && "text-primary font-semibold")}
-                >
-                  لوحة تحكم البائع
-                </Button>
-              </Link>
-            )}
-
-            {/* لوحة تحكم الإدارة - فقط للمسؤول */}
-            {user?.role === "admin" && (
-              <Link href="/admin" className={cn("rounded-md hover-elevate", isActive("/admin") && "bg-accent/10")}>
-                <Button 
-                  variant="ghost" 
-                  data-testid="link-admin-dashboard"
-                  className={cn(isActive("/admin") && "text-primary font-semibold")}
-                >
-                  لوحة تحكم الإدارة
-                </Button>
-              </Link>
-            )}
-          </nav>
-
-          {/* Right side actions */}
-          <div className="flex items-center gap-2">
+          {/* Right Actions */}
+          <div className="flex items-center gap-2 ml-auto">
             <ThemeToggle />
             
-            {user ? (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" className="rounded-full" data-testid="button-user-menu">
-                    <Avatar className="h-9 w-9">
-                      <AvatarFallback>{getInitials(user.email)}</AvatarFallback>
-                    </Avatar>
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="start" className="w-56">
-                  <DropdownMenuLabel>
-                    <div className="flex flex-col gap-1">
-                      <p className="text-sm font-medium">{user.email}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {getRoleLabel(user.role)}
-                      </p>
-                    </div>
-                  </DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={handleSignOut} data-testid="button-signout">
-                    <LogOut className="ml-2 h-4 w-4" />
-                    تسجيل الخروج
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            ) : (
-              <>
-                <Link href="/login">
-                  <Button variant="ghost" className="hidden sm:block" data-testid="link-login">
-                    تسجيل الدخول
-                  </Button>
-                </Link>
-                <Link href="/register">
-                  <Button data-testid="link-register">
-                    إنشاء حساب
-                  </Button>
-                </Link>
-              </>
+            {/* VIP Button */}
+            {user && (user.role === "buyer" || user.role === "seller") && (
+              <Link href="/vip-packages">
+                <Button
+                  variant={isActive("/vip-packages") || isActive("/vip-upgrade") ? "default" : "outline"}
+                  size="sm"
+                  className={cn(
+                    "gap-2 transition-all duration-300",
+                    (isActive("/vip-packages") || isActive("/vip-upgrade")) && "bg-gradient-to-r from-yellow-500 to-amber-600 hover:from-yellow-600 hover:to-amber-700 text-white"
+                  )}
+                >
+                  <Zap className="h-4 w-4" />
+                  <span className="hidden sm:inline">VIP</span>
+                </Button>
+              </Link>
             )}
-
-            {/* Mobile menu button */}
-            <Button
-              variant="ghost"
-              size="icon"
-              className="md:hidden"
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              data-testid="button-mobile-menu"
-            >
-              {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-            </Button>
           </div>
         </div>
-
-        {/* Mobile Navigation */}
-        {mobileMenuOpen && (
-          <div className="md:hidden border-t py-4 space-y-2">
-            {/* Home Icon - متاح للجميع */}
-            {(user || isGuest) && (
-              <Link href="/landing">
-                <Button
-                  variant="ghost"
-                  className={cn("w-full justify-start", isActive("/landing") && "bg-accent/10 text-primary font-semibold")}
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  <Home className="mr-2 h-5 w-5" />
-                  الصفحة الرئيسية
-                </Button>
-              </Link>
-            )}
-
-            {/* Contact Icon - متاح للجميع */}
-            <Link href="/contact">
-              <Button
-                variant="ghost"
-                className={cn("w-full justify-start", isActive("/contact") && "bg-accent/10 text-primary font-semibold")}
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                <MessageSquare className="mr-2 h-5 w-5" />
-                تواصل معنا
-              </Button>
-            </Link>
-
-            {/* الأضاحي - متاح للجميع (مسجلين وزائرين) */}
-            <Link href="/browse">
-              <Button
-                variant="ghost"
-                className={cn("w-full justify-start", isActive("/browse") && "bg-accent/10 text-primary font-semibold")}
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                الأضاحي
-              </Button>
-            </Link>
-
-            {/* طلباتي - فقط للمشترين والبائعين */}
-            {user && (user.role === "buyer" || user.role === "seller") && (
-              <Link href="/orders">
-                <Button
-                  variant="ghost"
-                  className={cn("w-full justify-start", isActive("/orders") && "bg-accent/10 text-primary font-semibold")}
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  <ShoppingBag className="mr-2 h-5 w-5" />
-                  طلباتي
-                </Button>
-              </Link>
-            )}
-
-            {/* لوحة تحكم البائع - فقط للبائعين */}
-            {user?.role === "seller" && (
-              <Link href="/seller">
-                <Button
-                  variant="ghost"
-                  className={cn("w-full justify-start", isActive("/seller") && "bg-accent/10 text-primary font-semibold")}
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  لوحة تحكم البائع
-                </Button>
-              </Link>
-            )}
-
-            {/* لوحة تحكم الإدارة - فقط للمسؤول */}
-            {user?.role === "admin" && (
-              <Link href="/admin">
-                <Button
-                  variant="ghost"
-                  className={cn("w-full justify-start", isActive("/admin") && "bg-accent/10 text-primary font-semibold")}
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  لوحة تحكم الإدارة
-                </Button>
-              </Link>
-            )}
-
-            {/* تسجيل الدخول - فقط إذا لم يكن مسجل دخول */}
-            {!user && (
-              <>
-                <Link href="/login">
-                  <Button
-                    variant="ghost"
-                    className="w-full justify-start"
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    تسجيل الدخول
-                  </Button>
-                </Link>
-              </>
-            )}
-          </div>
-        )}
       </div>
     </header>
   );

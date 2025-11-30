@@ -1,3 +1,4 @@
+import Header from "@/components/Header";
 import { useState, useEffect } from "react";
 import { collection, query, where, getDocs, addDoc, deleteDoc, doc, updateDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
@@ -208,6 +209,7 @@ export default function SellerDashboard() {
 
   return (
     <div className="min-h-screen bg-background">
+      <Header />
 
       <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8 py-8">
         {/* Page Header */}

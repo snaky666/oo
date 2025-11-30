@@ -1,3 +1,4 @@
+import Header from "@/components/Header";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
@@ -22,6 +23,7 @@ export default function VIPPackages() {
 
   return (
     <div className="min-h-screen bg-background">
+      <Header />
       <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8 py-12">
         <Button variant="ghost" onClick={() => setLocation(user.role === "seller" ? "/seller" : "/browse")} className="mb-8">
           <ArrowRight className="ml-2 h-4 w-4" />

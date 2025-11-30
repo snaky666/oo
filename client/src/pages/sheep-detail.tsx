@@ -1,3 +1,4 @@
+import Header from "@/components/Header";
 import { useState, useEffect } from "react";
 import { useRoute } from "wouter";
 import { useForm, Controller } from "react-hook-form";
@@ -171,6 +172,7 @@ export default function SheepDetail() {
   if (loading) {
     return (
       <div className="min-h-screen bg-background">
+      <Header />
         <div className="max-w-6xl mx-auto px-4 md:px-6 lg:px-8 py-8">
           <Skeleton className="h-8 w-32 mb-8" />
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -192,6 +194,7 @@ export default function SheepDetail() {
 
   return (
     <div className="min-h-screen bg-background">
+      <Header />
 
       <div className="max-w-6xl mx-auto px-4 md:px-6 lg:px-8 py-8">
         {/* Back Button */}

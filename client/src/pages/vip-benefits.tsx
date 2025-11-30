@@ -1,3 +1,4 @@
+import Header from "@/components/Header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Check, Zap, Gift, Users, TrendingUp, Clock, Star } from "lucide-react";
@@ -27,6 +28,7 @@ export default function VIPBenefits() {
 
   return (
     <div className="min-h-screen bg-background">
+      <Header />
       <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8 py-12">
         <Button variant="ghost" onClick={() => setLocation("/vip-upgrade")} className="mb-8">
           ← العودة

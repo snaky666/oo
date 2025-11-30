@@ -1,3 +1,4 @@
+import Header from "@/components/Header";
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLocation } from "wouter";

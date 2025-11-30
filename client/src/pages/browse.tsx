@@ -1,3 +1,4 @@
+import Header from "@/components/Header";
 import { useState, useEffect } from "react";
 import { Sheep, algeriaCities } from "@shared/schema";
 import SheepCard from "@/components/SheepCard";
@@ -213,6 +214,7 @@ export default function BrowseSheep() {
 
   return (
     <div className="min-h-screen bg-background">
+      <Header />
 
       <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8 py-8">
         {/* Page Header */}

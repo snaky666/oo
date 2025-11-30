@@ -1,9 +1,11 @@
+import Header from "@/components/Header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Mail, Phone, MessageCircle, Facebook, Linkedin, MessageSquare } from "lucide-react";
 
 export default function ContactPage() {
   return (
     <div className="min-h-screen bg-background">
+      <Header />
 
       {/* Hero Section */}
       <section className="py-12 md:py-20 bg-gradient-to-r from-primary/10 to-primary/5 border-b">

@@ -1,3 +1,4 @@
+import Header from "@/components/Header";
 import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
@@ -148,6 +149,7 @@ export default function VIPCheckout() {
 
   return (
     <div className="min-h-screen bg-background">
+      <Header />
       <div className="max-w-2xl mx-auto px-4 md:px-6 lg:px-8 py-12">
         <h1 className="text-3xl font-bold mb-8">ترقية VIP - باقة {vipPackage && VIP_PACKAGES[vipPackage]?.nameAr}</h1>
 

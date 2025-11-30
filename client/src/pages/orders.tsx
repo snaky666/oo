@@ -1,3 +1,4 @@
+import Header from "@/components/Header";
 import { useState, useEffect } from "react";
 import { collection, query, where, getDocs, doc, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
@@ -199,6 +200,7 @@ export default function OrdersPage() {
 
   return (
     <div className="min-h-screen bg-background">
+      <Header />
       <div className="max-w-6xl mx-auto px-4 md:px-6 lg:px-8 py-12">
         <div className="flex items-center gap-3 mb-8">
           <ShoppingBag className="h-8 w-8 text-primary" />

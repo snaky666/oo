@@ -1,3 +1,4 @@
+import Header from "@/components/Header";
 import { useState, useEffect } from "react";
 import { doc, getDoc, updateDoc, collection, query, where, getDocs } from "firebase/firestore";
 import { db } from "@/lib/firebase";
@@ -199,6 +200,7 @@ export default function OrderDetailPage({ params }: { params: { id: string } }) 
   if (loading) {
     return (
       <div className="min-h-screen bg-background">
+      <Header />
         <div className="max-w-4xl mx-auto px-4 md:px-6 lg:px-8 py-12">
           <p className="text-center text-muted-foreground">جاري التحميل...</p>
         </div>
@@ -209,6 +211,7 @@ export default function OrderDetailPage({ params }: { params: { id: string } }) 
   if (!order) {
     return (
       <div className="min-h-screen bg-background">
+      <Header />
         <div className="max-w-4xl mx-auto px-4 md:px-6 lg:px-8 py-12">
           <p className="text-center text-muted-foreground">الطلب غير موجود</p>
         </div>
@@ -222,6 +225,7 @@ export default function OrderDetailPage({ params }: { params: { id: string } }) 
 
   return (
     <div className="min-h-screen bg-background">
+      <Header />
       <div className="max-w-4xl mx-auto px-4 md:px-6 lg:px-8 py-12">
         {/* الزر الخلفي */}
         <Button

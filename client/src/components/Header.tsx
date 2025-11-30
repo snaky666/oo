@@ -2,16 +2,24 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import ThemeToggle from "@/components/ThemeToggle";
 import { Link, useLocation } from "wouter";
-import { Crown } from "lucide-react";
+import { Crown, LogOut, User } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useState } from "react";
 
 export default function Header() {
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
   const [location, setLocation] = useLocation();
+  const [profileOpen, setProfileOpen] = useState(false);
   const isGuest = typeof window !== 'undefined' && localStorage.getItem("guestMode") === "true";
 
   const isActive = (path: string) => {
     return location === path;
+  };
+
+  const handleSignOut = async () => {
+    setProfileOpen(false);
+    await signOut();
+    setLocation("/");
   };
 
   return (
@@ -104,6 +112,44 @@ export default function Header() {
                   <span className="hidden sm:inline">VIP</span>
                 </Button>
               </Link>
+            )}
+
+            {/* Profile Dropdown (Desktop) */}
+            {user && (
+              <div className="relative group hidden md:block">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="gap-2"
+                  onClick={() => setProfileOpen(!profileOpen)}
+                >
+                  <User className="h-5 w-5" />
+                  <span className="hidden lg:inline text-sm">الحساب</span>
+                </Button>
+                
+                {/* Dropdown Menu */}
+                <div className={cn(
+                  "absolute top-full right-0 mt-2 w-40 bg-background border rounded-lg shadow-lg transition-all duration-200 origin-top",
+                  profileOpen ? "opacity-100 visible scale-y-100" : "opacity-0 invisible scale-y-95"
+                )}>
+                  <Link href="/seller/profile">
+                    <button 
+                      onClick={() => setProfileOpen(false)}
+                      className="w-full text-right px-4 py-2 hover:bg-accent/10 rounded-t-lg text-sm transition-colors flex items-center justify-end gap-2 border-b"
+                    >
+                      <User className="h-4 w-4" />
+                      الملف الشخصي
+                    </button>
+                  </Link>
+                  <button
+                    onClick={handleSignOut}
+                    className="w-full text-right px-4 py-2 hover:bg-destructive/10 text-destructive rounded-b-lg text-sm transition-colors flex items-center justify-end gap-2"
+                  >
+                    <LogOut className="h-4 w-4" />
+                    خروج
+                  </button>
+                </div>
+              </div>
             )}
           </div>
         </div>

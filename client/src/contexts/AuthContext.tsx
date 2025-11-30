@@ -12,15 +12,6 @@ const isMobileDevice = (): boolean => {
   return mobilePatterns.test(userAgent) || window.innerWidth < 768;
 };
 
-// Helper function to detect if running in WebView
-const isWebView = (): boolean => {
-  if (typeof window === 'undefined') return false;
-  const userAgent = navigator.userAgent;
-  return /wv|Version|WebView/.test(userAgent) || 
-         (typeof navigator !== 'undefined' && (navigator as any).webkitTemporaryStorage) ||
-         (window as any).JSInterface !== undefined;
-};
-
 interface AuthContextType {
   user: User | null;
   firebaseUser: FirebaseUser | null;
@@ -114,23 +105,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signInWithGoogle = async (role?: UserRole): Promise<{ success: boolean; error?: string; userExists?: boolean }> => {
     try {
       const isMobile = isMobileDevice();
-      const inWebView = isWebView();
-      console.log(`📱 Google Sign-In: WebView: ${inWebView}, Mobile: ${isMobile}`);
+      console.log(`📱 Google Sign-In: ${isMobile ? 'Using Popup (Mobile)' : 'Using Redirect (Desktop)'}`);
 
       let result;
-      
-      if (inWebView) {
-        // Use redirect for WebView (will open in external browser/custom tabs)
-        console.log("🌐 Using Redirect for WebView");
-        await signInWithRedirect(auth, googleProvider);
-        return { success: true, error: "جاري التوجيه إلى Google..." };
-      } else if (isMobile) {
+      if (isMobile) {
         // Use popup on mobile devices (avoids sessionStorage issues)
-        console.log("📱 Using Popup for Mobile");
         result = await signInWithPopup(auth, googleProvider);
       } else {
         // Use redirect on desktop (better UX on large screens)
-        console.log("💻 Using Redirect for Desktop");
         await signInWithRedirect(auth, googleProvider);
         return { success: true, error: "جاري التوجيه إلى Google..." };
       }

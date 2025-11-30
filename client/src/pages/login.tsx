@@ -12,10 +12,20 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, LogIn } from "lucide-react";
 import { FcGoogle } from "react-icons/fc";
 import loginBgGif from "@assets/images/login-bg.gif";
+
+// Helper function to detect WebView
+const isWebView = (): boolean => {
+  if (typeof window === 'undefined') return false;
+  const userAgent = navigator.userAgent;
+  return /wv|Version|WebView/.test(userAgent) || 
+         (typeof navigator !== 'undefined' && (navigator as any).webkitTemporaryStorage) ||
+         (window as any).JSInterface !== undefined;
+};
 
 const loginSchema = z.object({
   email: z.string().email("البريد الإلكتروني غير صالح"),
@@ -34,6 +44,7 @@ export default function Login() {
   const [guestLoading, setGuestLoading] = useState(false);
   const [waitingForGoogleRedirect, setWaitingForGoogleRedirect] = useState(false);
   const [showAdminLogin, setShowAdminLogin] = useState(false);
+  const [showBrowserAlert, setShowBrowserAlert] = useState(false);
 
   const {
     register,
@@ -108,6 +119,16 @@ export default function Login() {
       setWaitingForGoogleRedirect(false);
     }
   }, [waitingForGoogleRedirect, user, setLocation]);
+
+  const handleGoogleSignInClick = () => {
+    if (isWebView()) {
+      // Show alert for WebView users
+      setShowBrowserAlert(true);
+    } else {
+      // For non-WebView, proceed directly
+      handleGoogleSignIn();
+    }
+  };
 
   const handleGoogleSignIn = async () => {
     setGoogleLoading(true);
@@ -244,7 +265,7 @@ export default function Login() {
               type="button"
               variant="outline"
               className="w-full"
-              onClick={handleGoogleSignIn}
+              onClick={handleGoogleSignInClick}
               disabled={loading || googleLoading}
               data-testid="button-google-signin"
             >
@@ -260,6 +281,30 @@ export default function Login() {
                 </>
               )}
             </Button>
+
+            {/* WebView Browser Alert */}
+            <AlertDialog open={showBrowserAlert} onOpenChange={setShowBrowserAlert}>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>فتح متصفح خارجي</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    يرجى فتح متصفح خارجي لإكمال تسجيل الدخول بحساب Google بشكل آمن. سيتم فتح المتصفح الخارجي تلقائياً.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <div className="flex gap-3">
+                  <AlertDialogCancel className="flex-1">إلغاء</AlertDialogCancel>
+                  <AlertDialogAction 
+                    className="flex-1"
+                    onClick={() => {
+                      setShowBrowserAlert(false);
+                      handleGoogleSignIn();
+                    }}
+                  >
+                    متابعة
+                  </AlertDialogAction>
+                </div>
+              </AlertDialogContent>
+            </AlertDialog>
 
             {/* Guest Login Button */}
             <Button

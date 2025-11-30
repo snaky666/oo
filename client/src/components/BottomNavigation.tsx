@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Link, useLocation } from "wouter";
-import { Home, MessageSquare, ShoppingBag, LayoutDashboard, Settings, LogOut } from "lucide-react";
+import { Home, MessageSquare, ShoppingBag, LayoutDashboard, Settings, LogOut, CheckCircle2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 
@@ -47,7 +47,7 @@ export default function BottomNavigation() {
 
     if (user && (user.role === "buyer" || user.role === "seller")) {
       navItems.push({
-        icon: <ShoppingBag className="h-5 w-5" />,
+        icon: <CheckCircle2 className="h-5 w-5" />,
         label: "طلباتي",
         href: "/orders",
       });

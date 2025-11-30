@@ -96,13 +96,13 @@ export default function BottomNavigation() {
                 <div key={`profile-${idx}`} className="relative">
                   <button 
                     onClick={() => setProfileOpen(!profileOpen)}
-                    className="p-2 rounded-lg hover:bg-accent/10 transition-all duration-300 hover:scale-110"
+                    className="p-2 rounded-lg hover:bg-accent/10 transition-all duration-300 hover:scale-110 z-40 relative"
                   >
                     {item.icon}
                   </button>
                   {/* Profile Dropdown */}
                   {profileOpen && (
-                    <div className="fixed bottom-16 left-1/2 transform -translate-x-1/2 w-40 bg-background border rounded-lg shadow-xl z-50 animate-in fade-in slide-in-from-bottom-2 duration-200">
+                    <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 w-44 bg-background border rounded-lg shadow-xl z-50 animate-in fade-in slide-in-from-bottom-2 duration-200">
                       {user && (
                         <>
                           <Link href="/seller/profile">

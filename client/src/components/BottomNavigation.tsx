@@ -102,7 +102,7 @@ export default function BottomNavigation() {
                   </button>
                   {/* Profile Dropdown */}
                   {profileOpen && (
-                    <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 w-44 bg-background border rounded-lg shadow-xl z-50 animate-in fade-in slide-in-from-bottom-2 duration-200">
+                    <div className="absolute bottom-full right-2 mb-2 w-44 bg-background border rounded-lg shadow-xl z-50 animate-in fade-in slide-in-from-bottom-2 duration-200">
                       {user && (
                         <>
                           <Link href="/seller/profile">

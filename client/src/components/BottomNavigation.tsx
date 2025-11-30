@@ -1,21 +1,9 @@
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Link, useLocation } from "wouter";
-import { Home, MessageSquare, LayoutDashboard, Settings, LogOut, ShoppingCart } from "lucide-react";
+import { Home, MessageSquare, Cloud, LayoutDashboard, Settings, LogOut, ShoppingCart } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-
-// Sheep Icon Component
-const SheepIcon = ({ className }: { className?: string }) => (
-  <svg className={className} viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
-    <circle cx="12" cy="8" r="3.5" fill="white" stroke="currentColor" strokeWidth="0.5"/>
-    <circle cx="7" cy="6" r="2.5" fill="white" stroke="currentColor" strokeWidth="0.5"/>
-    <circle cx="17" cy="6" r="2.5" fill="white" stroke="currentColor" strokeWidth="0.5"/>
-    <path d="M12 11.5C8.5 11.5 6 13.5 6 16v3c0 1.5.5 3 1.5 4" stroke="currentColor" strokeWidth="1.5" fill="none" strokeLinecap="round"/>
-    <path d="M12 11.5C15.5 11.5 18 13.5 18 16v3c0 1.5-.5 3-1.5 4" stroke="currentColor" strokeWidth="1.5" fill="none" strokeLinecap="round"/>
-    <path d="M9 20h6" stroke="currentColor" strokeWidth="1" strokeLinecap="round"/>
-  </svg>
-);
 
 interface NavItem {
   icon: React.ReactNode;
@@ -52,7 +40,7 @@ export default function BottomNavigation() {
     // Logged in or guest - full nav
     navItems = [
       { icon: <Home className="h-5 w-5" />, label: "الرئيسية", href: "/landing" },
-      { icon: <SheepIcon className="h-5 w-5" />, label: "الأضاحي", href: "/browse" },
+      { icon: <Cloud className="h-5 w-5" />, label: "الأضاحي", href: "/browse" },
     ];
 
     if (user && (user.role === "buyer" || user.role === "seller")) {

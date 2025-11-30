@@ -2,7 +2,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import ThemeToggle from "@/components/ThemeToggle";
 import { Link, useLocation } from "wouter";
-import { Zap } from "lucide-react";
+import { Crown } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export default function Header() {
@@ -41,7 +41,7 @@ export default function Header() {
                     (isActive("/vip-packages") || isActive("/vip-upgrade")) && "bg-gradient-to-r from-yellow-500 to-amber-600 hover:from-yellow-600 hover:to-amber-700 text-white"
                   )}
                 >
-                  <Zap className="h-4 w-4" />
+                  <Crown className="h-5 w-5" />
                   <span className="hidden sm:inline">VIP</span>
                 </Button>
               </Link>

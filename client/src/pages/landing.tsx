@@ -22,6 +22,7 @@ export default function LandingPage() {
 
   return (
     <div className="bg-background w-full">
+      <Header />
 
       {/* Hero Section */}
       <section className="relative h-[500px] md:h-[600px] overflow-hidden">

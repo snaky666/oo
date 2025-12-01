@@ -40,12 +40,12 @@ export default function BottomNavigation() {
     // Logged in or guest - full nav
     navItems = [
       { icon: <Home className="h-5 w-5" />, label: "الرئيسية", href: "/landing" },
-      { icon: <ShoppingBag className="h-5 w-5" />, label: "الأضاحي", href: "/browse" },
+      { icon: <CheckCircle2 className="h-5 w-5" />, label: "الأضاحي", href: "/browse" },
     ];
 
     if (user && (user.role === "buyer" || user.role === "seller")) {
       navItems.push({
-        icon: <CheckCircle2 className="h-5 w-5" />,
+        icon: <ShoppingBag className="h-5 w-5" />,
         label: "طلباتي",
         href: "/orders",
       });

@@ -46,6 +46,7 @@ SMTP_PORT = "465"
 SMTP_USER = "verification@odhiyaty.com"
 SMTP_PASSWORD = "silo@salah55"
 SMTP_FROM_EMAIL = "verification@odhiyaty.com"
+RESEND_API_KEY = "re_8NuUrKwr_DLYT1fzS2mTNkysve4vVTnuS"
 
 [deployment]
 deploymentTarget = "vm"

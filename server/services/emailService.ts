@@ -1,8 +1,11 @@
-import nodemailer from 'nodemailer';
-import fs from 'fs';
-import path from 'path';
+import { Resend } from 'resend';
 
 const isDev = process.env.NODE_ENV !== 'production';
+
+// Try to get Resend API key from environment
+const RESEND_API_KEY = process.env.RESEND_API_KEY || 're_test_key';
+
+let resendClient: Resend | null = null;
 
 const getBaseUrl = () => {
   if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`;
@@ -11,19 +14,12 @@ const getBaseUrl = () => {
   return 'http://localhost:5000';
 };
 
-// Create transporter using SMTP
-const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST || 'mail.odhiyaty.com',
-  port: parseInt(process.env.SMTP_PORT || '465'),
-  secure: true,
-  auth: {
-    user: process.env.SMTP_USER || 'verification@odhiyaty.com',
-    pass: process.env.SMTP_PASSWORD || 'silo@salah55',
-  },
-  tls: {
-    rejectUnauthorized: false,
-  },
-});
+function getResendClient() {
+  if (!resendClient) {
+    resendClient = new Resend(RESEND_API_KEY);
+  }
+  return resendClient;
+}
 
 export interface EmailOptions {
   to: string;
@@ -34,35 +30,24 @@ export interface EmailOptions {
 
 export async function sendEmail(options: EmailOptions) {
   try {
-    const info = await transporter.sendMail({
-      from: process.env.SMTP_FROM_EMAIL || 'verification@odhiyaty.com',
+    const client = getResendClient();
+    
+    console.log('📧 Sending email via Resend to:', options.to);
+    
+    const result = await client.emails.send({
+      from: process.env.RESEND_FROM_EMAIL || 'onboarding@resend.dev',
       to: options.to,
       subject: options.subject,
       html: options.html,
-      text: options.text,
     });
-    
-    console.log('✅ Email sent:', info.messageId);
-    
-    // Save to file in development
-    if (isDev) {
-      const logsDir = path.join(process.cwd(), '.logs');
-      if (!fs.existsSync(logsDir)) fs.mkdirSync(logsDir);
-      
-      const emailLog = {
-        timestamp: new Date().toISOString(),
-        to: options.to,
-        subject: options.subject,
-        messageId: info.messageId,
-      };
-      
-      fs.appendFileSync(
-        path.join(logsDir, 'emails.log'),
-        JSON.stringify(emailLog) + '\n'
-      );
+
+    if (result.error) {
+      console.error('❌ Resend error:', result.error.message);
+      return { success: false, error: result.error.message };
     }
-    
-    return { success: true, messageId: info.messageId };
+
+    console.log('✅ Email sent via Resend:', result.data?.id);
+    return { success: true, messageId: result.data?.id };
   } catch (error: any) {
     console.error('❌ Email error:', error?.message);
     return { success: false, error: error?.message };

@@ -335,7 +335,8 @@ export default function AdminDashboard() {
 
         {/* Tabs */}
         <Tabs defaultValue="pending" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-7">
+          <div className="overflow-x-auto">
+            <TabsList className="inline-flex w-max gap-2 p-1">
             <TabsTrigger value="pending" data-testid="tab-pending">
               قيد المراجعة ({pendingSheep.length})
             </TabsTrigger>
@@ -358,7 +359,8 @@ export default function AdminDashboard() {
               <CreditCard className="h-4 w-4 ml-1" />
               الدفع
             </TabsTrigger>
-          </TabsList>
+            </TabsList>
+          </div>
 
           {/* Payments Management Tab */}
           <TabsContent value="payments">

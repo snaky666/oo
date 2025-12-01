@@ -96,7 +96,7 @@ export default function BottomNavigation() {
                     {item.icon}
                   </button>
                   {/* Profile Dropdown */}
-                  <div className="absolute bottom-full -right-6 mb-2 w-28 bg-background border rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 origin-bottom">
+                  <div className="absolute bottom-full left-0 mb-2 w-32 bg-background border rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 origin-bottom">
                     {user && (
                       <>
                         <Link href="/seller/profile">

@@ -13,27 +13,33 @@ const getBaseUrl = () => {
 // Create transporter
 let transporter: any;
 
-// Always use real SMTP if credentials are available, otherwise use Ethereal for testing
-if (process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASSWORD) {
-  // Use real SMTP (works in both dev and production)
+// Use Gmail SMTP if in production with env vars, otherwise use Ethereal for development
+if (!isDev && process.env.SMTP_USER && process.env.SMTP_PASSWORD) {
+  // Production: Use Gmail SMTP
+  transporter = nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+      user: process.env.SMTP_USER,
+      pass: process.env.SMTP_PASSWORD,
+    },
+  });
+} else if (process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASSWORD && !isDev) {
+  // Production with custom SMTP
   const port = parseInt(process.env.SMTP_PORT || '465');
   transporter = nodemailer.createTransport({
     host: process.env.SMTP_HOST,
     port: port,
-    secure: port === 465, // true for 465, false for other ports
+    secure: port === 465,
     auth: {
       user: process.env.SMTP_USER,
       pass: process.env.SMTP_PASSWORD,
     },
     tls: {
       rejectUnauthorized: false,
-      minVersion: 'TLSv1.2',
     },
-    connectionTimeout: 30000, // 30 seconds
-    socketTimeout: 30000, // 30 seconds
   });
 } else {
-  // Development fallback: Use test account
+  // Development: Use Ethereal test account (works reliably)
   transporter = nodemailer.createTestAccount().then(testAccount => 
     nodemailer.createTransport({
       host: 'smtp.ethereal.email',

@@ -78,6 +78,10 @@ export interface User {
   email: string;
   role: UserRole;
   phone?: string;
+  // Email verification
+  emailVerified?: boolean; // هل تم التحقق من البريد الإلكتروني
+  emailVerificationToken?: string; // توكن التحقق
+  emailVerificationTokenExpiry?: number; // انتهاء توكن التحقق
   // Seller-specific fields
   fullName?: string;
   address?: string;

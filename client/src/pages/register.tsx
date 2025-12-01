@@ -54,18 +54,35 @@ export default function Register() {
         data.password
       );
 
+      // Generate verification token
+      const verificationToken = Math.random().toString(36).substring(2, 15);
+      const tokenExpiry = Date.now() + 24 * 60 * 60 * 1000; // 24 hours
+
       // Create user document in Firestore
       await setDoc(doc(db, "users", userCredential.user.uid), {
         uid: userCredential.user.uid,
         email: data.email,
         role: selectedRole,
         phone: data.phone || "",
+        emailVerified: false,
+        emailVerificationToken: verificationToken,
+        emailVerificationTokenExpiry: tokenExpiry,
         createdAt: Date.now(),
+      });
+
+      // Send verification email
+      await fetch("/api/auth/send-verification", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: data.email,
+          token: verificationToken,
+        }),
       });
 
       toast({
         title: "تم إنشاء الحساب بنجاح",
-        description: "الرجاء تسجيل الدخول الآن",
+        description: "تحقق من بريدك الإلكتروني لتفعيل الحساب",
       });
 
       // Redirect to login page

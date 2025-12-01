@@ -326,6 +326,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Verify email token
+  app.post("/api/auth/verify-email", async (req, res) => {
+    try {
+      const { token, email } = req.body;
+      if (!token || !email) {
+        return res.status(400).json({ error: "Token and email required" });
+      }
+
+      const { getFirestore, doc, updateDoc, getDoc } = await import("firebase-admin/firestore");
+      const db = getFirestore();
+      const userDoc = await getDoc(doc(db, "users", email.split("@")[0]));
+      
+      if (!userDoc.exists()) {
+        return res.status(404).json({ error: "User not found" });
+      }
+
+      const userData = userDoc.data();
+      
+      // Check token validity
+      if (!userData.emailVerificationToken || userData.emailVerificationToken !== token) {
+        return res.status(400).json({ error: "Invalid verification token" });
+      }
+
+      if (userData.emailVerificationTokenExpiry && userData.emailVerificationTokenExpiry < Date.now()) {
+        return res.status(400).json({ error: "Verification token expired" });
+      }
+
+      // Mark email as verified
+      await updateDoc(doc(db, "users", email.split("@")[0]), {
+        emailVerified: true,
+        emailVerificationToken: null,
+        emailVerificationTokenExpiry: null,
+      });
+
+      res.json({ success: true, message: "Email verified successfully" });
+    } catch (error: any) {
+      console.error("❌ Email verification error:", error?.message);
+      res.status(500).json({ error: error?.message });
+    }
+  });
+
   // Serve municipalities data with proper JSON content-type
   app.get("/api/municipalities", async (req, res) => {
     try {

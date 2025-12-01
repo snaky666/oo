@@ -14,7 +14,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, LogIn } from "lucide-react";
-import { FcGoogle } from "react-icons/fc";
 import loginBgGif from "@assets/images/login-bg.gif";
 
 const loginSchema = z.object({
@@ -27,12 +26,9 @@ type LoginData = z.infer<typeof loginSchema>;
 export default function Login() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
-  const auth = useAuth();
-  const { signInWithGoogle, user, signInAsGuest } = auth;
+  const { user, signInAsGuest } = useAuth();
   const [loading, setLoading] = useState(false);
-  const [googleLoading, setGoogleLoading] = useState(false);
   const [guestLoading, setGuestLoading] = useState(false);
-  const [waitingForGoogleRedirect, setWaitingForGoogleRedirect] = useState(false);
   const [showAdminLogin, setShowAdminLogin] = useState(false);
 
   const {
@@ -94,71 +90,6 @@ export default function Login() {
     }
   };
 
-  // Handle user redirect after successful Google sign-in
-  useEffect(() => {
-    if (waitingForGoogleRedirect && user) {
-      // User has been set by AuthContext, now redirect
-      if (user.role === "admin") {
-        setLocation("/admin");
-      } else if (user.role === "seller") {
-        setLocation("/seller");
-      } else {
-        setLocation("/browse");
-      }
-      setWaitingForGoogleRedirect(false);
-    }
-  }, [waitingForGoogleRedirect, user, setLocation]);
-
-  const handleGoogleSignIn = async () => {
-    setGoogleLoading(true);
-    setWaitingForGoogleRedirect(true);
-    
-    try {
-      // Call AuthContext method without role (for existing users only)
-      const result = await signInWithGoogle();
-      
-      // Check if this is a new user (regardless of success)
-      if (result.userExists === false) {
-        // New user, redirect to register
-        setWaitingForGoogleRedirect(false);
-        toast({
-          title: "حساب جديد",
-          description: "يرجى إنشاء حساب أولاً واختيار نوع الحساب",
-          variant: "default",
-        });
-        setLocation("/register");
-        return;
-      }
-      
-      if (result.success && result.userExists === true) {
-        // Existing user logged in successfully
-        toast({
-          title: "تم تسجيل الدخول بنجاح",
-          description: "مرحباً بك",
-        });
-        
-        // useEffect will handle redirect when user updates
-        // (waitingForGoogleRedirect is already set to true)
-      } else if (!result.success) {
-        // Error occurred
-        setWaitingForGoogleRedirect(false);
-        toast({
-          title: "خطأ",
-          description: result.error || "حدث خطأ أثناء تسجيل الدخول",
-          variant: "destructive",
-        });
-      }
-    } catch (error) {
-      setWaitingForGoogleRedirect(false);
-      toast({
-        title: "خطأ",
-        description: "حدث خطأ غير متوقع",
-        variant: "destructive",
-      });
-    } finally {
-      setGoogleLoading(false);
-    }
-  };
 
   return (
     <div 
@@ -215,7 +146,7 @@ export default function Login() {
             <Button
               type="submit"
               className="w-full"
-              disabled={loading || googleLoading}
+              disabled={loading}
               data-testid="button-submit"
             >
               {loading ? (
@@ -238,28 +169,6 @@ export default function Login() {
                 أو
               </span>
             </div>
-
-            {/* Google Sign In */}
-            <Button
-              type="button"
-              variant="outline"
-              className="w-full"
-              onClick={handleGoogleSignIn}
-              disabled={loading || googleLoading}
-              data-testid="button-google-signin"
-            >
-              {googleLoading ? (
-                <>
-                  <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                  جاري تسجيل الدخول...
-                </>
-              ) : (
-                <>
-                  <FcGoogle className="mr-2 h-5 w-5" />
-                  تسجيل الدخول بحساب Google
-                </>
-              )}
-            </Button>
 
             {/* Guest Login Button */}
             <Button
@@ -285,7 +194,7 @@ export default function Login() {
                   });
                 }
               }}
-              disabled={loading || googleLoading || guestLoading}
+              disabled={loading || guestLoading}
               data-testid="button-guest-login"
             >
               {guestLoading ? (

@@ -230,7 +230,7 @@ export default function BrowseSheep() {
           <div>
             <h1 className="text-3xl md:text-4xl font-semibold mb-2 flex items-center gap-2">
               تصفح الأغنام
-              {user?.vipStatus === "vip" && (
+              {user?.vipStatus && user.vipStatus !== "none" && (
                 <Crown className="h-6 w-6 text-amber-500" />
               )}
             </h1>
@@ -243,7 +243,7 @@ export default function BrowseSheep() {
             {user && (
               <Button onClick={() => setLocation("/vip-upgrade")} variant="outline" className="border-amber-500 text-amber-700 hover:bg-amber-50">
                 <Crown className="ml-2 h-4 w-4" />
-                {user?.vipStatus === "vip" ? "أنت VIP ⭐" : "ترقية إلى VIP"}
+                {user?.vipStatus && user.vipStatus !== "none" ? "أنت VIP ⭐" : "ترقية إلى VIP"}
               </Button>
             )}
             {/* Mobile Filter Button */}

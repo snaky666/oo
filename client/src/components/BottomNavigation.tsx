@@ -69,7 +69,6 @@ export default function BottomNavigation() {
 
     navItems.push(
       { icon: <MessageSquare className="h-5 w-5" />, label: "تواصل", href: "/contact" },
-      { divider: true } as any,
       { icon: <Settings className="h-5 w-5" />, label: "الحساب", href: "#profile" }
     );
   }
@@ -78,15 +77,10 @@ export default function BottomNavigation() {
     <>
       {/* Bottom Navigation */}
       <nav className="fixed bottom-0 left-0 right-0 z-40 border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 md:hidden">
-        <div className="flex items-center justify-around h-16 px-2 gap-1">
+        <div className="flex items-center justify-around h-16 px-2">
           {navItems.map((item, idx) => {
             if (item.divider) {
-              return (
-                <div
-                  key={`divider-${idx}`}
-                  className="h-6 w-px bg-border mx-1"
-                />
-              );
+              return null;
             }
 
             if (item.label === "الحساب") {

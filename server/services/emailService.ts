@@ -49,6 +49,7 @@ async function getTransporter() {
   } else {
     // Development: Use Ethereal test account
     const testAccount = await nodemailer.createTestAccount();
+    console.log('📧 Ethereal test account created');
     transporter = nodemailer.createTransport({
       host: 'smtp.ethereal.email',
       port: 587,
@@ -84,12 +85,18 @@ export async function sendEmail(options: EmailOptions) {
       text: options.text,
     });
 
-    console.log('✅ Email sent:', info.messageId);
+    console.log('✅ Email sent with ID:', info.messageId);
     
-    // Show preview URL in development
-    if (isDev && info.messageId && info.messageId.includes('@ethereal')) {
-      const previewUrl = nodemailer.getTestMessageUrl(info);
-      console.log('📬 Preview:', previewUrl);
+    // Show preview URL in development - always try to get preview
+    if (isDev) {
+      try {
+        const previewUrl = nodemailer.getTestMessageUrl(info);
+        if (previewUrl) {
+          console.log('📬 Preview URL:', previewUrl);
+        }
+      } catch (e) {
+        console.log('📧 Email sent (preview URL not available)');
+      }
     }
 
     return { success: true, messageId: info.messageId };

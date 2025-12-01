@@ -31,7 +31,7 @@ export default function Header() {
             <img 
               src="/logo.png" 
               alt="أضحيتي" 
-              className="h-14 md:h-16 w-auto object-contain animate-bounce hover:animate-spin transition-all duration-300 cursor-pointer drop-shadow-lg hover:drop-shadow-2xl"
+              className="h-14 md:h-16 w-auto object-contain animate-sheep-hop hover:animate-spin transition-all duration-300 cursor-pointer drop-shadow-lg hover:drop-shadow-2xl"
             />
           </Link>
 

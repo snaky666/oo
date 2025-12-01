@@ -16,17 +16,21 @@ let transporter: any;
 // Always use real SMTP if credentials are available, otherwise use Ethereal for testing
 if (process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASSWORD) {
   // Use real SMTP (works in both dev and production)
+  const port = parseInt(process.env.SMTP_PORT || '465');
   transporter = nodemailer.createTransport({
     host: process.env.SMTP_HOST,
-    port: parseInt(process.env.SMTP_PORT || '465'),
-    secure: process.env.SMTP_PORT === '465' ? true : false,
+    port: port,
+    secure: port === 465, // true for 465, false for other ports
     auth: {
       user: process.env.SMTP_USER,
       pass: process.env.SMTP_PASSWORD,
     },
     tls: {
       rejectUnauthorized: false,
+      minVersion: 'TLSv1.2',
     },
+    connectionTimeout: 30000, // 30 seconds
+    socketTimeout: 30000, // 30 seconds
   });
 } else {
   // Development fallback: Use test account

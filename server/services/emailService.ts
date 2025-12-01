@@ -1,11 +1,7 @@
+import nodemailer from 'nodemailer';
 import { Resend } from 'resend';
 
 const isDev = process.env.NODE_ENV !== 'production';
-
-// Try to get Resend API key from environment
-const RESEND_API_KEY = process.env.RESEND_API_KEY || 're_test_key';
-
-let resendClient: Resend | null = null;
 
 const getBaseUrl = () => {
   if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`;
@@ -14,11 +10,57 @@ const getBaseUrl = () => {
   return 'http://localhost:5000';
 };
 
-function getResendClient() {
-  if (!resendClient) {
-    resendClient = new Resend(RESEND_API_KEY);
+let transporter: any = null;
+
+async function getTransporter() {
+  if (transporter) return transporter;
+
+  // Production: Use Resend if API key available, otherwise use SMTP
+  if (!isDev) {
+    if (process.env.RESEND_API_KEY) {
+      const resend = new Resend(process.env.RESEND_API_KEY);
+      transporter = {
+        sendMail: async (options: any) => {
+          const result = await resend.emails.send({
+            from: process.env.RESEND_FROM_EMAIL || 'onboarding@resend.dev',
+            to: options.to,
+            subject: options.subject,
+            html: options.html,
+          });
+          if (result.error) throw new Error(result.error.message);
+          return { messageId: result.data?.id };
+        }
+      };
+    } else if (process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASSWORD) {
+      const port = parseInt(process.env.SMTP_PORT || '465');
+      transporter = nodemailer.createTransport({
+        host: process.env.SMTP_HOST,
+        port: port,
+        secure: port === 465,
+        auth: {
+          user: process.env.SMTP_USER,
+          pass: process.env.SMTP_PASSWORD,
+        },
+        tls: {
+          rejectUnauthorized: false,
+        },
+      });
+    }
+  } else {
+    // Development: Use Ethereal test account
+    const testAccount = await nodemailer.createTestAccount();
+    transporter = nodemailer.createTransport({
+      host: 'smtp.ethereal.email',
+      port: 587,
+      secure: false,
+      auth: {
+        user: testAccount.user,
+        pass: testAccount.pass,
+      },
+    });
   }
-  return resendClient;
+
+  return transporter;
 }
 
 export interface EmailOptions {
@@ -30,24 +72,27 @@ export interface EmailOptions {
 
 export async function sendEmail(options: EmailOptions) {
   try {
-    const client = getResendClient();
+    const mailer = await getTransporter();
     
-    console.log('📧 Sending email via Resend to:', options.to);
-    
-    const result = await client.emails.send({
-      from: process.env.RESEND_FROM_EMAIL || 'onboarding@resend.dev',
+    console.log('📧 Sending email to:', options.to);
+
+    const info = await mailer.sendMail({
+      from: process.env.SMTP_FROM_EMAIL || process.env.RESEND_FROM_EMAIL || 'noreply@odhiyaty.com',
       to: options.to,
       subject: options.subject,
       html: options.html,
+      text: options.text,
     });
 
-    if (result.error) {
-      console.error('❌ Resend error:', result.error.message);
-      return { success: false, error: result.error.message };
+    console.log('✅ Email sent:', info.messageId);
+    
+    // Show preview URL in development
+    if (isDev && info.messageId && info.messageId.includes('@ethereal')) {
+      const previewUrl = nodemailer.getTestMessageUrl(info);
+      console.log('📬 Preview:', previewUrl);
     }
 
-    console.log('✅ Email sent via Resend:', result.data?.id);
-    return { success: true, messageId: result.data?.id };
+    return { success: true, messageId: info.messageId };
   } catch (error: any) {
     console.error('❌ Email error:', error?.message);
     return { success: false, error: error?.message };

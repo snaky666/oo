@@ -1,4 +1,3 @@
-import nodemailer from 'nodemailer';
 import { Resend } from 'resend';
 
 const isDev = process.env.NODE_ENV !== 'production';
@@ -10,59 +9,8 @@ const getBaseUrl = () => {
   return 'http://localhost:5000';
 };
 
-let transporter: any = null;
-
-async function getTransporter() {
-  if (transporter) return transporter;
-
-  // Production: Use Resend if API key available, otherwise use SMTP
-  if (!isDev) {
-    if (process.env.RESEND_API_KEY) {
-      const resend = new Resend(process.env.RESEND_API_KEY);
-      transporter = {
-        sendMail: async (options: any) => {
-          const result = await resend.emails.send({
-            from: process.env.RESEND_FROM_EMAIL || 'onboarding@resend.dev',
-            to: options.to,
-            subject: options.subject,
-            html: options.html,
-          });
-          if (result.error) throw new Error(result.error.message);
-          return { messageId: result.data?.id };
-        }
-      };
-    } else if (process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASSWORD) {
-      const port = parseInt(process.env.SMTP_PORT || '465');
-      transporter = nodemailer.createTransport({
-        host: process.env.SMTP_HOST,
-        port: port,
-        secure: port === 465,
-        auth: {
-          user: process.env.SMTP_USER,
-          pass: process.env.SMTP_PASSWORD,
-        },
-        tls: {
-          rejectUnauthorized: false,
-        },
-      });
-    }
-  } else {
-    // Development: Use Ethereal test account
-    const testAccount = await nodemailer.createTestAccount();
-    console.log('📧 Ethereal test account created');
-    transporter = nodemailer.createTransport({
-      host: 'smtp.ethereal.email',
-      port: 587,
-      secure: false,
-      auth: {
-        user: testAccount.user,
-        pass: testAccount.pass,
-      },
-    });
-  }
-
-  return transporter;
-}
+// Use Resend for all environments (development and production)
+const resend = new Resend(process.env.RESEND_API_KEY || 're_test_');
 
 export interface EmailOptions {
   to: string;
@@ -73,33 +21,23 @@ export interface EmailOptions {
 
 export async function sendEmail(options: EmailOptions) {
   try {
-    const mailer = await getTransporter();
-    
-    console.log('📧 Sending email to:', options.to);
+    console.log('📧 Sending email via Resend to:', options.to);
+    console.log('🔑 Using API Key:', process.env.RESEND_API_KEY ? '✓ Available' : '✗ Missing');
 
-    const info = await mailer.sendMail({
-      from: process.env.SMTP_FROM_EMAIL || process.env.RESEND_FROM_EMAIL || 'noreply@odhiyaty.com',
+    const result = await resend.emails.send({
+      from: process.env.RESEND_FROM_EMAIL || 'onboarding@resend.dev',
       to: options.to,
       subject: options.subject,
       html: options.html,
-      text: options.text,
     });
 
-    console.log('✅ Email sent with ID:', info.messageId);
-    
-    // Show preview URL in development - always try to get preview
-    if (isDev) {
-      try {
-        const previewUrl = nodemailer.getTestMessageUrl(info);
-        if (previewUrl) {
-          console.log('📬 Preview URL:', previewUrl);
-        }
-      } catch (e) {
-        console.log('📧 Email sent (preview URL not available)');
-      }
+    if (result.error) {
+      console.error('❌ Resend error:', result.error);
+      return { success: false, error: result.error?.message };
     }
 
-    return { success: true, messageId: info.messageId };
+    console.log('✅ Email sent successfully:', result.data?.id);
+    return { success: true, messageId: result.data?.id };
   } catch (error: any) {
     console.error('❌ Email error:', error?.message);
     return { success: false, error: error?.message };
@@ -111,7 +49,7 @@ export async function sendVerificationEmail(email: string, token: string) {
   const verificationLink = `${baseUrl}/verify?token=${token}&email=${encodeURIComponent(email)}`;
   
   console.log('📧 Sending verification to:', email);
-  console.log('🔗 Link:', verificationLink);
+  console.log('🔗 Verification link:', verificationLink);
 
   const html = `
     <div dir="rtl" style="font-family: Cairo, Arial; text-align: right; padding: 20px; background-color: #f5f5f5;">
@@ -147,15 +85,23 @@ export async function sendResetPasswordEmail(email: string, token: string) {
   const baseUrl = getBaseUrl();
   const resetLink = `${baseUrl}/reset-password?token=${token}&email=${encodeURIComponent(email)}`;
   
+  console.log('📧 Sending password reset to:', email);
+
   const html = `
     <div dir="rtl" style="font-family: Cairo, Arial; text-align: right; padding: 20px; background-color: #f5f5f5;">
       <div style="background-color: white; padding: 30px; border-radius: 10px; max-width: 600px; margin: 0 auto;">
         <h1 style="color: #1a472a; margin-bottom: 20px;">إعادة تعيين كلمة المرور</h1>
+        <p style="color: #333; font-size: 16px; margin-bottom: 15px;">
+          لقد طلبت إعادة تعيين كلمة المرور. اضغط على الزر أدناه:
+        </p>
         <a href="${resetLink}" style="display: inline-block; background-color: #1a472a; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; margin: 20px 0; font-weight: bold;">
           إعادة تعيين كلمة المرور
         </a>
         <p style="color: #e74c3c; font-size: 14px; margin-top: 20px; font-weight: bold;">
           ⚠️ صلاحية هذا الرابط تنتهي بعد ساعة واحدة.
+        </p>
+        <p style="color: #999; font-size: 12px; margin-top: 20px;">
+          إذا لم تطلب إعادة تعيين كلمة المرور، تجاهل هذا البريد.
         </p>
       </div>
     </div>
@@ -170,9 +116,16 @@ export async function sendResetPasswordEmail(email: string, token: string) {
 
 export async function sendOrderConfirmationEmail(email: string, orderData: any) {
   const html = `
-    <div dir="rtl" style="font-family: Cairo, Arial; text-align: right; padding: 20px;">
-      <h2>تأكيد طلب الشراء</h2>
-      <p>رقم الطلب: ${orderData.orderId}</p>
+    <div dir="rtl" style="font-family: Cairo, Arial; text-align: right; padding: 20px; background-color: #f5f5f5;">
+      <div style="background-color: white; padding: 30px; border-radius: 10px; max-width: 600px; margin: 0 auto;">
+        <h1 style="color: #1a472a; margin-bottom: 20px;">تأكيد طلب الشراء</h1>
+        <p style="color: #333; font-size: 16px; margin-bottom: 15px;">
+          تم استقبال طلبك بنجاح
+        </p>
+        <p style="color: #666; font-size: 14px;">
+          رقم الطلب: <strong>${orderData.orderId}</strong>
+        </p>
+      </div>
     </div>
   `;
 
@@ -185,14 +138,18 @@ export async function sendOrderConfirmationEmail(email: string, orderData: any) 
 
 export async function sendAdminNotificationEmail(orderData: any) {
   const html = `
-    <div dir="rtl" style="font-family: Cairo, Arial; text-align: right; padding: 20px;">
-      <h2>طلب شراء جديد</h2>
-      <p>رقم الطلب: ${orderData.orderId}</p>
+    <div dir="rtl" style="font-family: Cairo, Arial; text-align: right; padding: 20px; background-color: #f5f5f5;">
+      <div style="background-color: white; padding: 30px; border-radius: 10px; max-width: 600px; margin: 0 auto;">
+        <h1 style="color: #1a472a; margin-bottom: 20px;">طلب شراء جديد</h1>
+        <p style="color: #666; font-size: 14px;">
+          رقم الطلب: <strong>${orderData.orderId}</strong>
+        </p>
+      </div>
     </div>
   `;
 
   return sendEmail({
-    to: 'admin@odhiyaty.com',
+    to: process.env.ADMIN_EMAIL || 'admin@odhiyaty.com',
     subject: 'طلب شراء جديد - أضحيتي',
     html,
   });

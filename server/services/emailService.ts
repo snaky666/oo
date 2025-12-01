@@ -13,8 +13,23 @@ const getBaseUrl = () => {
 // Create transporter
 let transporter: any;
 
-if (isDev) {
-  // Development: Use test account
+// Always use real SMTP if credentials are available, otherwise use Ethereal for testing
+if (process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASSWORD) {
+  // Use real SMTP (works in both dev and production)
+  transporter = nodemailer.createTransport({
+    host: process.env.SMTP_HOST,
+    port: parseInt(process.env.SMTP_PORT || '465'),
+    secure: process.env.SMTP_PORT === '465' ? true : false,
+    auth: {
+      user: process.env.SMTP_USER,
+      pass: process.env.SMTP_PASSWORD,
+    },
+    tls: {
+      rejectUnauthorized: false,
+    },
+  });
+} else {
+  // Development fallback: Use test account
   transporter = nodemailer.createTestAccount().then(testAccount => 
     nodemailer.createTransport({
       host: 'smtp.ethereal.email',
@@ -26,20 +41,6 @@ if (isDev) {
       },
     })
   );
-} else {
-  // Production: Use real SMTP
-  transporter = nodemailer.createTransport({
-    host: process.env.SMTP_HOST || 'mail.odhiyaty.com',
-    port: parseInt(process.env.SMTP_PORT || '465'),
-    secure: true,
-    auth: {
-      user: process.env.SMTP_USER || 'verification@odhiyaty.com',
-      pass: process.env.SMTP_PASSWORD,
-    },
-    tls: {
-      rejectUnauthorized: false,
-    },
-  });
 }
 
 export interface EmailOptions {

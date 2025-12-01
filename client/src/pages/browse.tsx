@@ -66,7 +66,9 @@ export default function BrowseSheep() {
     // Sort by seller VIP priority (VIP sellers appear first)
     const priorityA = a.sellerVIPStatus ? getSellerPriority({ vipStatus: a.sellerVIPStatus } as User) : 0;
     const priorityB = b.sellerVIPStatus ? getSellerPriority({ vipStatus: b.sellerVIPStatus } as User) : 0;
-    return priorityB - priorityA;
+    if (priorityB !== priorityA) return priorityB - priorityA;
+    // Secondary sort: newest first
+    return (b.createdAt || 0) - (a.createdAt || 0);
   });
 
   // Log the state for debugging

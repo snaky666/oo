@@ -119,6 +119,7 @@ export interface Sheep {
   id: string;
   sellerId: string;
   sellerEmail?: string;
+  sellerVIPStatus?: VIPStatus; // Seller's VIP status (for sorting/display)
   images: string[]; // URLs from ImgBB
   price: number;
   age: number; // in months

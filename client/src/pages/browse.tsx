@@ -1,6 +1,6 @@
 import Header from "@/components/Header";
 import { useState, useEffect } from "react";
-import { Sheep, algeriaCities } from "@shared/schema";
+import { Sheep, algeriaCities, User } from "@shared/schema";
 import SheepCard from "@/components/SheepCard";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,6 +12,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/co
 import { Filter, X, Crown } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLocation } from "wouter";
+import { getSellerPriority } from "@/lib/vip-benefits";
 
 export default function BrowseSheep() {
   const { user } = useAuth();
@@ -61,6 +62,11 @@ export default function BrowseSheep() {
     if (s.weight < weightRange[0] || s.weight > weightRange[1]) return false;
     if (selectedCities.length > 0 && !selectedCities.includes(s.city)) return false;
     return true;
+  }).sort((a, b) => {
+    // Sort by seller VIP priority (VIP sellers appear first)
+    const priorityA = a.sellerVIPStatus ? getSellerPriority({ vipStatus: a.sellerVIPStatus } as User) : 0;
+    const priorityB = b.sellerVIPStatus ? getSellerPriority({ vipStatus: b.sellerVIPStatus } as User) : 0;
+    return priorityB - priorityA;
   });
 
   // Log the state for debugging

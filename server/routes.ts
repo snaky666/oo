@@ -5,9 +5,11 @@ import fs from "fs";
 import path from "path";
 import { sendVerificationEmail, sendResetPasswordEmail, sendOrderConfirmationEmail, sendAdminNotificationEmail } from "./services/emailService";
 import { adminAuth } from "./firebase-admin";
+import { getFirestore } from 'firebase-admin/firestore';
 
 const FIREBASE_PROJECT_ID = process.env.VITE_FIREBASE_PROJECT_ID;
 const FIREBASE_API_KEY = process.env.VITE_FIREBASE_API_KEY;
+const adminDb = getFirestore();
 
 // Helper to query Firestore via REST API
 async function queryFirestore(collectionName: string, filters: Array<{ field: string; op: string; value: any }> = []) {
@@ -296,10 +298,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
-      // Check if pending registration already exists
-      const existingPending = await queryFirestore("pending_registrations", [
-        { field: "email", op: "EQUAL", value: email }
-      ]);
+      // Check if pending registration already exists using Admin SDK
+      const pendingRef = adminDb.collection('pending_registrations');
+      const existingSnapshot = await pendingRef.where('email', '==', email).get();
 
       const pendingData = {
         email,
@@ -311,56 +312,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         createdAt: Date.now()
       };
 
-      if (existingPending.length > 0) {
+      if (!existingSnapshot.empty) {
         // Update existing pending registration
-        const docId = existingPending[0].id;
-        await fetch(
-          `https://firestore.googleapis.com/v1/projects/${FIREBASE_PROJECT_ID}/databases/(default)/documents/pending_registrations/${docId}`,
-          {
-            method: "PATCH",
-            headers: {
-              "Content-Type": "application/json",
-              "X-Goog-Api-Key": FIREBASE_API_KEY || ""
-            },
-            body: JSON.stringify({
-              fields: {
-                email: { stringValue: email },
-                password: { stringValue: password },
-                role: { stringValue: role },
-                phone: { stringValue: phone },
-                verificationCode: { stringValue: verificationCode },
-                tokenExpiry: { integerValue: tokenExpiry.toString() },
-                createdAt: { integerValue: Date.now().toString() }
-              }
-            })
-          }
-        );
+        const docId = existingSnapshot.docs[0].id;
+        await pendingRef.doc(docId).set(pendingData);
+        console.log('✅ Updated existing pending registration');
       } else {
         // Create new pending registration
-        await fetch(
-          `https://firestore.googleapis.com/v1/projects/${FIREBASE_PROJECT_ID}/databases/(default)/documents/pending_registrations`,
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "X-Goog-Api-Key": FIREBASE_API_KEY || ""
-            },
-            body: JSON.stringify({
-              fields: {
-                email: { stringValue: email },
-                password: { stringValue: password },
-                role: { stringValue: role },
-                phone: { stringValue: phone },
-                verificationCode: { stringValue: verificationCode },
-                tokenExpiry: { integerValue: tokenExpiry.toString() },
-                createdAt: { integerValue: Date.now().toString() }
-              }
-            })
-          }
-        );
+        await pendingRef.add(pendingData);
+        console.log('✅ Created new pending registration');
       }
 
-      console.log('✅ Pending registration created');
       res.json({ success: true });
     } catch (error: any) {
       console.error("❌ Pending registration error:", error?.message);
@@ -384,19 +346,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      // Get pending registration
-      const pendingRegs = await queryFirestore("pending_registrations", [
-        { field: "email", op: "EQUAL", value: email }
-      ]);
+      // Get pending registration using Admin SDK
+      const pendingRef = adminDb.collection('pending_registrations');
+      const snapshot = await pendingRef.where('email', '==', email).get();
 
-      if (pendingRegs.length === 0) {
+      if (snapshot.empty) {
+        console.log('❌ No pending registration found for:', email);
         return res.status(404).json({ 
           success: false, 
           error: "Pending registration not found" 
         });
       }
 
-      const pending = pendingRegs[0];
+      const pendingDoc = snapshot.docs[0];
+      const pending = pendingDoc.data();
+
+      console.log('✅ Found pending registration');
+      console.log('Expected code:', pending.verificationCode);
+      console.log('Received code:', code);
 
       // Verify code
       if (pending.verificationCode !== code) {
@@ -423,41 +390,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       console.log('✅ Firebase Auth user created:', authUser.uid);
 
-      // Create user document in Firestore
+      // Create user document in Firestore using Admin SDK
       console.log('💾 Creating Firestore user document...');
-      await fetch(
-        `https://firestore.googleapis.com/v1/projects/${FIREBASE_PROJECT_ID}/databases/(default)/documents/users/${authUser.uid}`,
-        {
-          method: "PATCH",
-          headers: {
-            "Content-Type": "application/json",
-            "X-Goog-Api-Key": FIREBASE_API_KEY || ""
-          },
-          body: JSON.stringify({
-            fields: {
-              uid: { stringValue: authUser.uid },
-              email: { stringValue: pending.email },
-              role: { stringValue: pending.role },
-              phone: { stringValue: pending.phone },
-              emailVerified: { booleanValue: true },
-              createdAt: { integerValue: Date.now().toString() }
-            }
-          })
-        }
-      );
+      await adminDb.collection('users').doc(authUser.uid).set({
+        uid: authUser.uid,
+        email: pending.email,
+        role: pending.role,
+        phone: pending.phone,
+        emailVerified: true,
+        createdAt: Date.now()
+      });
 
       console.log('✅ Firestore user document created');
 
-      // Delete pending registration
-      await fetch(
-        `https://firestore.googleapis.com/v1/projects/${FIREBASE_PROJECT_ID}/databases/(default)/documents/pending_registrations/${pending.id}`,
-        {
-          method: "DELETE",
-          headers: {
-            "X-Goog-Api-Key": FIREBASE_API_KEY || ""
-          }
-        }
-      );
+      // Delete pending registration using Admin SDK
+      await pendingDoc.ref.delete();
+      console.log('✅ Pending registration deleted');
 
       console.log('✅ Registration completed successfully');
       res.json({ 
@@ -479,48 +427,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { email } = req.body;
       console.log('🔄 Resend pending verification for:', email);
 
-      const pendingRegs = await queryFirestore("pending_registrations", [
-        { field: "email", op: "EQUAL", value: email }
-      ]);
+      // Get pending registration using Admin SDK
+      const pendingRef = adminDb.collection('pending_registrations');
+      const snapshot = await pendingRef.where('email', '==', email).get();
 
-      if (pendingRegs.length === 0) {
+      if (snapshot.empty) {
         return res.status(404).json({ 
           success: false, 
           error: "Pending registration not found" 
         });
       }
 
-      const pending = pendingRegs[0];
+      const pendingDoc = snapshot.docs[0];
 
       // Generate new code
       const newCode = Math.floor(100000 + Math.random() * 900000).toString();
       const tokenExpiry = Date.now() + (15 * 60 * 1000);
 
-      // Update pending registration
-      await fetch(
-        `https://firestore.googleapis.com/v1/projects/${FIREBASE_PROJECT_ID}/databases/(default)/documents/pending_registrations/${pending.id}`,
-        {
-          method: "PATCH",
-          headers: {
-            "Content-Type": "application/json",
-            "X-Goog-Api-Key": FIREBASE_API_KEY || ""
-          },
-          body: JSON.stringify({
-            fields: {
-              ...Object.fromEntries(
-                Object.entries(pending).map(([k, v]) => [
-                  k,
-                  typeof v === 'string' ? { stringValue: v } :
-                  typeof v === 'number' ? { integerValue: v.toString() } :
-                  { stringValue: String(v) }
-                ])
-              ),
-              verificationCode: { stringValue: newCode },
-              tokenExpiry: { integerValue: tokenExpiry.toString() }
-            }
-          })
-        }
-      );
+      // Update pending registration using Admin SDK
+      await pendingDoc.ref.update({
+        verificationCode: newCode,
+        tokenExpiry: tokenExpiry
+      });
+
+      console.log('✅ Updated verification code');
 
       // Send email
       const emailResult = await sendVerificationEmail(email, newCode);
@@ -542,20 +472,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { email } = req.body;
       console.log('🗑️ Cancel pending registration for:', email);
 
-      const pendingRegs = await queryFirestore("pending_registrations", [
-        { field: "email", op: "EQUAL", value: email }
-      ]);
+      // Get and delete pending registration using Admin SDK
+      const pendingRef = adminDb.collection('pending_registrations');
+      const snapshot = await pendingRef.where('email', '==', email).get();
 
-      if (pendingRegs.length > 0) {
-        await fetch(
-          `https://firestore.googleapis.com/v1/projects/${FIREBASE_PROJECT_ID}/databases/(default)/documents/pending_registrations/${pendingRegs[0].id}`,
-          {
-            method: "DELETE",
-            headers: {
-              "X-Goog-Api-Key": FIREBASE_API_KEY || ""
-            }
-          }
-        );
+      if (!snapshot.empty) {
+        await snapshot.docs[0].ref.delete();
+        console.log('✅ Deleted pending registration');
       }
 
       res.json({ success: true, message: "Pending registration canceled" });

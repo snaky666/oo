@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react';
 import { useLocation } from 'wouter';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -19,13 +18,13 @@ export default function VerifyEmailPage() {
     // Get email from URL parameters
     const params = new URLSearchParams(window.location.search);
     const emailParam = params.get('email');
-    
+
     if (!emailParam) {
       setStatus('error');
       setMessage('رابط التحقق غير صحيح. يرجى التحقق من الرابط المرسل إلى بريدك.');
       return;
     }
-    
+
     setEmail(emailParam);
   }, []);
 
@@ -55,49 +54,44 @@ export default function VerifyEmailPage() {
         body: JSON.stringify({ code, email }),
       });
 
-      console.log('📬 Response status:', response.status);
-      
-      const result = await response.json();
-      console.log('📋 Response data:', result);
+      const data = await response.json(); // Variable 'data' was declared here.
 
-      if (response.ok && result.success) {
-        console.log('✅ Verification successful');
-        setStatus('success');
-        setMessage('تم التحقق من بريدك الإلكتروني بنجاح! يمكنك الآن تسجيل الدخول.');
-        toast({
-          title: 'نجح التحقق',
-          description: 'تم تفعيل حسابك بنجاح',
-        });
-        
-        // Redirect to login after 3 seconds
-        setTimeout(() => {
-          console.log('🔄 Redirecting to login...');
-          setLocation('/login');
-        }, 3000);
-      } else {
-        let errorMessage = 'فشل التحقق من البريد الإلكتروني';
-        
-        if (result.error) {
-          if (result.error.includes('expired')) {
-            errorMessage = 'انتهت صلاحية الكود. يرجى طلب كود جديد.';
-          } else if (result.error.includes('Invalid')) {
-            errorMessage = 'الكود غير صحيح.';
-          } else if (result.error.includes('not found')) {
-            errorMessage = 'لم يتم العثور على الحساب.';
-          } else {
-            errorMessage = result.error;
-          }
-        }
-        
-        console.error('❌ Verification failed:', errorMessage);
-        setStatus('error');
-        setMessage(errorMessage);
+      console.log('📬 Response status:', response.status);
+      console.log('📋 Response data:', data);
+
+      if (!response.ok || !data.success) {
+        const errorMsg = data.error === 'User not found' 
+          ? 'لم يتم العثور على الحساب. يرجى التأكد من البريد الإلكتروني المستخدم.'
+          : data.error === 'Invalid verification code'
+          ? 'رمز التحقق غير صحيح. يرجى التحقق من الرمز المرسل.'
+          : data.error === 'Verification code expired. Please request a new verification code.'
+          ? 'انتهت صلاحية رمز التحقق. يرجى طلب رمز جديد.'
+          : data.error || 'حدث خطأ أثناء التحقق';
+
+        setMessage(errorMsg);
+        console.log('❌ Verification failed:', data.error);
+        setStatus('error'); // Set status to error here
         toast({
           title: 'فشل التحقق',
-          description: errorMessage,
+          description: errorMsg,
           variant: 'destructive',
         });
+        return;
       }
+
+      console.log('✅ Verification successful');
+      setStatus('success');
+      setMessage('تم التحقق من بريدك الإلكتروني بنجاح! يمكنك الآن تسجيل الدخول.');
+      toast({
+        title: 'نجح التحقق',
+        description: 'تم تفعيل حسابك بنجاح',
+      });
+
+      // Redirect to login after 3 seconds
+      setTimeout(() => {
+        console.log('🔄 Redirecting to login...');
+        setLocation('/login');
+      }, 3000);
     } catch (error: any) {
       console.error('❌ Verification error:', error);
       setStatus('error');

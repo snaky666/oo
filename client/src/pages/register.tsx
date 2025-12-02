@@ -86,7 +86,7 @@ export default function Register() {
       setLocation(`/verify?email=${encodeURIComponent(data.email)}`);
     } catch (error: any) {
       let errorMessage = "حدث خطأ أثناء إنشاء الحساب";
-      
+
       if (error.code === "auth/email-already-in-use") {
         errorMessage = "البريد الإلكتروني مستخدم بالفعل";
       } else if (error.code === "auth/invalid-email") {

@@ -67,7 +67,16 @@ export class FirebaseStorage implements IStorage {
       phone: insertUser.phone,
       createdAt: Date.now()
     };
-    return user;
+    
+    try {
+      // حفظ المستخدم في Firestore
+      await setDoc(doc(db, "users", uid), user);
+      console.log('✅ User saved to Firestore:', uid);
+      return user;
+    } catch (error) {
+      console.error("Error creating user in Firestore:", error);
+      throw error;
+    }
   }
 
   async updateUser(uid: string, data: Partial<User>): Promise<void> {

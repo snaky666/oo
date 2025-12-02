@@ -52,32 +52,78 @@ export async function sendVerificationEmail(email: string, token: string) {
   console.log('🔗 Verification link:', verificationLink);
 
   const html = `
-    <div dir="rtl" style="font-family: Cairo, Arial; text-align: right; padding: 20px; background-color: #f5f5f5;">
-      <div style="background-color: white; padding: 30px; border-radius: 10px; max-width: 600px; margin: 0 auto;">
-        <h1 style="color: #1a472a; margin-bottom: 20px;">أهلاً بك في أضحيتي</h1>
-        <p style="color: #333; font-size: 16px; margin-bottom: 15px;">
-          شكراً لتسجيلك في منصة أضحيتي. يرجى تحقق من بريدك الإلكتروني بالنقر على الزر أدناه:
-        </p>
-        <a href="${verificationLink}" style="display: inline-block; background-color: #1a472a; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; margin: 20px 0; font-weight: bold;">
-          تحقق من البريد الإلكتروني
-        </a>
-        <p style="color: #666; font-size: 14px; margin-top: 20px;">
-          أو انسخ هذا الرابط والصقه في المتصفح:
-        </p>
-        <p style="color: #1a472a; word-break: break-all; font-size: 12px; background-color: #f9f9f9; padding: 10px; border-radius: 5px;">
-          ${verificationLink}
-        </p>
-        <p style="color: #999; font-size: 12px; margin-top: 30px;">
-          إذا لم تقم بإنشاء حساب، يرجى تجاهل هذا البريد.
-        </p>
+    <!DOCTYPE html>
+    <html lang="ar" dir="rtl">
+    <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>تحقق من بريدك الإلكتروني</title>
+    </head>
+    <body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
+      <div style="background-color: #f5f5f5; padding: 20px;">
+        <div style="background-color: white; padding: 40px; border-radius: 10px; max-width: 600px; margin: 0 auto; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+          <div style="text-align: center; margin-bottom: 30px;">
+            <h1 style="color: #1a472a; margin: 0 0 10px 0; font-size: 28px;">أهلاً بك في أضحيتي</h1>
+            <p style="color: #666; margin: 0;">منصة شراء وبيع الأضاحي في الجزائر</p>
+          </div>
+          
+          <p style="color: #333; font-size: 16px; line-height: 1.6; margin-bottom: 20px;">
+            مرحباً،
+          </p>
+          
+          <p style="color: #333; font-size: 16px; line-height: 1.6; margin-bottom: 25px;">
+            شكراً لتسجيلك في منصة <strong>أضحيتي</strong>. لإتمام عملية التسجيل وتفعيل حسابك، يرجى النقر على الزر أدناه للتحقق من بريدك الإلكتروني:
+          </p>
+          
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${verificationLink}" style="display: inline-block; background-color: #1a472a; color: white; padding: 15px 40px; text-decoration: none; border-radius: 5px; font-weight: bold; font-size: 16px;">
+              ✓ تحقق من البريد الإلكتروني
+            </a>
+          </div>
+          
+          <p style="color: #666; font-size: 14px; margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee;">
+            <strong>لا يعمل الزر؟</strong> انسخ الرابط التالي والصقه في المتصفح:
+          </p>
+          
+          <p style="color: #1a472a; word-break: break-all; font-size: 13px; background-color: #f9f9f9; padding: 12px; border-radius: 5px; border: 1px solid #e0e0e0;">
+            ${verificationLink}
+          </p>
+          
+          <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #eee;">
+            <p style="color: #999; font-size: 12px; margin: 5px 0;">
+              <strong>ملاحظة أمنية:</strong> إذا لم تقم بإنشاء حساب في أضحيتي، يرجى تجاهل هذا البريد.
+            </p>
+            <p style="color: #999; font-size: 12px; margin: 15px 0 5px 0;">
+              مع تحيات فريق أضحيتي
+            </p>
+            <p style="color: #ccc; font-size: 11px; margin: 5px 0;">
+              ${email}
+            </p>
+          </div>
+        </div>
       </div>
-    </div>
+    </body>
+    </html>
+  `;
+
+  const text = `
+مرحباً،
+
+شكراً لتسجيلك في منصة أضحيتي. 
+
+للتحقق من بريدك الإلكتروني، يرجى زيارة الرابط التالي:
+${verificationLink}
+
+إذا لم تقم بإنشاء حساب، يرجى تجاهل هذا البريد.
+
+مع تحيات فريق أضحيتي
   `;
 
   return sendEmail({
     to: email,
     subject: 'تحقق من بريدك الإلكتروني - أضحيتي',
     html,
+    text,
   });
 }
 
@@ -88,29 +134,75 @@ export async function sendResetPasswordEmail(email: string, token: string) {
   console.log('📧 Sending password reset to:', email);
 
   const html = `
-    <div dir="rtl" style="font-family: Cairo, Arial; text-align: right; padding: 20px; background-color: #f5f5f5;">
-      <div style="background-color: white; padding: 30px; border-radius: 10px; max-width: 600px; margin: 0 auto;">
-        <h1 style="color: #1a472a; margin-bottom: 20px;">إعادة تعيين كلمة المرور</h1>
-        <p style="color: #333; font-size: 16px; margin-bottom: 15px;">
-          لقد طلبت إعادة تعيين كلمة المرور. اضغط على الزر أدناه:
-        </p>
-        <a href="${resetLink}" style="display: inline-block; background-color: #1a472a; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; margin: 20px 0; font-weight: bold;">
-          إعادة تعيين كلمة المرور
-        </a>
-        <p style="color: #e74c3c; font-size: 14px; margin-top: 20px; font-weight: bold;">
-          ⚠️ صلاحية هذا الرابط تنتهي بعد ساعة واحدة.
-        </p>
-        <p style="color: #999; font-size: 12px; margin-top: 20px;">
-          إذا لم تطلب إعادة تعيين كلمة المرور، تجاهل هذا البريد.
-        </p>
+    <!DOCTYPE html>
+    <html lang="ar" dir="rtl">
+    <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>إعادة تعيين كلمة المرور</title>
+    </head>
+    <body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
+      <div style="background-color: #f5f5f5; padding: 20px;">
+        <div style="background-color: white; padding: 40px; border-radius: 10px; max-width: 600px; margin: 0 auto; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+          <div style="text-align: center; margin-bottom: 30px;">
+            <h1 style="color: #1a472a; margin: 0 0 10px 0; font-size: 28px;">إعادة تعيين كلمة المرور</h1>
+            <p style="color: #666; margin: 0;">منصة أضحيتي</p>
+          </div>
+          
+          <p style="color: #333; font-size: 16px; line-height: 1.6; margin-bottom: 20px;">
+            مرحباً،
+          </p>
+          
+          <p style="color: #333; font-size: 16px; line-height: 1.6; margin-bottom: 25px;">
+            تلقينا طلباً لإعادة تعيين كلمة المرور لحسابك في أضحيتي. للمتابعة، يرجى النقر على الزر أدناه:
+          </p>
+          
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${resetLink}" style="display: inline-block; background-color: #1a472a; color: white; padding: 15px 40px; text-decoration: none; border-radius: 5px; font-weight: bold; font-size: 16px;">
+              🔒 إعادة تعيين كلمة المرور
+            </a>
+          </div>
+          
+          <div style="background-color: #fff3cd; border: 1px solid #ffc107; border-radius: 5px; padding: 15px; margin: 25px 0;">
+            <p style="color: #856404; font-size: 14px; margin: 0; font-weight: bold;">
+              ⚠️ تنبيه هام: صلاحية هذا الرابط تنتهي بعد ساعة واحدة فقط.
+            </p>
+          </div>
+          
+          <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #eee;">
+            <p style="color: #999; font-size: 12px; margin: 5px 0;">
+              <strong>لم تطلب إعادة تعيين كلمة المرور؟</strong> يرجى تجاهل هذا البريد. حسابك آمن ولن يتم إجراء أي تغييرات.
+            </p>
+            <p style="color: #999; font-size: 12px; margin: 15px 0 5px 0;">
+              مع تحيات فريق أضحيتي
+            </p>
+          </div>
+        </div>
       </div>
-    </div>
+    </body>
+    </html>
+  `;
+
+  const text = `
+مرحباً،
+
+تلقينا طلباً لإعادة تعيين كلمة المرور لحسابك في أضحيتي.
+
+لإعادة تعيين كلمة المرور، يرجى زيارة الرابط التالي:
+${resetLink}
+
+تنبيه: صلاحية هذا الرابط تنتهي بعد ساعة واحدة.
+
+إذا لم تطلب إعادة تعيين كلمة المرور، يرجى تجاهل هذا البريد.
+
+مع تحيات فريق أضحيتي
   `;
 
   return sendEmail({
     to: email,
     subject: 'إعادة تعيين كلمة المرور - أضحيتي',
     html,
+    text,
   });
 }
 

@@ -49,6 +49,20 @@ SMTP_FROM_EMAIL = "verification@odhiyaty.com"
 RESEND_API_KEY = "re_8NuUrKwr_DLYT1fzS2mTNkysve4vVTnuS"
 
 [deployment]
-deploymentTarget = "vm"
-run = ["npm", "start"]
+deploymentTarget = "static"
+publicDir = "dist/public"
 build = ["npm", "run", "build"]
+
+[[deployment.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[[deployment.responseHeaders]]
+path = "/data/*"
+name = "Content-Type"
+value = "application/json"
+
+[[deployment.responseHeaders]]
+path = "/data/*"
+name = "Cache-Control"
+value = "public, max-age=3600"

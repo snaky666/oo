@@ -4,6 +4,7 @@ import { storage } from "./storage";
 import fs from "fs";
 import path from "path";
 import { sendVerificationEmail, sendResetPasswordEmail, sendOrderConfirmationEmail, sendAdminNotificationEmail } from "./services/emailService";
+import { adminAuth } from "./firebase-admin";
 
 const FIREBASE_PROJECT_ID = process.env.VITE_FIREBASE_PROJECT_ID;
 const FIREBASE_API_KEY = process.env.VITE_FIREBASE_API_KEY;
@@ -411,7 +412,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const user = await storage.getUserByEmail(email);
       
       if (!user) {
-        console.log('⚠️ User not found, already deleted or never existed');
+        console.log('⚠️ User not found in Firestore, checking Firebase Auth...');
+        
+        // Try to find and delete from Firebase Auth directly
+        try {
+          const authUser = await adminAuth.getUserByEmail(email);
+          if (authUser && !authUser.emailVerified) {
+            await adminAuth.deleteUser(authUser.uid);
+            console.log('✅ Deleted unverified user from Firebase Auth:', authUser.uid);
+          }
+        } catch (authError: any) {
+          if (authError.code === 'auth/user-not-found') {
+            console.log('✅ User not found in Firebase Auth either');
+          }
+        }
+        
         return res.json({ 
           success: true, 
           message: "Account cleared" 
@@ -429,6 +444,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       console.log('🗑️ Deleting unverified account:', user.uid);
 
+      // Delete from Firebase Auth using Admin SDK
+      try {
+        await adminAuth.deleteUser(user.uid);
+        console.log('✅ Deleted from Firebase Auth:', user.uid);
+      } catch (authError: any) {
+        if (authError.code === 'auth/user-not-found') {
+          console.log('⚠️ User not found in Firebase Auth');
+        } else {
+          console.error('❌ Error deleting from Firebase Auth:', authError.message);
+        }
+      }
+
       // Delete from Firestore
       const deleteDocResponse = await fetch(
         `https://firestore.googleapis.com/v1/projects/${FIREBASE_PROJECT_ID}/databases/(default)/documents/users/${user.uid}`,
@@ -442,23 +469,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       if (!deleteDocResponse.ok && deleteDocResponse.status !== 404) {
         console.error('❌ Failed to delete Firestore document');
+      } else {
+        console.log('✅ Deleted from Firestore');
       }
 
-      // Delete from Firebase Auth
-      const deleteAuthResponse = await fetch(
-        `https://identitytoolkit.googleapis.com/v1/accounts:delete?key=${FIREBASE_API_KEY}`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({
-            idToken: user.uid // This won't work without proper token, but we'll use Admin SDK alternative
-          })
-        }
-      );
-
-      console.log('✅ Unverified account deleted successfully');
+      console.log('✅ Unverified account deleted completely');
       res.json({ 
         success: true, 
         message: "Account deleted successfully" 

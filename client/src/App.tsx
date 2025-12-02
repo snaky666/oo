@@ -8,13 +8,14 @@ import { ThemeProvider } from "@/components/ThemeProvider";
 import NotFound from "@/pages/not-found";
 import Login from "@/pages/login";
 import Register from "@/pages/register";
+import VerifyEmail from "@/pages/verify";
+import Contact from "@/pages/contact";
 import LandingPage from "@/pages/landing";
 import BrowseSheep from "@/pages/browse";
 import SheepDetail from "@/pages/sheep-detail";
 import SellerDashboard from "@/pages/seller-dashboard";
 import SellerProfile from "@/pages/seller-profile";
 import AdminDashboard from "@/pages/admin-dashboard";
-import ContactPage from "@/pages/contact";
 import VIPUpgrade from "@/pages/vip-upgrade";
 import VIPPackages from "@/pages/vip-packages";
 import VIPBenefits from "@/pages/vip-benefits";
@@ -53,8 +54,9 @@ function Router() {
           <Register />
         </PublicRoute>
       </Route>
-      
-      {/* Buyer routes */}
+      <Route path="/verify" component={VerifyEmail} />
+
+      {/* Buyer/Seller routes */}
       <Route path="/browse">
         <ProtectedRoute allowedRoles={["buyer", "admin", "seller"]} allowGuest={true}>
           <BrowseSheep />
@@ -65,7 +67,7 @@ function Router() {
           <SheepDetail />
         </ProtectedRoute>
       </Route>
-      
+
       {/* Seller routes */}
       <Route path="/seller">
         <ProtectedRoute allowedRoles={["seller"]}>
@@ -108,14 +110,14 @@ function Router() {
         </ProtectedRoute>
       </Route>
       <Route path="/order/:id" component={OrderDetailPageWrapper} />
-      
+
       {/* Admin routes */}
       <Route path="/admin">
         <ProtectedRoute allowedRoles={["admin"]}>
           <AdminDashboard />
         </ProtectedRoute>
       </Route>
-      
+
       {/* Fallback to 404 */}
       <Route component={NotFound} />
     </Switch>

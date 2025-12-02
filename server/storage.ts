@@ -1,105 +1,154 @@
-import { type User, type InsertUser } from "@shared/schema";
-import { randomUUID } from "node:crypto";
-import { initializeApp } from "firebase/app";
-import { getFirestore, collection, doc, getDoc, getDocs, setDoc, query, where } from "firebase/firestore";
 
-const firebaseConfig = {
-  apiKey: process.env.FIREBASE_API_KEY,
-  authDomain: process.env.FIREBASE_AUTH_DOMAIN,
-  projectId: process.env.FIREBASE_PROJECT_ID,
-  storageBucket: process.env.FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: process.env.FIREBASE_MESSAGING_SENDER_ID,
-  appId: process.env.FIREBASE_APP_ID,
-};
+const FIREBASE_PROJECT_ID = process.env.VITE_FIREBASE_PROJECT_ID;
+const FIREBASE_API_KEY = process.env.VITE_FIREBASE_API_KEY;
 
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
+// Helper to extract data from Firestore document fields
+function extractDocumentData(fields: any): any {
+  if (!fields) return {};
 
-
-// modify the interface with any CRUD methods
-// you might need
-
-export interface IStorage {
-  getUser(id: string): Promise<User | undefined>;
-  getUserByEmail(email: string): Promise<User | undefined>;
-  createUser(user: InsertUser): Promise<User>;
-  updateUser(uid: string, data: Partial<User>): Promise<void>;
+  const result: any = {};
+  for (const [key, value] of Object.entries(fields)) {
+    result[key] = extractFieldValue(value);
+  }
+  return result;
 }
 
-export class FirebaseStorage implements IStorage {
-  async getUser(id: string): Promise<User | undefined> {
-    try {
-      const userDoc = await getDoc(doc(db, "users", id));
-      if (userDoc.exists()) {
-        return userDoc.data() as User;
-      }
-      return undefined;
-    } catch (error) {
-      console.error("Error getting user:", error);
-      return undefined;
-    }
+// Helper to extract value from Firestore field value
+function extractFieldValue(value: any): any {
+  if (!value) return null;
+  if (value.stringValue !== undefined) return value.stringValue;
+  if (value.integerValue !== undefined) return parseInt(value.integerValue);
+  if (value.doubleValue !== undefined) return parseFloat(value.doubleValue);
+  if (value.booleanValue !== undefined) return value.booleanValue;
+  if (value.arrayValue !== undefined) {
+    return value.arrayValue.values?.map((v: any) => extractFieldValue(v)) || [];
   }
-
-  async getUserByEmail(email: string): Promise<User | undefined> {
-    try {
-      const usersRef = collection(db, "users");
-      const q = query(usersRef, where("email", "==", email));
-      const querySnapshot = await getDocs(q);
-      
-      if (querySnapshot.empty) {
-        return undefined;
-      }
-      
-      return querySnapshot.docs[0].data() as User;
-    } catch (error) {
-      console.error("Error getting user by email:", error);
-      return undefined;
-    }
+  if (value.mapValue !== undefined) {
+    return extractDocumentData(value.mapValue.fields);
   }
+  if (value.timestampValue !== undefined) {
+    return new Date(value.timestampValue).getTime();
+  }
+  return value;
+}
 
-  async createUser(insertUser: InsertUser): Promise<User> {
-    const uid = randomUUID();
-    const user: User = { 
-      uid,
-      email: insertUser.email,
-      role: insertUser.role,
-      phone: insertUser.phone,
-      createdAt: Date.now()
-    };
+// Helper to convert data to Firestore fields
+function convertToFirestoreFields(data: any): any {
+  const fields: any = {};
+  
+  for (const [key, value] of Object.entries(data)) {
+    if (value === null || value === undefined) continue;
     
+    if (typeof value === 'string') {
+      fields[key] = { stringValue: value };
+    } else if (typeof value === 'number') {
+      fields[key] = { integerValue: value };
+    } else if (typeof value === 'boolean') {
+      fields[key] = { booleanValue: value };
+    } else if (Array.isArray(value)) {
+      fields[key] = {
+        arrayValue: {
+          values: value.map(v => {
+            if (typeof v === 'string') return { stringValue: v };
+            if (typeof v === 'number') return { integerValue: v };
+            if (typeof v === 'boolean') return { booleanValue: v };
+            return { stringValue: String(v) };
+          })
+        }
+      };
+    }
+  }
+  
+  return fields;
+}
+
+class FirestoreStorage {
+  async getUserByEmail(email: string): Promise<any | null> {
     try {
-      // حفظ المستخدم في Firestore
-      await setDoc(doc(db, "users", uid), user);
-      console.log('✅ User saved to Firestore:', uid);
-      return user;
-    } catch (error) {
-      console.error("Error creating user in Firestore:", error);
-      throw error;
+      console.log('🔍 Searching for user with email:', email);
+      
+      const body = {
+        structuredQuery: {
+          from: [{ collectionId: "users" }],
+          where: {
+            fieldFilter: {
+              field: { fieldPath: "email" },
+              op: "EQUAL",
+              value: { stringValue: email }
+            }
+          },
+          limit: 1
+        }
+      };
+
+      const response = await fetch(
+        `https://firestore.googleapis.com/v1/projects/${FIREBASE_PROJECT_ID}/databases/(default)/documents:runQuery`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-Goog-Api-Key": FIREBASE_API_KEY || ""
+          },
+          body: JSON.stringify(body)
+        }
+      );
+
+      if (!response.ok) {
+        console.error(`Firestore API error: ${response.status}`);
+        return null;
+      }
+
+      const data = await response.json();
+      
+      if (Array.isArray(data) && data.length > 0 && data[0].document) {
+        const doc = data[0].document;
+        const userData = {
+          uid: doc.name.split('/').pop(),
+          ...extractDocumentData(doc.fields)
+        };
+        console.log('✅ Found user:', userData.uid);
+        return userData;
+      }
+
+      console.log('❌ No user found with email:', email);
+      return null;
+    } catch (error: any) {
+      console.error("Error getting user by email:", error?.message);
+      return null;
     }
   }
 
-  async updateUser(uid: string, data: Partial<User>): Promise<void> {
+  async updateUser(uid: string, data: any): Promise<void> {
     try {
-      const userRef = doc(db, "users", uid);
+      console.log('📝 Updating user:', uid, 'with data:', data);
       
-      // Remove undefined values
-      const cleanData = Object.fromEntries(
-        Object.entries(data).filter(([_, v]) => v !== undefined)
+      const fields = convertToFirestoreFields(data);
+      
+      const response = await fetch(
+        `https://firestore.googleapis.com/v1/projects/${FIREBASE_PROJECT_ID}/databases/(default)/documents/users/${uid}?updateMask.fieldPaths=${Object.keys(data).join('&updateMask.fieldPaths=')}`,
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            "X-Goog-Api-Key": FIREBASE_API_KEY || ""
+          },
+          body: JSON.stringify({ fields })
+        }
       );
-      
-      // Convert null to deleteField for Firestore
-      const updateData: any = {};
-      for (const [key, value] of Object.entries(cleanData)) {
-        updateData[key] = value;
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error(`Firestore update error: ${response.status} ${errorText}`);
+        throw new Error(`Failed to update user: ${response.status}`);
       }
-      
-      await setDoc(userRef, updateData, { merge: true });
-    } catch (error) {
-      console.error("Error updating user:", error);
+
+      console.log('✅ User updated successfully');
+    } catch (error: any) {
+      console.error("Error updating user:", error?.message);
       throw error;
     }
   }
 }
 
-export const storage = new FirebaseStorage();
+export const storage = new FirestoreStorage();
+export type { InsertUser, User } from "@shared/schema";

@@ -329,17 +329,106 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Resend verification code
+  app.post("/api/auth/resend-verification", async (req, res) => {
+    try {
+      const { email } = req.body;
+      console.log('🔄 Resend verification request for:', email);
+
+      if (!email) {
+        return res.status(400).json({ 
+          success: false, 
+          error: "Email required" 
+        });
+      }
+
+      // Query Firestore to find user by email
+      const users = await queryFirestore("users", [
+        { field: "email", op: "EQUAL", value: email }
+      ]);
+
+      if (users.length === 0) {
+        return res.status(404).json({ 
+          success: false, 
+          error: "User not found" 
+        });
+      }
+
+      const user = users[0];
+
+      // Check if already verified
+      if (user.emailVerified) {
+        return res.json({ 
+          success: true, 
+          message: "Email already verified" 
+        });
+      }
+
+      // Generate new verification code
+      const newCode = Math.floor(100000 + Math.random() * 900000).toString();
+      const tokenExpiry = Date.now() + (15 * 60 * 1000); // 15 minutes
+
+      // Update user with new code
+      const updateResponse = await fetch(
+        `https://firestore.googleapis.com/v1/projects/${FIREBASE_PROJECT_ID}/databases/(default)/documents/users/${user.id}?updateMask.fieldPaths=emailVerificationToken&updateMask.fieldPaths=emailVerificationTokenExpiry`,
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            "X-Goog-Api-Key": FIREBASE_API_KEY || ""
+          },
+          body: JSON.stringify({
+            fields: {
+              emailVerificationToken: { stringValue: newCode },
+              emailVerificationTokenExpiry: { integerValue: tokenExpiry.toString() }
+            }
+          })
+        }
+      );
+
+      if (!updateResponse.ok) {
+        console.error('❌ Failed to update verification code');
+        return res.status(500).json({ 
+          success: false, 
+          error: "Failed to generate new code" 
+        });
+      }
+
+      // Send new verification email
+      const emailResult = await sendVerificationEmail(email, newCode);
+
+      if (emailResult.success) {
+        console.log('✅ New verification code sent to:', email);
+        res.json({ 
+          success: true, 
+          message: "New verification code sent" 
+        });
+      } else {
+        res.status(500).json({ 
+          success: false, 
+          error: emailResult.error || "Failed to send email" 
+        });
+      }
+    } catch (error: any) {
+      console.error("❌ Resend verification error:", error?.message);
+      res.status(500).json({ 
+        success: false, 
+        error: "An error occurred. Please try again." 
+      });
+    }
+  });
+
   // Verify email token
   app.post("/api/auth/verify-email", async (req, res) => {
     try {
-      const { token, email } = req.body;
-      console.log('🔐 Verify request:', { email, token: token ? 'present' : 'missing' });
+      const { code, email } = req.body;
+      console.log('🔐 Verify request:', { email, code: code ? 'present' : 'missing' });
 
-      if (!token || !email) {
-        console.log('❌ Missing token or email');
+      if (!code || !email) {
+        console.log('❌ Missing code or email');
         return res.status(400).json({ 
           success: false, 
-          error: "Token and email required" 
+          error: "Code and email required" 
         });
       }
 
@@ -371,30 +460,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      // Check token validity
+      // Check code validity
       if (!user.emailVerificationToken) {
-        console.log('❌ No verification token found');
+        console.log('❌ No verification code found');
         return res.status(400).json({ 
           success: false, 
-          error: "Invalid verification token" 
+          error: "Invalid verification code" 
         });
       }
 
-      if (user.emailVerificationToken !== token) {
-        console.log('❌ Token mismatch');
+      if (user.emailVerificationToken !== code) {
+        console.log('❌ Code mismatch');
         console.log('Expected:', user.emailVerificationToken);
-        console.log('Received:', token);
+        console.log('Received:', code);
         return res.status(400).json({ 
           success: false, 
-          error: "Invalid verification token" 
+          error: "Invalid verification code" 
         });
       }
 
       if (user.emailVerificationTokenExpiry && user.emailVerificationTokenExpiry < Date.now()) {
-        console.log('❌ Token expired');
+        console.log('❌ Code expired');
         return res.status(400).json({ 
           success: false, 
-          error: "Verification token expired. Please request a new verification email." 
+          error: "Verification code expired. Please request a new verification code." 
         });
       }
 

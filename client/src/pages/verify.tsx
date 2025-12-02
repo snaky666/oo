@@ -250,11 +250,11 @@ export default function VerifyEmailPage() {
                   المحاولة مرة أخرى
                 </Button>
                 <Button 
-                  onClick={() => setLocation('/register')}
+                  onClick={() => setLocation('/login')}
                   variant="outline"
                   className="w-full"
                 >
-                  العودة للتسجيل
+                  الذهاب لتسجيل الدخول
                 </Button>
               </div>
             </>

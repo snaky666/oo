@@ -15,44 +15,12 @@ export async function loadMunicipalitiesData(): Promise<Municipality[]> {
   }
 
   try {
-    // Try API endpoint first, then fallback to direct file paths
-    const paths = [
-      '/api/municipalities',
-      '/data/municipalities.json',
-      '/public/data/municipalities.json',
-    ];
-    
-    let response: Response | null = null;
-    let lastError: Error | null = null;
-    
-    for (const endpoint of paths) {
-      try {
-        console.log(`📥 Trying to load municipalities from: ${endpoint}`);
-        response = await fetch(endpoint);
-        if (response.ok) {
-          console.log(`✅ Successfully loaded from: ${endpoint}`);
-          break;
-        }
-        console.warn(`⚠️ Failed to load from ${endpoint}: ${response.status}`);
-      } catch (err) {
-        lastError = err as Error;
-        console.warn(`⚠️ Error fetching from ${endpoint}:`, err);
-      }
-    }
-    
-    if (!response?.ok) {
-      throw lastError || new Error('Failed to fetch municipalities data from all paths');
-    }
-    
-    const contentType = response.headers.get('content-type');
-    if (!contentType?.includes('application/json')) {
-      throw new Error(`Invalid content-type: ${contentType}. Expected application/json`);
-    }
-    
-    const data = await response.json();
-    municipalitiesCache = data;
-    console.log(`✅ Loaded ${data.length} municipalities`);
-    return data;
+    // Import the data directly for static deployment
+    const response = await import('/data/municipalities.json');
+    const data = response.default || response;
+    municipalitiesCache = Array.isArray(data) ? data : [];
+    console.log(`✅ Loaded ${municipalitiesCache.length} municipalities`);
+    return municipalitiesCache;
   } catch (error) {
     console.error('❌ Error loading municipalities:', error);
     // Return empty array but don't break the app

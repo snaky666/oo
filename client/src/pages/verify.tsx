@@ -39,14 +39,14 @@ export default function VerifyEmailPage() {
     }
 
     setStatus('loading');
-    setMessage('جاري التحقق من الكود...');
+    setMessage('جاري التحقق من الكود وإنشاء حسابك...');
 
     try {
-      console.log('🔐 Starting verification...');
+      console.log('🔐 Starting verification and account creation...');
       console.log('Email:', email);
       console.log('Code:', code);
 
-      const response = await fetch('/api/auth/verify-email', {
+      const response = await fetch('/api/auth/complete-registration', {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
@@ -54,23 +54,23 @@ export default function VerifyEmailPage() {
         body: JSON.stringify({ code, email }),
       });
 
-      const data = await response.json(); // Variable 'data' was declared here.
+      const data = await response.json();
 
       console.log('📬 Response status:', response.status);
       console.log('📋 Response data:', data);
 
       if (!response.ok || !data.success) {
-        const errorMsg = data.error === 'User not found' 
-          ? 'لم يتم العثور على الحساب. يرجى التأكد من البريد الإلكتروني المستخدم.'
+        const errorMsg = data.error === 'Pending registration not found' 
+          ? 'لم يتم العثور على طلب التسجيل. يرجى إعادة التسجيل.'
           : data.error === 'Invalid verification code'
           ? 'رمز التحقق غير صحيح. يرجى التحقق من الرمز المرسل.'
-          : data.error === 'Verification code expired. Please request a new verification code.'
+          : data.error === 'Verification code expired'
           ? 'انتهت صلاحية رمز التحقق. يرجى طلب رمز جديد.'
           : data.error || 'حدث خطأ أثناء التحقق';
 
         setMessage(errorMsg);
         console.log('❌ Verification failed:', data.error);
-        setStatus('error'); // Set status to error here
+        setStatus('error');
         toast({
           title: 'فشل التحقق',
           description: errorMsg,
@@ -79,11 +79,11 @@ export default function VerifyEmailPage() {
         return;
       }
 
-      console.log('✅ Verification successful');
+      console.log('✅ Verification successful, account created');
       setStatus('success');
-      setMessage('تم التحقق من بريدك الإلكتروني بنجاح! يمكنك الآن تسجيل الدخول.');
+      setMessage('تم إنشاء حسابك بنجاح! يمكنك الآن تسجيل الدخول.');
       toast({
-        title: 'نجح التحقق',
+        title: 'تم إنشاء الحساب',
         description: 'تم تفعيل حسابك بنجاح',
       });
 
@@ -106,7 +106,7 @@ export default function VerifyEmailPage() {
 
   const handleResendCode = async () => {
     try {
-      const response = await fetch('/api/auth/resend-verification', {
+      const response = await fetch('/api/auth/resend-pending-verification', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email }),
@@ -259,27 +259,27 @@ export default function VerifyEmailPage() {
                 <Button 
                   onClick={async () => {
                     try {
-                      console.log('🗑️ Deleting unverified account...');
-                      const response = await fetch('/api/auth/delete-unverified', {
+                      console.log('🗑️ Canceling pending registration...');
+                      const response = await fetch('/api/auth/cancel-pending-registration', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ email }),
                       });
 
                       const result = await response.json();
-                      console.log('🗑️ Delete result:', result);
+                      console.log('🗑️ Cancel result:', result);
 
                       toast({
-                        title: 'تم الحذف',
+                        title: 'تم الإلغاء',
                         description: 'يمكنك الآن إنشاء حساب جديد',
                       });
 
                       setLocation('/register');
                     } catch (error) {
-                      console.error('❌ Delete error:', error);
+                      console.error('❌ Cancel error:', error);
                       toast({
                         title: 'خطأ',
-                        description: 'فشل حذف الحساب',
+                        description: 'فشل إلغاء التسجيل',
                         variant: 'destructive',
                       });
                     }
@@ -287,7 +287,7 @@ export default function VerifyEmailPage() {
                   variant="outline"
                   className="w-full"
                 >
-                  إعادة إنشاء الحساب
+                  إلغاء والعودة للتسجيل
                 </Button>
               </div>
             </>

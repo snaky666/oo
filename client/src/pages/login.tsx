@@ -53,10 +53,28 @@ export default function Login() {
       const userDoc = await getDoc(doc(db, "users", userCredential.user.uid));
       
       if (!userDoc.exists()) {
+        // Sign out immediately if no user data found
+        await firebaseAuth.signOut();
         throw new Error("User data not found");
       }
 
       const userData = userDoc.data();
+
+      // Check if email is verified
+      if (!userData.emailVerified) {
+        // Sign out immediately
+        await firebaseAuth.signOut();
+        
+        toast({
+          title: "البريد غير مؤكد",
+          description: "يرجى تأكيد بريدك الإلكتروني أولاً",
+          variant: "destructive",
+        });
+        
+        // Redirect to verification page
+        setLocation(`/verify?email=${encodeURIComponent(data.email)}`);
+        return;
+      }
       
       toast({
         title: "تم تسجيل الدخول بنجاح",
@@ -78,6 +96,8 @@ export default function Login() {
         errorMessage = "البريد الإلكتروني أو كلمة المرور غير صحيحة";
       } else if (error.code === "auth/too-many-requests") {
         errorMessage = "تم تجاوز عدد المحاولات، يرجى المحاولة لاحقاً";
+      } else if (error.message === "User data not found") {
+        errorMessage = "لم يتم العثور على بيانات الحساب";
       }
 
       toast({

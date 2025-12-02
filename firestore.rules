@@ -2,6 +2,11 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+    
+    // Pending registrations collection (server-side only)
+    match /pending_registrations/{docId} {
+      allow read, write: if false; // Only server can access
+    }
 
     // ================= HELPER FUNCTIONS =================
     function isAuth() {

@@ -275,6 +275,296 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Store pending registration (before email verification)
+  app.post("/api/auth/pending-registration", async (req, res) => {
+    try {
+      const { email, password, role, phone, verificationCode, tokenExpiry } = req.body;
+      console.log('💾 Creating pending registration for:', email);
+
+      // Check if email already exists in Firebase Auth
+      try {
+        const authUser = await adminAuth.getUserByEmail(email);
+        if (authUser) {
+          return res.status(400).json({
+            success: false,
+            error: "البريد الإلكتروني مستخدم بالفعل"
+          });
+        }
+      } catch (error: any) {
+        if (error.code !== 'auth/user-not-found') {
+          throw error;
+        }
+      }
+
+      // Check if pending registration already exists
+      const existingPending = await queryFirestore("pending_registrations", [
+        { field: "email", op: "EQUAL", value: email }
+      ]);
+
+      const pendingData = {
+        email,
+        password,
+        role,
+        phone,
+        verificationCode,
+        tokenExpiry,
+        createdAt: Date.now()
+      };
+
+      if (existingPending.length > 0) {
+        // Update existing pending registration
+        const docId = existingPending[0].id;
+        await fetch(
+          `https://firestore.googleapis.com/v1/projects/${FIREBASE_PROJECT_ID}/databases/(default)/documents/pending_registrations/${docId}`,
+          {
+            method: "PATCH",
+            headers: {
+              "Content-Type": "application/json",
+              "X-Goog-Api-Key": FIREBASE_API_KEY || ""
+            },
+            body: JSON.stringify({
+              fields: {
+                email: { stringValue: email },
+                password: { stringValue: password },
+                role: { stringValue: role },
+                phone: { stringValue: phone },
+                verificationCode: { stringValue: verificationCode },
+                tokenExpiry: { integerValue: tokenExpiry.toString() },
+                createdAt: { integerValue: Date.now().toString() }
+              }
+            })
+          }
+        );
+      } else {
+        // Create new pending registration
+        await fetch(
+          `https://firestore.googleapis.com/v1/projects/${FIREBASE_PROJECT_ID}/databases/(default)/documents/pending_registrations`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "X-Goog-Api-Key": FIREBASE_API_KEY || ""
+            },
+            body: JSON.stringify({
+              fields: {
+                email: { stringValue: email },
+                password: { stringValue: password },
+                role: { stringValue: role },
+                phone: { stringValue: phone },
+                verificationCode: { stringValue: verificationCode },
+                tokenExpiry: { integerValue: tokenExpiry.toString() },
+                createdAt: { integerValue: Date.now().toString() }
+              }
+            })
+          }
+        );
+      }
+
+      console.log('✅ Pending registration created');
+      res.json({ success: true });
+    } catch (error: any) {
+      console.error("❌ Pending registration error:", error?.message);
+      res.status(500).json({ 
+        success: false, 
+        error: error?.message || "Failed to create pending registration" 
+      });
+    }
+  });
+
+  // Complete registration after email verification
+  app.post("/api/auth/complete-registration", async (req, res) => {
+    try {
+      const { code, email } = req.body;
+      console.log('🔐 Complete registration request:', { email, code: code ? 'present' : 'missing' });
+
+      if (!code || !email) {
+        return res.status(400).json({ 
+          success: false, 
+          error: "Code and email required" 
+        });
+      }
+
+      // Get pending registration
+      const pendingRegs = await queryFirestore("pending_registrations", [
+        { field: "email", op: "EQUAL", value: email }
+      ]);
+
+      if (pendingRegs.length === 0) {
+        return res.status(404).json({ 
+          success: false, 
+          error: "Pending registration not found" 
+        });
+      }
+
+      const pending = pendingRegs[0];
+
+      // Verify code
+      if (pending.verificationCode !== code) {
+        return res.status(400).json({ 
+          success: false, 
+          error: "Invalid verification code" 
+        });
+      }
+
+      if (pending.tokenExpiry < Date.now()) {
+        return res.status(400).json({ 
+          success: false, 
+          error: "Verification code expired" 
+        });
+      }
+
+      // Create user in Firebase Auth
+      console.log('🔐 Creating Firebase Auth user...');
+      const authUser = await adminAuth.createUser({
+        email: pending.email,
+        password: pending.password,
+        emailVerified: true
+      });
+
+      console.log('✅ Firebase Auth user created:', authUser.uid);
+
+      // Create user document in Firestore
+      console.log('💾 Creating Firestore user document...');
+      await fetch(
+        `https://firestore.googleapis.com/v1/projects/${FIREBASE_PROJECT_ID}/databases/(default)/documents/users/${authUser.uid}`,
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            "X-Goog-Api-Key": FIREBASE_API_KEY || ""
+          },
+          body: JSON.stringify({
+            fields: {
+              uid: { stringValue: authUser.uid },
+              email: { stringValue: pending.email },
+              role: { stringValue: pending.role },
+              phone: { stringValue: pending.phone },
+              emailVerified: { booleanValue: true },
+              createdAt: { integerValue: Date.now().toString() }
+            }
+          })
+        }
+      );
+
+      console.log('✅ Firestore user document created');
+
+      // Delete pending registration
+      await fetch(
+        `https://firestore.googleapis.com/v1/projects/${FIREBASE_PROJECT_ID}/databases/(default)/documents/pending_registrations/${pending.id}`,
+        {
+          method: "DELETE",
+          headers: {
+            "X-Goog-Api-Key": FIREBASE_API_KEY || ""
+          }
+        }
+      );
+
+      console.log('✅ Registration completed successfully');
+      res.json({ 
+        success: true, 
+        message: "Registration completed successfully" 
+      });
+    } catch (error: any) {
+      console.error("❌ Complete registration error:", error?.message);
+      res.status(500).json({ 
+        success: false, 
+        error: error?.message || "Failed to complete registration" 
+      });
+    }
+  });
+
+  // Resend verification code for pending registration
+  app.post("/api/auth/resend-pending-verification", async (req, res) => {
+    try {
+      const { email } = req.body;
+      console.log('🔄 Resend pending verification for:', email);
+
+      const pendingRegs = await queryFirestore("pending_registrations", [
+        { field: "email", op: "EQUAL", value: email }
+      ]);
+
+      if (pendingRegs.length === 0) {
+        return res.status(404).json({ 
+          success: false, 
+          error: "Pending registration not found" 
+        });
+      }
+
+      const pending = pendingRegs[0];
+
+      // Generate new code
+      const newCode = Math.floor(100000 + Math.random() * 900000).toString();
+      const tokenExpiry = Date.now() + (15 * 60 * 1000);
+
+      // Update pending registration
+      await fetch(
+        `https://firestore.googleapis.com/v1/projects/${FIREBASE_PROJECT_ID}/databases/(default)/documents/pending_registrations/${pending.id}`,
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            "X-Goog-Api-Key": FIREBASE_API_KEY || ""
+          },
+          body: JSON.stringify({
+            fields: {
+              ...Object.fromEntries(
+                Object.entries(pending).map(([k, v]) => [
+                  k,
+                  typeof v === 'string' ? { stringValue: v } :
+                  typeof v === 'number' ? { integerValue: v.toString() } :
+                  { stringValue: String(v) }
+                ])
+              ),
+              verificationCode: { stringValue: newCode },
+              tokenExpiry: { integerValue: tokenExpiry.toString() }
+            }
+          })
+        }
+      );
+
+      // Send email
+      const emailResult = await sendVerificationEmail(email, newCode);
+
+      if (emailResult.success) {
+        res.json({ success: true, message: "New verification code sent" });
+      } else {
+        res.status(500).json({ success: false, error: emailResult.error });
+      }
+    } catch (error: any) {
+      console.error("❌ Resend error:", error?.message);
+      res.status(500).json({ success: false, error: error?.message });
+    }
+  });
+
+  // Cancel pending registration
+  app.post("/api/auth/cancel-pending-registration", async (req, res) => {
+    try {
+      const { email } = req.body;
+      console.log('🗑️ Cancel pending registration for:', email);
+
+      const pendingRegs = await queryFirestore("pending_registrations", [
+        { field: "email", op: "EQUAL", value: email }
+      ]);
+
+      if (pendingRegs.length > 0) {
+        await fetch(
+          `https://firestore.googleapis.com/v1/projects/${FIREBASE_PROJECT_ID}/databases/(default)/documents/pending_registrations/${pendingRegs[0].id}`,
+          {
+            method: "DELETE",
+            headers: {
+              "X-Goog-Api-Key": FIREBASE_API_KEY || ""
+            }
+          }
+        );
+      }
+
+      res.json({ success: true, message: "Pending registration canceled" });
+    } catch (error: any) {
+      console.error("❌ Cancel error:", error?.message);
+      res.status(500).json({ success: false, error: error?.message });
+    }
+  });
+
   // Send verification email with code
   app.post("/api/auth/send-verification", async (req, res) => {
     try {

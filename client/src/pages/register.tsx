@@ -44,11 +44,7 @@ export default function Register() {
 
     setLoading(true);
     try {
-      // Create user in Firebase Auth
-      const userCredential = await createUserWithEmailAndPassword(auth, data.email, data.password);
-      const user = userCredential.user;
-
-      console.log('✅ User created in Firebase Auth:', user.uid);
+      console.log('📝 Starting registration process...');
 
       // Generate verification code
       const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
@@ -56,21 +52,28 @@ export default function Register() {
 
       console.log('🔢 Generated verification code:', verificationCode);
 
-      // Create user document in Firestore with verification data
-      console.log('💾 Creating user document in Firestore...');
-      const userDoc = {
-        uid: user.uid,
-        email: data.email,
-        role: data.role,
-        phone: data.phone || '',
-        emailVerified: false,
-        emailVerificationToken: verificationCode,
-        emailVerificationTokenExpiry: tokenExpiry,
-        createdAt: Date.now(),
-      };
+      // Store pending registration data on server
+      console.log('💾 Storing pending registration...');
+      const response = await fetch('/api/auth/pending-registration', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: data.email,
+          password: data.password,
+          role: data.role,
+          phone: data.phone || '',
+          verificationCode,
+          tokenExpiry,
+        }),
+      });
 
-      await setDoc(doc(db, 'users', user.uid), userDoc);
-      console.log('✅ User document created in Firestore');
+      const result = await response.json();
+
+      if (!response.ok || !result.success) {
+        throw new Error(result.error || 'Failed to create pending registration');
+      }
+
+      console.log('✅ Pending registration created');
 
       // Send verification email
       console.log('📧 Sending verification email...');
@@ -93,21 +96,17 @@ export default function Register() {
       console.log('✅ Verification email sent');
 
       toast({
-        title: "تم إنشاء الحساب",
+        title: "تحقق من بريدك الإلكتروني",
         description: "تم إرسال كود التحقق إلى بريدك الإلكتروني",
       });
 
       // Redirect to verification page with email
       setLocation(`/verify?email=${encodeURIComponent(data.email)}`);
     } catch (error: any) {
-      let errorMessage = "حدث خطأ أثناء إنشاء الحساب";
+      let errorMessage = "حدث خطأ أثناء التسجيل";
 
-      if (error.code === "auth/email-already-in-use") {
+      if (error.message.includes("email-already-in-use") || error.message.includes("already exists")) {
         errorMessage = "البريد الإلكتروني مستخدم بالفعل";
-      } else if (error.code === "auth/invalid-email") {
-        errorMessage = "البريد الإلكتروني غير صالح";
-      } else if (error.code === "auth/weak-password") {
-        errorMessage = "كلمة المرور ضعيفة جداً";
       }
 
       toast({

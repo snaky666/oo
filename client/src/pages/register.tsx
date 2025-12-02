@@ -45,41 +45,56 @@ export default function Register() {
     setLoading(true);
     try {
       // Create user in Firebase Auth
-      const userCredential = await createUserWithEmailAndPassword(
-        auth,
-        data.email,
-        data.password
-      );
+      const userCredential = await createUserWithEmailAndPassword(auth, data.email, data.password);
+      const user = userCredential.user;
 
-      // Generate 6-digit verification code
+      console.log('✅ User created in Firebase Auth:', user.uid);
+
+      // Generate verification code
       const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
-      const codeExpiry = Date.now() + 15 * 60 * 1000; // 15 minutes
+      const tokenExpiry = Date.now() + (15 * 60 * 1000); // 15 minutes
 
-      // Create user document in Firestore
-      await setDoc(doc(db, "users", userCredential.user.uid), {
-        uid: userCredential.user.uid,
+      console.log('🔢 Generated verification code:', verificationCode);
+
+      // Create user document in Firestore with verification data
+      console.log('💾 Creating user document in Firestore...');
+      const userDoc = {
+        uid: user.uid,
         email: data.email,
-        role: selectedRole,
-        phone: data.phone || "",
+        role: data.role,
+        phone: data.phone || '',
         emailVerified: false,
-        emailVerificationCode: verificationCode,
-        emailVerificationCodeExpiry: codeExpiry,
+        emailVerificationToken: verificationCode,
+        emailVerificationTokenExpiry: tokenExpiry,
         createdAt: Date.now(),
-      });
+      };
 
-      // Send verification email with code
-      await fetch("/api/auth/send-verification", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          email: data.email,
-          code: verificationCode,
+      await setDoc(doc(db, 'users', user.uid), userDoc);
+      console.log('✅ User document created in Firestore');
+
+      // Send verification email
+      console.log('📧 Sending verification email...');
+      const emailResponse = await fetch('/api/auth/send-verification', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          email: data.email, 
+          code: verificationCode 
         }),
       });
 
+      const emailResult = await emailResponse.json();
+      console.log('📬 Email result:', emailResult);
+
+      if (!emailResponse.ok || !emailResult.success) {
+        throw new Error(emailResult.error || 'Failed to send verification email');
+      }
+
+      console.log('✅ Verification email sent');
+
       toast({
-        title: "تم إنشاء الحساب بنجاح",
-        description: "تحقق من بريدك الإلكتروني للحصول على كود التفعيل",
+        title: "تم إنشاء الحساب",
+        description: "تم إرسال كود التحقق إلى بريدك الإلكتروني",
       });
 
       // Redirect to verification page with email

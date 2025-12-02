@@ -330,38 +330,73 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/auth/verify-email", async (req, res) => {
     try {
       const { token, email } = req.body;
-      console.log('🔐 Verify request:', { email, token });
+      console.log('🔐 Verify request:', { email, token: token ? 'present' : 'missing' });
       
       if (!token || !email) {
         console.log('❌ Missing token or email');
-        return res.status(400).json({ success: false, error: "Token and email required" });
+        return res.status(400).json({ 
+          success: false, 
+          error: "Token and email required" 
+        });
       }
 
       // Query Firestore to find user by email
+      console.log('🔍 Searching for user with email:', email);
       const users = await queryFirestore("users", [
         { field: "email", op: "EQUAL", value: email }
       ]);
 
       if (users.length === 0) {
         console.log('❌ User not found for email:', email);
-        return res.status(404).json({ success: false, error: "User not found" });
+        return res.status(404).json({ 
+          success: false, 
+          error: "User not found" 
+        });
       }
 
       const user = users[0];
       console.log('👤 Found user:', user.id);
+      console.log('📧 Email verified status:', user.emailVerified);
+      console.log('🔑 Has verification token:', !!user.emailVerificationToken);
+      
+      // Check if already verified
+      if (user.emailVerified) {
+        console.log('✅ Email already verified');
+        return res.json({ 
+          success: true, 
+          message: "Email already verified" 
+        });
+      }
       
       // Check token validity
-      if (!user.emailVerificationToken || user.emailVerificationToken !== token) {
-        console.log('❌ Invalid token. Expected:', user.emailVerificationToken, 'Got:', token);
-        return res.status(400).json({ success: false, error: "Invalid verification token" });
+      if (!user.emailVerificationToken) {
+        console.log('❌ No verification token found');
+        return res.status(400).json({ 
+          success: false, 
+          error: "Invalid verification token" 
+        });
+      }
+
+      if (user.emailVerificationToken !== token) {
+        console.log('❌ Token mismatch');
+        console.log('Expected:', user.emailVerificationToken);
+        console.log('Received:', token);
+        return res.status(400).json({ 
+          success: false, 
+          error: "Invalid verification token" 
+        });
       }
 
       if (user.emailVerificationTokenExpiry && user.emailVerificationTokenExpiry < Date.now()) {
         console.log('❌ Token expired');
-        return res.status(400).json({ success: false, error: "Verification token expired" });
+        return res.status(400).json({ 
+          success: false, 
+          error: "Verification token expired. Please request a new verification email." 
+        });
       }
 
       // Update user to mark email as verified
+      console.log('📝 Updating user verification status...');
       const updateResponse = await fetch(
         `https://firestore.googleapis.com/v1/projects/${FIREBASE_PROJECT_ID}/databases/(default)/documents/users/${user.id}?updateMask.fieldPaths=emailVerified&updateMask.fieldPaths=emailVerificationToken&updateMask.fieldPaths=emailVerificationTokenExpiry`,
         {
@@ -381,15 +416,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
       );
 
       if (!updateResponse.ok) {
-        console.error('❌ Failed to update user');
-        return res.status(500).json({ success: false, error: "Failed to verify email" });
+        const errorText = await updateResponse.text();
+        console.error('❌ Failed to update user:', errorText);
+        return res.status(500).json({ 
+          success: false, 
+          error: "Failed to verify email. Please try again." 
+        });
       }
 
       console.log('✅ Email verified successfully for:', email);
-      res.json({ success: true, message: "Email verified successfully" });
+      res.json({ 
+        success: true, 
+        message: "Email verified successfully" 
+      });
     } catch (error: any) {
-      console.error("❌ Email verification error:", error?.message);
-      res.status(500).json({ success: false, error: error?.message });
+      console.error("❌ Email verification error:", error?.message || error);
+      res.status(500).json({ 
+        success: false, 
+        error: "An error occurred during verification. Please try again." 
+      });
     }
   });
 

@@ -15,6 +15,7 @@ export default function VerifyEmailPage() {
   useEffect(() => {
     const verifyEmail = async () => {
       try {
+        // Get URL parameters
         const params = new URLSearchParams(window.location.search);
         const token = params.get('token');
         const email = params.get('email');
@@ -23,10 +24,11 @@ export default function VerifyEmailPage() {
         console.log('Token:', token);
         console.log('Email:', email);
 
+        // Validate parameters
         if (!token || !email) {
           console.error('❌ Missing token or email');
           setStatus('error');
-          setMessage('رابط التحقق غير صحيح أو مفقود');
+          setMessage('رابط التحقق غير صحيح. يرجى التحقق من الرابط المرسل إلى بريدك.');
           toast({
             title: 'خطأ',
             description: 'رابط التحقق غير صحيح',
@@ -36,13 +38,18 @@ export default function VerifyEmailPage() {
         }
 
         console.log('📧 Sending verification request...');
+        
+        // Send verification request
         const response = await fetch('/api/auth/verify-email', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 
+            'Content-Type': 'application/json',
+          },
           body: JSON.stringify({ token, email }),
         });
 
         console.log('📬 Response status:', response.status);
+        
         const result = await response.json();
         console.log('📋 Response data:', result);
 
@@ -61,7 +68,21 @@ export default function VerifyEmailPage() {
             setLocation('/login');
           }, 3000);
         } else {
-          const errorMessage = result.error || 'فشل التحقق من البريد الإلكتروني';
+          // Handle error response
+          let errorMessage = 'فشل التحقق من البريد الإلكتروني';
+          
+          if (result.error) {
+            if (result.error.includes('expired')) {
+              errorMessage = 'انتهت صلاحية رابط التحقق. يرجى طلب رابط جديد.';
+            } else if (result.error.includes('Invalid')) {
+              errorMessage = 'رابط التحقق غير صحيح.';
+            } else if (result.error.includes('not found')) {
+              errorMessage = 'لم يتم العثور على الحساب.';
+            } else {
+              errorMessage = result.error;
+            }
+          }
+          
           console.error('❌ Verification failed:', errorMessage);
           setStatus('error');
           setMessage(errorMessage);
@@ -74,10 +95,10 @@ export default function VerifyEmailPage() {
       } catch (error: any) {
         console.error('❌ Verification error:', error);
         setStatus('error');
-        setMessage('حدث خطأ أثناء التحقق من البريد');
+        setMessage('حدث خطأ في الاتصال بالخادم. يرجى المحاولة مرة أخرى.');
         toast({
-          title: 'خطأ',
-          description: 'حدث خطأ غير متوقع',
+          title: 'خطأ في الاتصال',
+          description: 'تعذر الاتصال بالخادم',
           variant: 'destructive',
         });
       }
@@ -135,10 +156,10 @@ export default function VerifyEmailPage() {
                 العودة للتسجيل
               </Button>
               <Button 
-                onClick={() => setLocation('/')}
+                onClick={() => setLocation('/login')}
                 className="w-full bg-primary hover:bg-primary/90"
               >
-                الصفحة الرئيسية
+                تسجيل الدخول
               </Button>
             </div>
           )}

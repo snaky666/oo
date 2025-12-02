@@ -1,7 +1,7 @@
 import { type User, type InsertUser } from "@shared/schema";
 import { randomUUID } from "node:crypto";
 import { initializeApp } from "firebase/app";
-import { getFirestore, collection, doc, getDoc, getDocs, query, where } from "firebase/firestore";
+import { getFirestore, collection, doc, getDoc, getDocs, setDoc, query, where } from "firebase/firestore";
 
 const firebaseConfig = {
   apiKey: process.env.FIREBASE_API_KEY,
@@ -24,23 +24,38 @@ export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
   getUserByEmail(email: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
+  updateUser(uid: string, data: Partial<User>): Promise<void>;
 }
 
-export class MemStorage implements IStorage {
-  private users: Map<string, User>;
-
-  constructor() {
-    this.users = new Map();
-  }
-
+export class FirebaseStorage implements IStorage {
   async getUser(id: string): Promise<User | undefined> {
-    return this.users.get(id);
+    try {
+      const userDoc = await getDoc(doc(db, "users", id));
+      if (userDoc.exists()) {
+        return userDoc.data() as User;
+      }
+      return undefined;
+    } catch (error) {
+      console.error("Error getting user:", error);
+      return undefined;
+    }
   }
 
   async getUserByEmail(email: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(
-      (user) => user.email === email,
-    );
+    try {
+      const usersRef = collection(db, "users");
+      const q = query(usersRef, where("email", "==", email));
+      const querySnapshot = await getDocs(q);
+      
+      if (querySnapshot.empty) {
+        return undefined;
+      }
+      
+      return querySnapshot.docs[0].data() as User;
+    } catch (error) {
+      console.error("Error getting user by email:", error);
+      return undefined;
+    }
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
@@ -52,9 +67,30 @@ export class MemStorage implements IStorage {
       phone: insertUser.phone,
       createdAt: Date.now()
     };
-    this.users.set(uid, user);
     return user;
+  }
+
+  async updateUser(uid: string, data: Partial<User>): Promise<void> {
+    try {
+      const userRef = doc(db, "users", uid);
+      
+      // Remove undefined values
+      const cleanData = Object.fromEntries(
+        Object.entries(data).filter(([_, v]) => v !== undefined)
+      );
+      
+      // Convert null to deleteField for Firestore
+      const updateData: any = {};
+      for (const [key, value] of Object.entries(cleanData)) {
+        updateData[key] = value;
+      }
+      
+      await setDoc(userRef, updateData, { merge: true });
+    } catch (error) {
+      console.error("Error updating user:", error);
+      throw error;
+    }
   }
 }
 
-export const storage = new MemStorage();
+export const storage = new FirebaseStorage();

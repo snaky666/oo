@@ -1,3 +1,4 @@
+
 modules = ["nodejs-20", "web", "postgresql-16", "python-3.11"]
 [agent]
 expertMode = true
@@ -54,15 +55,5 @@ publicDir = "dist/public"
 build = ["npm", "run", "build"]
 
 [[deployment.rewrites]]
-from = "/*"
-to = "/index.html"
-
-[[deployment.responseHeaders]]
-path = "/data/*"
-name = "Content-Type"
-value = "application/json"
-
-[[deployment.responseHeaders]]
-path = "/data/*"
-name = "Cache-Control"
-value = "public, max-age=3600"
+source = "/(.*)"
+destination = "/index.html"

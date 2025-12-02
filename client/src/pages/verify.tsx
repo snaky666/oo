@@ -250,11 +250,44 @@ export default function VerifyEmailPage() {
                   المحاولة مرة أخرى
                 </Button>
                 <Button 
-                  onClick={() => setLocation('/login')}
+                  onClick={handleResendCode}
                   variant="outline"
                   className="w-full"
                 >
-                  الذهاب لتسجيل الدخول
+                  إرسال كود جديد
+                </Button>
+                <Button 
+                  onClick={async () => {
+                    try {
+                      console.log('🗑️ Deleting unverified account...');
+                      const response = await fetch('/api/auth/delete-unverified', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ email }),
+                      });
+
+                      const result = await response.json();
+                      console.log('🗑️ Delete result:', result);
+
+                      toast({
+                        title: 'تم الحذف',
+                        description: 'يمكنك الآن إنشاء حساب جديد',
+                      });
+
+                      setLocation('/register');
+                    } catch (error) {
+                      console.error('❌ Delete error:', error);
+                      toast({
+                        title: 'خطأ',
+                        description: 'فشل حذف الحساب',
+                        variant: 'destructive',
+                      });
+                    }
+                  }}
+                  variant="outline"
+                  className="w-full"
+                >
+                  إعادة إنشاء الحساب
                 </Button>
               </div>
             </>

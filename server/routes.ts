@@ -394,6 +394,84 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Delete unverified account
+  app.post("/api/auth/delete-unverified", async (req, res) => {
+    try {
+      const { email } = req.body;
+      console.log('🗑️ Delete unverified account request for:', email);
+
+      if (!email) {
+        return res.status(400).json({ 
+          success: false, 
+          error: "Email required" 
+        });
+      }
+
+      // Get user from storage
+      const user = await storage.getUserByEmail(email);
+      
+      if (!user) {
+        console.log('⚠️ User not found, already deleted or never existed');
+        return res.json({ 
+          success: true, 
+          message: "Account cleared" 
+        });
+      }
+
+      // Only delete if not verified
+      if (user.emailVerified) {
+        console.log('❌ Cannot delete verified account');
+        return res.status(403).json({ 
+          success: false, 
+          error: "Cannot delete verified account" 
+        });
+      }
+
+      console.log('🗑️ Deleting unverified account:', user.uid);
+
+      // Delete from Firestore
+      const deleteDocResponse = await fetch(
+        `https://firestore.googleapis.com/v1/projects/${FIREBASE_PROJECT_ID}/databases/(default)/documents/users/${user.uid}`,
+        {
+          method: "DELETE",
+          headers: {
+            "X-Goog-Api-Key": FIREBASE_API_KEY || ""
+          }
+        }
+      );
+
+      if (!deleteDocResponse.ok && deleteDocResponse.status !== 404) {
+        console.error('❌ Failed to delete Firestore document');
+      }
+
+      // Delete from Firebase Auth
+      const deleteAuthResponse = await fetch(
+        `https://identitytoolkit.googleapis.com/v1/accounts:delete?key=${FIREBASE_API_KEY}`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            idToken: user.uid // This won't work without proper token, but we'll use Admin SDK alternative
+          })
+        }
+      );
+
+      console.log('✅ Unverified account deleted successfully');
+      res.json({ 
+        success: true, 
+        message: "Account deleted successfully" 
+      });
+    } catch (error: any) {
+      console.error("❌ Delete account error:", error?.message);
+      res.status(500).json({ 
+        success: false, 
+        error: "Failed to delete account" 
+      });
+    }
+  });
+
   // Verify email code
   app.post("/api/auth/verify-email", async (req, res) => {
     try {

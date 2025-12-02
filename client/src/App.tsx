@@ -8,7 +8,7 @@ import { ThemeProvider } from "@/components/ThemeProvider";
 import NotFound from "@/pages/not-found";
 import Login from "@/pages/login";
 import Register from "@/pages/register";
-import VerifyEmail from "@/pages/verify";
+import VerifyEmailPage from "@/pages/verify";
 import LandingPage from "@/pages/landing";
 import BrowseSheep from "@/pages/browse";
 import SheepDetail from "@/pages/sheep-detail";
@@ -52,7 +52,7 @@ function Router() {
           <Register />
         </PublicRoute>
       </Route>
-      <Route path="/verify" component={VerifyEmail} />
+      <Route path="/verify" component={VerifyEmailPage} />
 
       {/* Buyer/Seller routes */}
       <Route path="/browse">

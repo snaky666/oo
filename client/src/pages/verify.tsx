@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
-export default function VerifyEmail() {
+export default function VerifyEmailPage() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');

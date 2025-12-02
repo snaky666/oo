@@ -342,19 +342,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      // Query Firestore to find user by email
-      const users = await queryFirestore("users", [
-        { field: "email", op: "EQUAL", value: email }
-      ]);
+      // Get user from storage
+      const user = await storage.getUserByEmail(email);
 
-      if (users.length === 0) {
+      if (!user) {
         return res.status(404).json({ 
           success: false, 
           error: "User not found" 
         });
       }
-
-      const user = users[0];
 
       // Check if already verified
       if (user.emailVerified) {
@@ -369,30 +365,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const tokenExpiry = Date.now() + (15 * 60 * 1000); // 15 minutes
 
       // Update user with new code
-      const updateResponse = await fetch(
-        `https://firestore.googleapis.com/v1/projects/${FIREBASE_PROJECT_ID}/databases/(default)/documents/users/${user.id}?updateMask.fieldPaths=emailVerificationToken&updateMask.fieldPaths=emailVerificationTokenExpiry`,
-        {
-          method: "PATCH",
-          headers: {
-            "Content-Type": "application/json",
-            "X-Goog-Api-Key": FIREBASE_API_KEY || ""
-          },
-          body: JSON.stringify({
-            fields: {
-              emailVerificationToken: { stringValue: newCode },
-              emailVerificationTokenExpiry: { integerValue: tokenExpiry.toString() }
-            }
-          })
-        }
-      );
-
-      if (!updateResponse.ok) {
-        console.error('❌ Failed to update verification code');
-        return res.status(500).json({ 
-          success: false, 
-          error: "Failed to generate new code" 
-        });
-      }
+      await storage.updateUser(user.uid, {
+        emailVerificationToken: newCode,
+        emailVerificationTokenExpiry: tokenExpiry
+      });
 
       // Send new verification email
       const emailResult = await sendVerificationEmail(email, newCode);
@@ -418,7 +394,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Verify email token
+  // Verify email code
   app.post("/api/auth/verify-email", async (req, res) => {
     try {
       const { code, email } = req.body;
@@ -432,13 +408,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      // Query Firestore to find user by email
-      console.log('🔍 Searching for user with email:', email);
-      const users = await queryFirestore("users", [
-        { field: "email", op: "EQUAL", value: email }
-      ]);
-
-      if (users.length === 0) {
+      // Get user from storage
+      const user = await storage.getUserByEmail(email);
+      
+      if (!user) {
         console.log('❌ User not found for email:', email);
         return res.status(404).json({ 
           success: false, 
@@ -446,8 +419,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      const user = users[0];
-      console.log('👤 Found user:', user.id);
+      console.log('👤 Found user:', user.uid);
       console.log('📧 Email verified status:', user.emailVerified);
       console.log('🔑 Has verification token:', !!user.emailVerificationToken);
 
@@ -489,32 +461,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Update user to mark email as verified
       console.log('📝 Updating user verification status...');
-      const updateResponse = await fetch(
-        `https://firestore.googleapis.com/v1/projects/${FIREBASE_PROJECT_ID}/databases/(default)/documents/users/${user.id}?updateMask.fieldPaths=emailVerified&updateMask.fieldPaths=emailVerificationToken&updateMask.fieldPaths=emailVerificationTokenExpiry`,
-        {
-          method: "PATCH",
-          headers: {
-            "Content-Type": "application/json",
-            "X-Goog-Api-Key": FIREBASE_API_KEY || ""
-          },
-          body: JSON.stringify({
-            fields: {
-              emailVerified: { booleanValue: true },
-              emailVerificationToken: { nullValue: null },
-              emailVerificationTokenExpiry: { nullValue: null }
-            }
-          })
-        }
-      );
-
-      if (!updateResponse.ok) {
-        const errorText = await updateResponse.text();
-        console.error('❌ Failed to update user:', errorText);
-        return res.status(500).json({ 
-          success: false, 
-          error: "Failed to verify email. Please try again." 
-        });
-      }
+      await storage.updateUser(user.uid, {
+        emailVerified: true,
+        emailVerificationToken: null,
+        emailVerificationTokenExpiry: null
+      });
 
       console.log('✅ Email verified successfully for:', email);
       res.json({ 

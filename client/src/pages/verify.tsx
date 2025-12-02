@@ -41,6 +41,7 @@ export default function VerifyEmail() {
 
         const result = await response.json();
         console.log('📧 Verification result:', result);
+        console.log('📧 Response status:', response.status);
 
         if (response.ok && result.success) {
           setStatus('success');
@@ -53,11 +54,13 @@ export default function VerifyEmail() {
           // Redirect to login after 3 seconds
           setTimeout(() => setLocation('/login'), 3000);
         } else {
+          const errorMessage = result.error || 'فشل التحقق من البريد الإلكتروني';
+          console.error('❌ Verification failed:', errorMessage);
           setStatus('error');
-          setMessage(result.error || 'فشل التحقق من البريد الإلكتروني');
+          setMessage(errorMessage);
           toast({
             title: 'فشل التحقق',
-            description: result.error || 'حدث خطأ أثناء التحقق',
+            description: errorMessage,
             variant: 'destructive',
           });
         }

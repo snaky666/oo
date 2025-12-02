@@ -330,40 +330,66 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/auth/verify-email", async (req, res) => {
     try {
       const { token, email } = req.body;
-      if (!token || !email) {
-        return res.status(400).json({ error: "Token and email required" });
-      }
-
-      const { getFirestore, doc, updateDoc, getDoc } = await import("firebase-admin/firestore");
-      const db = getFirestore();
-      const userDoc = await getDoc(doc(db, "users", email.split("@")[0]));
+      console.log('🔐 Verify request:', { email, token });
       
-      if (!userDoc.exists()) {
-        return res.status(404).json({ error: "User not found" });
+      if (!token || !email) {
+        console.log('❌ Missing token or email');
+        return res.status(400).json({ success: false, error: "Token and email required" });
       }
 
-      const userData = userDoc.data();
+      // Query Firestore to find user by email
+      const users = await queryFirestore("users", [
+        { field: "email", op: "EQUAL", value: email }
+      ]);
+
+      if (users.length === 0) {
+        console.log('❌ User not found for email:', email);
+        return res.status(404).json({ success: false, error: "User not found" });
+      }
+
+      const user = users[0];
+      console.log('👤 Found user:', user.id);
       
       // Check token validity
-      if (!userData.emailVerificationToken || userData.emailVerificationToken !== token) {
-        return res.status(400).json({ error: "Invalid verification token" });
+      if (!user.emailVerificationToken || user.emailVerificationToken !== token) {
+        console.log('❌ Invalid token. Expected:', user.emailVerificationToken, 'Got:', token);
+        return res.status(400).json({ success: false, error: "Invalid verification token" });
       }
 
-      if (userData.emailVerificationTokenExpiry && userData.emailVerificationTokenExpiry < Date.now()) {
-        return res.status(400).json({ error: "Verification token expired" });
+      if (user.emailVerificationTokenExpiry && user.emailVerificationTokenExpiry < Date.now()) {
+        console.log('❌ Token expired');
+        return res.status(400).json({ success: false, error: "Verification token expired" });
       }
 
-      // Mark email as verified
-      await updateDoc(doc(db, "users", email.split("@")[0]), {
-        emailVerified: true,
-        emailVerificationToken: null,
-        emailVerificationTokenExpiry: null,
-      });
+      // Update user to mark email as verified
+      const updateResponse = await fetch(
+        `https://firestore.googleapis.com/v1/projects/${FIREBASE_PROJECT_ID}/databases/(default)/documents/users/${user.id}?updateMask.fieldPaths=emailVerified&updateMask.fieldPaths=emailVerificationToken&updateMask.fieldPaths=emailVerificationTokenExpiry`,
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            "X-Goog-Api-Key": FIREBASE_API_KEY || ""
+          },
+          body: JSON.stringify({
+            fields: {
+              emailVerified: { booleanValue: true },
+              emailVerificationToken: { nullValue: null },
+              emailVerificationTokenExpiry: { nullValue: null }
+            }
+          })
+        }
+      );
 
+      if (!updateResponse.ok) {
+        console.error('❌ Failed to update user');
+        return res.status(500).json({ success: false, error: "Failed to verify email" });
+      }
+
+      console.log('✅ Email verified successfully for:', email);
       res.json({ success: true, message: "Email verified successfully" });
     } catch (error: any) {
       console.error("❌ Email verification error:", error?.message);
-      res.status(500).json({ error: error?.message });
+      res.status(500).json({ success: false, error: error?.message });
     }
   });
 

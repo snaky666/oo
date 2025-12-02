@@ -19,7 +19,12 @@ export default function VerifyEmail() {
         const token = params.get('token');
         const email = params.get('email');
 
+        console.log('🔐 Starting verification...');
+        console.log('Token:', token);
+        console.log('Email:', email);
+
         if (!token || !email) {
+          console.error('❌ Missing token or email');
           setStatus('error');
           setMessage('رابط التحقق غير صحيح أو مفقود');
           toast({
@@ -30,20 +35,19 @@ export default function VerifyEmail() {
           return;
         }
 
-        console.log('🔐 Verifying email:', email);
-        console.log('🔑 Token:', token);
-
+        console.log('📧 Sending verification request...');
         const response = await fetch('/api/auth/verify-email', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ token, email }),
         });
 
+        console.log('📬 Response status:', response.status);
         const result = await response.json();
-        console.log('📧 Verification result:', result);
-        console.log('📧 Response status:', response.status);
+        console.log('📋 Response data:', result);
 
         if (response.ok && result.success) {
+          console.log('✅ Verification successful');
           setStatus('success');
           setMessage('تم التحقق من بريدك الإلكتروني بنجاح! يمكنك الآن تسجيل الدخول.');
           toast({
@@ -52,7 +56,10 @@ export default function VerifyEmail() {
           });
           
           // Redirect to login after 3 seconds
-          setTimeout(() => setLocation('/login'), 3000);
+          setTimeout(() => {
+            console.log('🔄 Redirecting to login...');
+            setLocation('/login');
+          }, 3000);
         } else {
           const errorMessage = result.error || 'فشل التحقق من البريد الإلكتروني';
           console.error('❌ Verification failed:', errorMessage);

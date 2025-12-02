@@ -9,7 +9,6 @@ import NotFound from "@/pages/not-found";
 import Login from "@/pages/login";
 import Register from "@/pages/register";
 import VerifyEmail from "@/pages/verify";
-import Contact from "@/pages/contact";
 import LandingPage from "@/pages/landing";
 import BrowseSheep from "@/pages/browse";
 import SheepDetail from "@/pages/sheep-detail";
@@ -48,7 +47,6 @@ function Router() {
         </PublicRoute>
       </Route>
       <Route path="/landing" component={LandingPage} />
-      <Route path="/contact" component={Contact} />
       <Route path="/register">
         <PublicRoute>
           <Register />

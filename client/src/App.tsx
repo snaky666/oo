@@ -48,7 +48,7 @@ function Router() {
         </PublicRoute>
       </Route>
       <Route path="/landing" component={LandingPage} />
-      <Route path="/contact" component={ContactPage} />
+      <Route path="/contact" component={Contact} />
       <Route path="/register">
         <PublicRoute>
           <Register />

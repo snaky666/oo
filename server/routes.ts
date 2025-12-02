@@ -47,7 +47,7 @@ async function queryFirestore(collectionName: string, filters: Array<{ field: st
 
     const data = await response.json();
     const results: any[] = [];
-    
+
     if (Array.isArray(data)) {
       for (const item of data) {
         if (item.document) {
@@ -97,7 +97,7 @@ async function getDocument(collectionName: string, documentId: string) {
 // Helper to extract data from Firestore document fields
 function extractDocumentData(fields: any): any {
   if (!fields) return {};
-  
+
   const result: any = {};
   for (const [key, value] of Object.entries(fields)) {
     result[key] = extractFieldValue(value);
@@ -130,7 +130,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const approved = req.query.approved === "true";
       console.log(`🐑 Fetching ${approved ? "approved" : "all"} sheep...`);
-      
+
       // Use REST API with a direct Firestore query
       const body: any = {
         structuredQuery: {
@@ -183,7 +183,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/sheep/approved", async (req, res) => {
     try {
       console.log("🐑 Fetching approved sheep...");
-      
+
       // Use REST API with a direct Firestore query
       const body = {
         structuredQuery: {
@@ -233,7 +233,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/sheep/:id", async (req, res) => {
     try {
       console.log(`🐑 Fetching sheep ${req.params.id}...`);
-      
+
       const response = await fetch(
         `https://firestore.googleapis.com/v1/projects/${FIREBASE_PROJECT_ID}/databases/(default)/documents/sheep/${req.params.id}`,
         {
@@ -256,7 +256,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const doc = await response.json();
       const data = extractDocumentData(doc.fields);
-      
+
       // Only return if approved
       if (data?.status !== "approved") {
         console.log(`⚠️ Sheep ${req.params.id} status is ${data?.status}, not approved`);
@@ -274,19 +274,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Send verification email
+  // Send verification email with code
   app.post("/api/auth/send-verification", async (req, res) => {
     try {
-      const { email, token } = req.body;
-      if (!email || !token) {
-        return res.status(400).json({ error: "Email and token required" });
-      }
+      const { email, code } = req.body;
+      console.log('📧 Sending verification code to:', email);
 
-      const result = await sendVerificationEmail(email, token);
-      res.json(result);
+      const result = await sendVerificationEmail(email, code);
+
+      if (result.success) {
+        res.json({ success: true, message: "Verification code sent" });
+      } else {
+        res.status(500).json({ success: false, error: result.error });
+      }
     } catch (error: any) {
       console.error("❌ Send verification error:", error?.message);
-      res.status(500).json({ error: error?.message });
+      res.status(500).json({ success: false, error: error?.message });
     }
   });
 
@@ -315,10 +318,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const result = await sendOrderConfirmationEmail(email, orderData);
-      
+
       // Also send notification to admin
       await sendAdminNotificationEmail(orderData);
-      
+
       res.json(result);
     } catch (error: any) {
       console.error("❌ Send confirmation error:", error?.message);
@@ -331,7 +334,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { token, email } = req.body;
       console.log('🔐 Verify request:', { email, token: token ? 'present' : 'missing' });
-      
+
       if (!token || !email) {
         console.log('❌ Missing token or email');
         return res.status(400).json({ 
@@ -358,7 +361,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log('👤 Found user:', user.id);
       console.log('📧 Email verified status:', user.emailVerified);
       console.log('🔑 Has verification token:', !!user.emailVerificationToken);
-      
+
       // Check if already verified
       if (user.emailVerified) {
         console.log('✅ Email already verified');
@@ -367,7 +370,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           message: "Email already verified" 
         });
       }
-      
+
       // Check token validity
       if (!user.emailVerificationToken) {
         console.log('❌ No verification token found');
@@ -443,7 +446,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const filePath = path.resolve(import.meta.dirname, "..", "public", "data", "municipalities.json");
       const data = await fs.promises.readFile(filePath, "utf-8");
-      
+
       res.set("Content-Type", "application/json");
       res.send(data);
     } catch (error: any) {

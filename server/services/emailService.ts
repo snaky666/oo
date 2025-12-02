@@ -44,12 +44,9 @@ export async function sendEmail(options: EmailOptions) {
   }
 }
 
-export async function sendVerificationEmail(email: string, token: string) {
-  const baseUrl = getBaseUrl();
-  const verificationLink = `${baseUrl}/verify?token=${token}&email=${encodeURIComponent(email)}`;
-  
-  console.log('📧 Sending verification to:', email);
-  console.log('🔗 Verification link:', verificationLink);
+export async function sendVerificationEmail(email: string, code: string) {
+  console.log('📧 Sending verification code to:', email);
+  console.log('🔢 Verification code:', code);
 
   const html = `
     <!DOCTYPE html>
@@ -57,7 +54,7 @@ export async function sendVerificationEmail(email: string, token: string) {
     <head>
       <meta charset="UTF-8">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>تحقق من بريدك الإلكتروني</title>
+      <title>كود التحقق</title>
     </head>
     <body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
       <div style="background-color: #f5f5f5; padding: 20px;">
@@ -72,22 +69,23 @@ export async function sendVerificationEmail(email: string, token: string) {
           </p>
           
           <p style="color: #333; font-size: 16px; line-height: 1.6; margin-bottom: 25px;">
-            شكراً لتسجيلك في منصة <strong>أضحيتي</strong>. لإتمام عملية التسجيل وتفعيل حسابك، يرجى النقر على الزر أدناه للتحقق من بريدك الإلكتروني:
+            شكراً لتسجيلك في منصة <strong>أضحيتي</strong>. استخدم كود التحقق التالي لتفعيل حسابك:
           </p>
           
-          <div style="text-align: center; margin: 30px 0;">
-            <a href="${verificationLink}" style="display: inline-block; background-color: #1a472a; color: white; padding: 15px 40px; text-decoration: none; border-radius: 5px; font-weight: bold; font-size: 16px;">
-              ✓ تحقق من البريد الإلكتروني
-            </a>
+          <div style="text-align: center; margin: 40px 0;">
+            <div style="display: inline-block; background: linear-gradient(135deg, #1a472a 0%, #2d6b3f 100%); padding: 25px 50px; border-radius: 12px; box-shadow: 0 4px 15px rgba(26, 71, 42, 0.3);">
+              <p style="color: #fff; font-size: 14px; margin: 0 0 10px 0; opacity: 0.9;">كود التحقق الخاص بك</p>
+              <p style="color: #fff; font-size: 42px; font-weight: bold; letter-spacing: 8px; margin: 0; font-family: 'Courier New', monospace;">
+                ${code}
+              </p>
+            </div>
           </div>
           
-          <p style="color: #666; font-size: 14px; margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee;">
-            <strong>لا يعمل الزر؟</strong> انسخ الرابط التالي والصقه في المتصفح:
-          </p>
-          
-          <p style="color: #1a472a; word-break: break-all; font-size: 13px; background-color: #f9f9f9; padding: 12px; border-radius: 5px; border: 1px solid #e0e0e0;">
-            ${verificationLink}
-          </p>
+          <div style="background-color: #fff3cd; border: 1px solid #ffc107; border-radius: 5px; padding: 15px; margin: 25px 0;">
+            <p style="color: #856404; font-size: 14px; margin: 0; font-weight: bold;">
+              ⚠️ تنبيه: صلاحية هذا الكود تنتهي بعد 15 دقيقة
+            </p>
+          </div>
           
           <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #eee;">
             <p style="color: #999; font-size: 12px; margin: 5px 0;">
@@ -111,8 +109,9 @@ export async function sendVerificationEmail(email: string, token: string) {
 
 شكراً لتسجيلك في منصة أضحيتي. 
 
-للتحقق من بريدك الإلكتروني، يرجى زيارة الرابط التالي:
-${verificationLink}
+كود التحقق الخاص بك هو: ${code}
+
+صلاحية الكود: 15 دقيقة
 
 إذا لم تقم بإنشاء حساب، يرجى تجاهل هذا البريد.
 
@@ -121,7 +120,7 @@ ${verificationLink}
 
   return sendEmail({
     to: email,
-    subject: 'تحقق من بريدك الإلكتروني - أضحيتي',
+    subject: 'كود التحقق - أضحيتي',
     html,
     text,
   });

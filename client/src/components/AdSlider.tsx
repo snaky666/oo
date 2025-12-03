@@ -12,63 +12,66 @@ interface Ad {
   active: boolean;
 }
 
-interface AdSliderProps {
+interface Slide {
+  id: string;
+  image: string;
+  companyName?: string;
+  link?: string;
+  description?: string;
   isHero?: boolean;
 }
 
-export default function AdSlider({ isHero = false }: AdSliderProps) {
-  const [ads, setAds] = useState<Ad[]>([]);
+interface AdSliderProps {
+  ads: Ad[];
+  heroImage: string;
+}
+
+export default function AdSlider({ ads, heroImage }: AdSliderProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [isLoading, setIsLoading] = useState(true);
+
+  // Combine hero image with ads
+  const slides: Slide[] = [
+    {
+      id: "hero",
+      image: heroImage,
+      description: "منصة موثوقة لبيع وشراء الأغنام",
+      isHero: true,
+    },
+    ...ads.map((ad) => ({
+      id: ad.id,
+      image: ad.image,
+      companyName: ad.companyName,
+      description: ad.description,
+      link: ad.link,
+      isHero: false,
+    })),
+  ];
 
   useEffect(() => {
-    fetchAds();
-  }, []);
-
-  const fetchAds = async () => {
-    try {
-      const response = await fetch('/api/ads');
-      const data = await response.json();
-      const activeAds = data.filter((ad: Ad) => ad.active);
-      setAds(activeAds);
-    } catch (error) {
-      console.error('Error fetching ads:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    if (!ads || ads.length === 0) return;
+    if (slides.length === 0) return;
 
     const interval = setInterval(() => {
-      setCurrentIndex((prev) => (prev + 1) % ads.length);
+      setCurrentIndex((prev) => (prev + 1) % slides.length);
     }, 5000);
 
     return () => clearInterval(interval);
-  }, [ads]);
+  }, [slides.length]);
 
   const nextSlide = () => {
-    if (!ads || ads.length === 0) return;
-    setCurrentIndex((prev) => (prev + 1) % ads.length);
+    if (slides.length === 0) return;
+    setCurrentIndex((prev) => (prev + 1) % slides.length);
   };
 
   const prevSlide = () => {
-    if (!ads || ads.length === 0) return;
-    setCurrentIndex((prev) => (prev - 1 + ads.length) % ads.length);
+    if (slides.length === 0) return;
+    setCurrentIndex((prev) => (prev - 1 + slides.length) % slides.length);
   };
 
-  if (isLoading) {
-    return (
-      <div className="w-full h-96 bg-muted animate-pulse rounded-lg" />
-    );
-  }
-
-  if (!ads || ads.length === 0) {
+  if (slides.length === 0) {
     return null;
   }
 
-  const currentSlide = ads[currentIndex];
+  const currentSlide = slides[currentIndex];
 
   return (
     <div className="relative w-full overflow-hidden rounded-lg shadow-lg">
@@ -88,9 +91,9 @@ export default function AdSlider({ isHero = false }: AdSliderProps) {
 
       {/* Content Below Image */}
       {currentSlide.description && (
-        <div className={`flex flex-col justify-between p-6 md:p-8 lg:p-10 ${isHero ? "bg-transparent" : "bg-white dark:bg-slate-900"}`}>
+        <div className={`flex flex-col justify-between p-6 md:p-8 lg:p-10 ${currentSlide.isHero ? "bg-transparent" : "bg-white dark:bg-slate-900"}`}>
           {/* Company Name */}
-          {!isHero && currentSlide.companyName && (
+          {!currentSlide.isHero && currentSlide.companyName && (
             <div className="flex items-start justify-end mb-4">
               <h2 className="text-2xl md:text-4xl font-black leading-tight text-right text-foreground">
                 {currentSlide.companyName}
@@ -99,14 +102,14 @@ export default function AdSlider({ isHero = false }: AdSliderProps) {
           )}
           
           {/* Hero Title */}
-          {isHero && (
+          {currentSlide.isHero && (
             <h1 className="text-4xl md:text-6xl font-black mb-6 leading-tight text-right text-white" style={{textShadow: '0 4px 12px rgba(0,0,0,0.8)'}}>
               منصة موثوقة<br />لبيع وشراء<br />الأغنام
             </h1>
           )}
 
           {/* Description */}
-          <p className={`text-base md:text-lg font-light mb-6 leading-relaxed text-right ${isHero ? "text-white" : "text-foreground"}`}>
+          <p className={`text-base md:text-lg font-light mb-6 leading-relaxed text-right ${currentSlide.isHero ? "text-white" : "text-foreground"}`}>
             {currentSlide.description}
           </p>
 
@@ -116,7 +119,7 @@ export default function AdSlider({ isHero = false }: AdSliderProps) {
               <Button
                 asChild
                 size="lg"
-                className={`${isHero ? "bg-white text-black hover:bg-gray-100" : "bg-primary text-primary-foreground hover:bg-primary/90"}`}
+                className={`${currentSlide.isHero ? "bg-white text-black hover:bg-gray-100" : "bg-primary text-primary-foreground hover:bg-primary/90"}`}
               >
                 <a href={currentSlide.link} target="_blank" rel="noopener noreferrer">
                   اعرف المزيد
@@ -128,7 +131,7 @@ export default function AdSlider({ isHero = false }: AdSliderProps) {
       )}
 
       {/* Navigation Arrows */}
-      {ads.length > 1 && (
+      {slides.length > 1 && (
         <>
           <Button
             variant="ghost"
@@ -150,9 +153,9 @@ export default function AdSlider({ isHero = false }: AdSliderProps) {
       )}
 
       {/* Dots Indicator */}
-      {ads.length > 1 && (
+      {slides.length > 1 && (
         <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
-          {ads.map((_, index) => (
+          {slides.map((_, index) => (
             <button
               key={index}
               className={`w-2 h-2 rounded-full transition-all ${

@@ -30,30 +30,14 @@ export default function LandingPage() {
       try {
         const response = await fetch("/api/ads");
         if (!response.ok) return [];
-        return response.json() as Promise<Ad[]>;
+        const data = await response.json() as Ad[];
+        // Filter only active ads
+        return data.filter((ad: Ad) => ad.active);
       } catch {
         return [];
       }
     },
   });
-
-  // Combine hero and ads into one slider
-  const slides = [
-    {
-      id: "hero",
-      image: heroImage,
-      description: "منصة موثوقة لبيع وشراء الأغنام",
-      isHero: true,
-    },
-    ...ads.map((ad) => ({
-      id: ad.id,
-      image: ad.image,
-      companyName: ad.companyName,
-      description: ad.description,
-      link: ad.link,
-      isHero: false,
-    })),
-  ];
 
   return (
     <div className="bg-background w-full">
@@ -61,32 +45,7 @@ export default function LandingPage() {
 
       {/* Slider with Hero + Ads */}
       <section>
-        {slides.length > 0 ? (
-          <AdSlider slides={slides} autoSlideInterval={5000} />
-        ) : (
-          <div className="relative h-[500px] md:h-[600px] overflow-hidden">
-            <div className="absolute inset-0">
-              <img
-                src={heroImage}
-                alt="مزرعة أغنام"
-                className="w-full h-full object-cover"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/50 to-black/30" />
-            </div>
-            <div className="relative h-full flex items-center">
-              <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8 w-full">
-                <div className="max-w-3xl text-white">
-                  <h1 className="text-5xl md:text-6xl font-bold mb-6">
-                    منصة موثوقة لبيع وشراء الأغنام
-                  </h1>
-                  <p className="text-xl md:text-2xl mb-8 text-white/90">
-                    تواصل آمن بين البائعين والمشترين مع إشراف إداري كامل
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
+        <AdSlider ads={ads} heroImage={heroImage} />
       </section>
 
       {/* CTA Buttons - Always Visible */}

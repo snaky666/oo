@@ -171,7 +171,7 @@ export default function AdSlider({ ads, heroImage }: AdSliderProps) {
           <Button
             variant="ghost"
             size="icon"
-            className="absolute left-4 md:left-8 top-1/2 -translate-y-1/2 bg-white/20 backdrop-blur-md hover:bg-white/30 border border-white/30 text-white w-12 h-12 md:w-14 md:h-14 rounded-full transition-all duration-300 hover:scale-110 shadow-lg"
+            className="absolute left-4 md:left-8 top-1/2 -translate-y-1/2 bg-white/20 backdrop-blur-md hover:bg-white/30 border border-white/30 text-white w-12 h-12 md:w-14 md:h-14 rounded-lg transition-all duration-300 hover:scale-110 shadow-lg"
             onClick={prevSlide}
           >
             <ChevronLeft className="h-6 w-6 md:h-8 md:w-8" />
@@ -179,7 +179,7 @@ export default function AdSlider({ ads, heroImage }: AdSliderProps) {
           <Button
             variant="ghost"
             size="icon"
-            className="absolute right-4 md:right-8 top-1/2 -translate-y-1/2 bg-white/20 backdrop-blur-md hover:bg-white/30 border border-white/30 text-white w-12 h-12 md:w-14 md:h-14 rounded-full transition-all duration-300 hover:scale-110 shadow-lg"
+            className="absolute right-4 md:right-8 top-1/2 -translate-y-1/2 bg-white/20 backdrop-blur-md hover:bg-white/30 border border-white/30 text-white w-12 h-12 md:w-14 md:h-14 rounded-lg transition-all duration-300 hover:scale-110 shadow-lg"
             onClick={nextSlide}
           >
             <ChevronRight className="h-6 w-6 md:h-8 md:w-8" />

@@ -39,20 +39,22 @@ export default function AdSlider({ isHero = false }: AdSliderProps) {
   };
 
   useEffect(() => {
-    if (ads.length === 0) return;
+    if (!ads || ads.length === 0) return;
 
     const interval = setInterval(() => {
       setCurrentIndex((prev) => (prev + 1) % ads.length);
     }, 5000);
 
     return () => clearInterval(interval);
-  }, [ads.length]);
+  }, [ads]);
 
   const nextSlide = () => {
+    if (!ads || ads.length === 0) return;
     setCurrentIndex((prev) => (prev + 1) % ads.length);
   };
 
   const prevSlide = () => {
+    if (!ads || ads.length === 0) return;
     setCurrentIndex((prev) => (prev - 1 + ads.length) % ads.length);
   };
 
@@ -62,7 +64,7 @@ export default function AdSlider({ isHero = false }: AdSliderProps) {
     );
   }
 
-  if (ads.length === 0) {
+  if (!ads || ads.length === 0) {
     return null;
   }
 

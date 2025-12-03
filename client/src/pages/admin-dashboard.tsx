@@ -11,6 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import AdminPaymentTab from "@/components/admin-payment-tab";
+import AdminAdsPage from "@/pages/admin-ads";
 import {
   CheckCircle,
   XCircle,
@@ -23,6 +24,7 @@ import {
   Crown,
   Edit2,
   CreditCard,
+  Megaphone,
 } from "lucide-react";
 import {
   Dialog,
@@ -359,12 +361,21 @@ export default function AdminDashboard() {
               <CreditCard className="h-4 w-4 ml-1" />
               الدفع
             </TabsTrigger>
+            <TabsTrigger value="ads" data-testid="tab-ads">
+              <Megaphone className="h-4 w-4 ml-1" />
+              الإعلانات
+            </TabsTrigger>
             </TabsList>
           </div>
 
           {/* Payments Management Tab */}
           <TabsContent value="payments">
             <AdminPaymentTab />
+          </TabsContent>
+
+          {/* Ads Management Tab */}
+          <TabsContent value="ads">
+            <AdminAdsPage />
           </TabsContent>
 
           {/* VIP Management Tab */}

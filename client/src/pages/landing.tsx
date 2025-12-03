@@ -282,48 +282,6 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="border-t py-8 md:py-12 bg-muted/30">
-        <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div>
-              <h3 className="font-bold text-lg mb-4">أضحيتي</h3>
-              <p className="text-sm text-muted-foreground">
-                منصة موثوقة لبيع وشراء الأغنام مع إشراف إداري كامل
-              </p>
-            </div>
-            <div>
-              <h3 className="font-semibold mb-4">روابط سريعة</h3>
-              <ul className="space-y-2 text-sm">
-                <li>
-                  <Link href="/browse" className="text-muted-foreground hover:text-foreground transition-colors">
-                    تصفح الأغنام
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/register" className="text-muted-foreground hover:text-foreground transition-colors">
-                    إنشاء حساب
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/login" className="text-muted-foreground hover:text-foreground transition-colors">
-                    تسجيل الدخول
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/contact" className="text-muted-foreground hover:text-foreground transition-colors">
-                    تواصل معنا
-                  </Link>
-                </li>
-              </ul>
-            </div>
-          </div>
-          <div className="mt-8 pt-8 border-t space-y-3 text-center text-sm text-muted-foreground">
-            <p>&copy; 2025 أضحيتي. جميع الحقوق محفوظة.</p>
-            <p>Developed by <a href="https://novawebdv.vercel.app" target="_blank" rel="noopener noreferrer" className="font-semibold text-foreground hover:text-primary transition-colors cursor-pointer">NovaWeb</a></p>
-          </div>
-        </div>
-      </footer>
-    </div>
+      </div>
   );
 }

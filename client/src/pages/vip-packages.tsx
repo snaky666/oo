@@ -1,4 +1,5 @@
 import Header from "@/components/Header";
+import Footer from "@/components/Footer";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
@@ -171,6 +172,7 @@ export default function VIPPackages() {
           </CardContent>
         </Card>
       </div>
+      <Footer />
     </div>
   );
 }

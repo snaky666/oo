@@ -1,4 +1,5 @@
 import Header from "@/components/Header";
+import Footer from "@/components/Footer";
 import { useState, useEffect } from "react";
 import { collection, query, where, getDocs, doc, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
@@ -65,7 +66,7 @@ export default function OrdersPage() {
 
         for (const orderDoc of snapshot.docs) {
           const orderData = orderDoc.data();
-          
+
           // تصفية الطلبات:
           // المشترين - طلباتهم فقط
           // البائعين - طلباتهم + الطلبات على منتجاتهم
@@ -314,6 +315,7 @@ export default function OrdersPage() {
           </div>
         )}
       </div>
+      <Footer />
     </div>
   );
 }

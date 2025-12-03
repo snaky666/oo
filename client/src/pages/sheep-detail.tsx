@@ -1,4 +1,5 @@
 import Header from "@/components/Header";
+import Footer from "@/components/Footer";
 import { useState, useEffect } from "react";
 import { useRoute } from "wouter";
 import { useForm, Controller } from "react-hook-form";
@@ -184,6 +185,7 @@ export default function SheepDetail() {
             </div>
           </div>
         </div>
+        <Footer />
       </div>
     );
   }
@@ -315,7 +317,7 @@ export default function SheepDetail() {
               يرجى إدخال بيانات التواصل الخاصة بك
             </DialogDescription>
           </DialogHeader>
-          
+
           <form onSubmit={handleSubmit(handleCreateOrder)} className="space-y-4">
             {/* Full Name */}
             <div className="space-y-2">
@@ -438,7 +440,7 @@ export default function SheepDetail() {
               يجب تسجيل الدخول أو إنشاء حساب لإنشاء طلب شراء
             </DialogDescription>
           </DialogHeader>
-          
+
           <div className="py-4">
             <p className="text-center text-muted-foreground mb-4">
               هل تريد متابعة التسوق كمستخدم مسجل؟
@@ -466,6 +468,7 @@ export default function SheepDetail() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      <Footer />
     </div>
   );
 }

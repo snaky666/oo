@@ -13,6 +13,7 @@ import { Filter, X, Crown } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLocation } from "wouter";
 import { getSellerPriority } from "@/lib/vip-benefits";
+import Footer from "@/components/Footer";
 
 export default function BrowseSheep() {
   const { user } = useAuth();
@@ -36,13 +37,13 @@ export default function BrowseSheep() {
             "Content-Type": "application/json",
           }
         });
-        
+
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
-        
+
         let sheepData = await response.json() as Sheep[];
-        
+
         console.log("✅ Fetched", sheepData.length, "approved sheep");
         setSheep(sheepData);
       } catch (error: any) {
@@ -221,10 +222,10 @@ export default function BrowseSheep() {
   );
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background flex flex-col">
       <Header />
 
-      <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8 py-8">
+      <main className="flex-grow max-w-7xl mx-auto px-4 md:px-6 lg:px-8 py-8">
         {/* Page Header */}
         <div className="flex items-center justify-between mb-8">
           <div>
@@ -314,7 +315,8 @@ export default function BrowseSheep() {
             )}
           </div>
         </div>
-      </div>
+      </main>
+      <Footer />
     </div>
   );
 }

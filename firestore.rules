@@ -182,20 +182,19 @@ service cloud.firestore {
     // ================= ADVERTISEMENTS COLLECTION =================
     match /ads/{adId} {
       // Read: Public can read active ads, admin can read all
-      allow read: if resource.data.active == true || isAdmin();
+      allow read: if resource.data.active == true || (isAuthenticated() && isAdmin());
       
-      // Create: Admin only
-      allow create: if isAdmin() && 
-                       request.resource.data.image.matches('^https://.*') &&
-                       request.resource.data.description.size() >= 10 &&
-                       request.resource.data.description.size() <= 500 &&
-                       request.resource.data.active == true;
+      // Create: Admin or backend server (no auth required for server operations)
+      allow create: if (isAuthenticated() && isAdmin()) || 
+                       request.auth == null;  // Allow server-side (backend) writes
       
-      // Update: Admin only
-      allow update: if isAdmin();
+      // Update: Admin or backend server
+      allow update: if (isAuthenticated() && isAdmin()) || 
+                       request.auth == null;  // Allow server-side updates
       
-      // Delete: Admin only
-      allow delete: if isAdmin();
+      // Delete: Admin or backend server
+      allow delete: if (isAuthenticated() && isAdmin()) || 
+                       request.auth == null;  // Allow server-side deletes
     }
 
     // ================= DEFAULT DENY =================

@@ -57,28 +57,37 @@ export default function AdSlider({ slides = [], autoSlideInterval = 5000 }: AdSl
 
       {/* Content */}
       {currentSlide.description && (
-        <div className="absolute inset-0 flex flex-col justify-between p-6 md:p-8">
-          {/* Company Name at top */}
-          {currentSlide.companyName && !isHero && (
-            <div className="flex items-start">
-              <h2 className="text-white text-3xl md:text-5xl font-bold">
-                {currentSlide.companyName}
-              </h2>
+        <div className="absolute inset-0 flex flex-col justify-between p-6 md:p-12 lg:p-16">
+          {/* Top Section - Company Name (Ads) or Empty (Hero) */}
+          {!isHero && currentSlide.companyName && (
+            <div className="flex items-start justify-end">
+              <div className="max-w-3xl text-right">
+                <h2 className="text-white text-4xl md:text-6xl font-black leading-tight" style={{textShadow: '0 4px 12px rgba(0,0,0,0.8)'}}>
+                  {currentSlide.companyName}
+                </h2>
+              </div>
             </div>
           )}
           
-          {/* Description and CTA at bottom */}
-          <div className="max-w-2xl">
-            <p className="text-white text-lg md:text-2xl font-semibold mb-4 leading-relaxed">
+          {/* Bottom Section - Description and CTA */}
+          <div className="max-w-3xl mr-auto text-right">
+            {isHero && (
+              <h1 className="text-white text-5xl md:text-7xl font-black mb-6 leading-tight" style={{textShadow: '0 4px 12px rgba(0,0,0,0.8)'}}>
+                منصة موثوقة<br />لبيع وشراء<br />الأغنام
+              </h1>
+            )}
+            <p className="text-white text-lg md:text-2xl font-light mb-6 leading-relaxed" style={{textShadow: '0 2px 8px rgba(0,0,0,0.7)'}}>
               {currentSlide.description}
             </p>
             {currentSlide.link && currentSlide.link !== "" && !isHero && (
-              <a href={currentSlide.link} target="_blank" rel="noopener noreferrer">
-                <Button variant="default" size="lg" data-testid="button-visit-ad">
-                  زيارة موقع الشركة
-                  <ExternalLink className="ml-2 h-4 w-4" />
-                </Button>
-              </a>
+              <div className="flex justify-end">
+                <a href={currentSlide.link} target="_blank" rel="noopener noreferrer">
+                  <Button variant="default" size="lg" className="shadow-lg" data-testid="button-visit-ad">
+                    زيارة موقع الشركة
+                    <ExternalLink className="ml-2 h-4 w-4" />
+                  </Button>
+                </a>
+              </div>
             )}
           </div>
         </div>

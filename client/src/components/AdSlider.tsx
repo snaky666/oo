@@ -84,7 +84,7 @@ export default function AdSlider({ ads, heroImage }: AdSliderProps) {
         />
         
         {/* Overlay gradient for better text readability */}
-        {isHero && (
+        {currentSlide.isHero && (
           <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/30 to-transparent" />
         )}
       </div>

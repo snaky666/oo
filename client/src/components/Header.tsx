@@ -96,11 +96,6 @@ export default function Header() {
 
           {/* Right Actions */}
           <div className="flex items-center gap-2 ml-auto">
-            <img 
-              src={algeriaFlag} 
-              alt="علم الجزائر" 
-              className="h-8 md:h-10 w-auto rounded-sm"
-            />
             <ThemeToggle />
             
             {/* VIP Button */}
@@ -157,6 +152,13 @@ export default function Header() {
                 </div>
               </div>
             )}
+            
+            {/* Algeria Flag */}
+            <img 
+              src={algeriaFlag} 
+              alt="علم الجزائر" 
+              className="h-6 md:h-7 w-auto rounded-sm"
+            />
           </div>
         </div>
       </div>

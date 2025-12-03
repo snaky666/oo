@@ -149,7 +149,17 @@ export default function Login() {
 
             {/* Password */}
             <div className="space-y-2">
-              <Label htmlFor="password">كلمة المرور</Label>
+              <div className="flex items-center justify-between gap-2 flex-wrap">
+                <Label htmlFor="password">كلمة المرور</Label>
+                <button
+                  type="button"
+                  onClick={() => setLocation("/forgot-password")}
+                  className="text-sm text-primary hover:underline"
+                  data-testid="link-forgot-password"
+                >
+                  نسيت كلمة السر؟
+                </button>
+              </div>
               <Input
                 id="password"
                 type="password"

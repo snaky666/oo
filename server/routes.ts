@@ -637,6 +637,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { email, code, newPassword } = req.body;
       console.log('🔐 Reset password request for:', email);
 
+      // Check if Firebase Admin is available first
+      if (!adminAuth) {
+        console.error('❌ Firebase Admin SDK not available');
+        return res.status(503).json({ 
+          success: false, 
+          error: "خدمة إعادة تعيين كلمة المرور غير متاحة حالياً. يرجى المحاولة لاحقاً." 
+        });
+      }
+
       if (!email || !code || !newPassword) {
         return res.status(400).json({ 
           success: false, 
@@ -655,6 +664,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const usersQuery = await queryFirestore('users', [{ field: 'email', op: 'EQUAL', value: email }]);
       
       if (usersQuery.length === 0) {
+        console.log('❌ User not found:', email);
         return res.status(404).json({ 
           success: false, 
           error: "المستخدم غير موجود" 
@@ -662,14 +672,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const user = usersQuery[0];
+      console.log('✅ User found:', user.uid);
 
       // Get reset code from Firestore
       const resetDoc = await getDocument('password_resets', user.uid);
+      console.log('📄 Reset document:', resetDoc ? 'found' : 'not found');
 
       if (!resetDoc) {
         return res.status(400).json({ 
           success: false, 
-          error: "لم يتم طلب إعادة تعيين كلمة المرور" 
+          error: "لم يتم طلب إعادة تعيين كلمة المرور. يرجى طلب كود جديد." 
         });
       }
 
@@ -683,53 +695,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Check expiry
-      if (resetDoc.expiry < Date.now()) {
+      const expiryTime = typeof resetDoc.expiry === 'number' ? resetDoc.expiry : parseInt(resetDoc.expiry);
+      if (expiryTime < Date.now()) {
+        console.log('❌ Code expired. Expiry:', expiryTime, 'Now:', Date.now());
+        // Delete expired reset code
+        await fetch(
+          `https://firestore.googleapis.com/v1/projects/${FIREBASE_PROJECT_ID}/databases/(default)/documents/password_resets/${user.uid}`,
+          {
+            method: "DELETE",
+            headers: { "X-Goog-Api-Key": FIREBASE_API_KEY || "" }
+          }
+        );
         return res.status(400).json({ 
           success: false, 
-          error: "انتهت صلاحية كود التحقق" 
+          error: "انتهت صلاحية كود التحقق. يرجى طلب كود جديد." 
         });
       }
 
-      // Update password in Firebase Auth using REST API
-      const updatePasswordResponse = await fetch(
-        `https://identitytoolkit.googleapis.com/v1/accounts:update?key=${FIREBASE_API_KEY}`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            localId: user.uid,
-            password: newPassword,
-            returnSecureToken: false
-          })
-        }
-      );
+      console.log('✅ Code verified, updating password...');
 
-      // If direct update doesn't work, we need to use Admin SDK
-      if (!updatePasswordResponse.ok) {
-        // Try using Admin SDK if available
-        if (adminAuth) {
-          try {
-            await adminAuth.updateUser(user.uid, { password: newPassword });
-            console.log('✅ Password updated via Admin SDK');
-          } catch (adminError: any) {
-            console.error('❌ Admin SDK error:', adminError?.message);
-            return res.status(500).json({ 
-              success: false, 
-              error: "فشل في تحديث كلمة المرور" 
-            });
-          }
-        } else {
-          console.error('❌ Cannot update password - Admin SDK not available');
-          return res.status(500).json({ 
-            success: false, 
-            error: "خدمة تحديث كلمة المرور غير متاحة حالياً" 
-          });
-        }
-      } else {
-        console.log('✅ Password updated via REST API');
+      // Update password using Firebase Admin SDK
+      try {
+        await adminAuth.updateUser(user.uid, { password: newPassword });
+        console.log('✅ Password updated via Admin SDK');
+      } catch (adminError: any) {
+        console.error('❌ Admin SDK error:', adminError?.message);
+        return res.status(500).json({ 
+          success: false, 
+          error: "فشل في تحديث كلمة المرور. يرجى المحاولة لاحقاً." 
+        });
       }
 
-      // Delete reset code
+      // Delete reset code after successful password update
       await fetch(
         `https://firestore.googleapis.com/v1/projects/${FIREBASE_PROJECT_ID}/databases/(default)/documents/password_resets/${user.uid}`,
         {
@@ -738,7 +735,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       );
 
-      console.log('✅ Password reset completed');
+      console.log('✅ Password reset completed successfully');
       res.json({ 
         success: true, 
         message: "تم تغيير كلمة المرور بنجاح" 

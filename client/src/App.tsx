@@ -23,6 +23,7 @@ import VIPCheckout from "@/pages/vip-checkout";
 import OrdersPage from "@/pages/orders";
 import OrderDetailPage from "@/pages/order-detail";
 import ContactPage from "@/pages/contact";
+import ForgotPassword from "@/pages/forgot-password";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import PublicRoute from "@/components/PublicRoute";
 import BottomNavigation from "@/components/BottomNavigation";
@@ -49,6 +50,11 @@ function Router() {
       </Route>
       <Route path="/landing" component={LandingPage} />
       <Route path="/contact" component={ContactPage} />
+      <Route path="/forgot-password">
+        <PublicRoute>
+          <ForgotPassword />
+        </PublicRoute>
+      </Route>
       <Route path="/register">
         <PublicRoute>
           <Register />

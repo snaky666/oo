@@ -1159,13 +1159,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       );
 
       if (!response.ok) {
-        return res.status(500).json({ error: "Failed to create ad" });
+        const errorText = await response.text();
+        console.error("❌ Firestore error:", response.status, errorText);
+        return res.status(500).json({ error: "Failed to create ad", details: errorText });
       }
 
       res.json({ success: true, id: adId });
     } catch (error: any) {
       console.error("❌ Error creating ad:", error?.message);
-      res.status(500).json({ error: "Failed to create ad" });
+      res.status(500).json({ error: "Failed to create ad", details: error?.message });
     }
   });
 

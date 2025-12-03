@@ -1142,6 +1142,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           image: { stringValue: image },
           link: link ? { stringValue: link } : { stringValue: "" },
           description: { stringValue: description },
+          active: { booleanValue: true },
           createdAt: { integerValue: Date.now() }
         }
       };

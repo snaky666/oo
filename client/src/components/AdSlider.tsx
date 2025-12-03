@@ -1,58 +1,87 @@
-import { useState, useEffect } from "react";
-import { Ad } from "@shared/schema";
-import { Button } from "@/components/ui/button";
-import { ExternalLink } from "lucide-react";
 
-interface SlideContent {
+import { useState, useEffect } from "react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
+import { Button } from "@/components/ui/button";
+
+interface Ad {
   id: string;
   image: string;
-  description?: string;
   companyName?: string;
   link?: string;
-  isHero?: boolean;
+  description?: string;
+  active: boolean;
 }
 
 interface AdSliderProps {
-  slides?: SlideContent[];
-  autoSlideInterval?: number;
+  isHero?: boolean;
 }
 
-export default function AdSlider({ slides = [], autoSlideInterval = 5000 }: AdSliderProps) {
+export default function AdSlider({ isHero = false }: AdSliderProps) {
+  const [ads, setAds] = useState<Ad[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [isVisible, setIsVisible] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    if (!isVisible || !slides || slides.length === 0) return;
+    fetchAds();
+  }, []);
 
-    const timer = setInterval(() => {
-      setCurrentIndex((prev) => (prev + 1) % slides.length);
-    }, autoSlideInterval);
+  const fetchAds = async () => {
+    try {
+      const response = await fetch('/api/ads');
+      const data = await response.json();
+      const activeAds = data.filter((ad: Ad) => ad.active);
+      setAds(activeAds);
+    } catch (error) {
+      console.error('Error fetching ads:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-    return () => clearInterval(timer);
-  }, [slides?.length, autoSlideInterval, isVisible]);
+  useEffect(() => {
+    if (ads.length === 0) return;
 
-  if (!slides || slides.length === 0) return null;
+    const interval = setInterval(() => {
+      setCurrentIndex((prev) => (prev + 1) % ads.length);
+    }, 5000);
 
-  const currentSlide = slides[currentIndex];
-  const isHero = currentSlide.isHero;
+    return () => clearInterval(interval);
+  }, [ads.length]);
+
+  const nextSlide = () => {
+    setCurrentIndex((prev) => (prev + 1) % ads.length);
+  };
+
+  const prevSlide = () => {
+    setCurrentIndex((prev) => (prev - 1 + ads.length) % ads.length);
+  };
+
+  if (isLoading) {
+    return (
+      <div className="w-full h-96 bg-muted animate-pulse rounded-lg" />
+    );
+  }
+
+  if (ads.length === 0) {
+    return null;
+  }
+
+  const currentSlide = ads[currentIndex];
 
   return (
-    <div
-      className={`relative w-full flex flex-col ${isHero ? "h-auto" : "h-auto"} ${!isHero ? "rounded-lg overflow-hidden" : ""} fade-in`}
-      onMouseEnter={() => setIsVisible(false)}
-      onMouseLeave={() => setIsVisible(true)}
-    >
-      {/* Slide Image with Fade Transition */}
-      <div
-        key={currentSlide.id}
-        className={`relative w-full fade-in-out overflow-hidden ${isHero ? "h-[500px] md:h-[600px]" : "h-[300px] md:h-[400px]"}`}
-      >
+    <div className="relative w-full overflow-hidden rounded-lg shadow-lg">
+      {/* Main Image */}
+      <div className="relative w-full h-96">
         <img
           src={currentSlide.image}
-          alt={isHero ? "صفحة البداية" : "إعلان"}
+          alt={currentSlide.companyName || "إعلان"}
           className="w-full h-full object-cover"
         />
-        <div className={`absolute inset-0 ${isHero ? "bg-gradient-to-t from-black/70 via-black/50 to-black/30" : "bg-gradient-to-b from-black/10 to-transparent"}`} />
+        
+        {/* Overlay gradient for better text readability */}
+        {isHero && (
+          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/30 to-transparent" />
+        )}
       </div>
 
       {/* Content Below Image */}
@@ -80,74 +109,60 @@ export default function AdSlider({ slides = [], autoSlideInterval = 5000 }: AdSl
           </p>
 
           {/* CTA Button */}
-          {currentSlide.link && currentSlide.link !== "" && !isHero && (
+          {currentSlide.link && (
             <div className="flex justify-end">
-              <a href={currentSlide.link} target="_blank" rel="noopener noreferrer">
-                <Button variant="default" size="lg" className="shadow-lg" data-testid="button-visit-ad">
-                  زيارة موقع الشركة
-                  <ExternalLink className="ml-2 h-4 w-4" />
-                </Button>
-              </a>
+              <Button
+                asChild
+                size="lg"
+                className={`${isHero ? "bg-white text-black hover:bg-gray-100" : "bg-primary text-primary-foreground hover:bg-primary/90"}`}
+              >
+                <a href={currentSlide.link} target="_blank" rel="noopener noreferrer">
+                  اعرف المزيد
+                </a>
+              </Button>
             </div>
           )}
         </div>
       )}
 
-      {/* Indicators - For non-hero ads */}
-      {slides.length > 1 && !isHero && (
-        <div className="flex justify-center gap-2 px-6 pb-4">
-          {slides.map((_, index) => (
+      {/* Navigation Arrows */}
+      {ads.length > 1 && (
+        <>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white"
+            onClick={prevSlide}
+          >
+            <ChevronLeft className="h-6 w-6" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white"
+            onClick={nextSlide}
+          >
+            <ChevronRight className="h-6 w-6" />
+          </Button>
+        </>
+      )}
+
+      {/* Dots Indicator */}
+      {ads.length > 1 && (
+        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
+          {ads.map((_, index) => (
             <button
               key={index}
-              onClick={() => setCurrentIndex(index)}
-              className={`h-2 rounded-full transition-all ${
+              className={`w-2 h-2 rounded-full transition-all ${
                 index === currentIndex
-                  ? "w-8 bg-primary"
-                  : "w-2 bg-muted hover:bg-muted-foreground"
+                  ? "bg-white w-8"
+                  : "bg-white/50 hover:bg-white/75"
               }`}
-              data-testid={`button-ad-indicator-${index}`}
+              onClick={() => setCurrentIndex(index)}
             />
           ))}
         </div>
       )}
-
-      {/* Indicators - For hero */}
-      {slides.length > 1 && isHero && (
-        <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex gap-2">
-          {slides.map((_, index) => (
-            <button
-              key={index}
-              onClick={() => setCurrentIndex(index)}
-              className={`h-2 rounded-full transition-all ${
-                index === currentIndex
-                  ? "w-8 bg-white"
-                  : "w-2 bg-white/50 hover:bg-white/70"
-              }`}
-              data-testid={`button-ad-indicator-${index}`}
-            />
-          ))}
-        </div>
-      )}
-
-      {/* CSS for Fade In/Out */}
-      <style>{`
-        @keyframes fadeIn {
-          from {
-            opacity: 0;
-          }
-          to {
-            opacity: 1;
-          }
-        }
-
-        .fade-in {
-          animation: fadeIn 0.8s ease-in-out;
-        }
-
-        .fade-in-out {
-          animation: fadeIn 0.8s ease-in-out;
-        }
-      `}</style>
     </div>
   );
 }

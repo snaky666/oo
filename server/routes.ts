@@ -4,20 +4,10 @@ import { storage } from "./storage";
 import fs from "fs";
 import path from "path";
 import { sendVerificationEmail, sendResetPasswordEmail, sendOrderConfirmationEmail, sendAdminNotificationEmail } from "./services/emailService";
-import { adminAuth } from "./firebase-admin";
-import { getFirestore, Firestore } from 'firebase-admin/firestore';
+import { adminAuth, adminDb } from "./firebase-admin";
 
 const FIREBASE_PROJECT_ID = process.env.VITE_FIREBASE_PROJECT_ID;
 const FIREBASE_API_KEY = process.env.VITE_FIREBASE_API_KEY;
-
-let adminDb: Firestore | null = null;
-try {
-  if (adminAuth) {
-    adminDb = getFirestore();
-  }
-} catch (error) {
-  console.warn('⚠️ Firestore not initialized');
-}
 
 // Helper to query Firestore via REST API
 async function queryFirestore(collectionName: string, filters: Array<{ field: string; op: string; value: any }> = []) {

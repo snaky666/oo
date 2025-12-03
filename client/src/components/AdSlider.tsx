@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "wouter";
 
@@ -56,16 +55,6 @@ export default function AdSlider({ ads, heroImage }: AdSliderProps) {
 
     return () => clearInterval(interval);
   }, [slides.length]);
-
-  const nextSlide = () => {
-    if (slides.length === 0) return;
-    setCurrentIndex((prev) => (prev + 1) % slides.length);
-  };
-
-  const prevSlide = () => {
-    if (slides.length === 0) return;
-    setCurrentIndex((prev) => (prev - 1 + slides.length) % slides.length);
-  };
 
   if (slides.length === 0) {
     return null;
@@ -165,27 +154,6 @@ export default function AdSlider({ ads, heroImage }: AdSliderProps) {
         </div>
       </div>
 
-      {/* Navigation Arrows */}
-      {slides.length > 1 && (
-        <>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="absolute left-4 md:left-8 top-1/2 -translate-y-1/2 bg-white/20 backdrop-blur-md hover:bg-white/30 border border-white/30 text-white w-12 h-12 md:w-14 md:h-14 rounded-lg transition-all duration-300 hover:scale-110 shadow-lg"
-            onClick={prevSlide}
-          >
-            <ChevronLeft className="h-6 w-6 md:h-8 md:w-8" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="absolute right-4 md:right-8 top-1/2 -translate-y-1/2 bg-white/20 backdrop-blur-md hover:bg-white/30 border border-white/30 text-white w-12 h-12 md:w-14 md:h-14 rounded-lg transition-all duration-300 hover:scale-110 shadow-lg"
-            onClick={nextSlide}
-          >
-            <ChevronRight className="h-6 w-6 md:h-8 md:w-8" />
-          </Button>
-        </>
-      )}
 
       {/* Dots Indicator */}
       {slides.length > 1 && (

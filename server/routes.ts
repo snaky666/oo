@@ -5,11 +5,19 @@ import fs from "fs";
 import path from "path";
 import { sendVerificationEmail, sendResetPasswordEmail, sendOrderConfirmationEmail, sendAdminNotificationEmail } from "./services/emailService";
 import { adminAuth } from "./firebase-admin";
-import { getFirestore } from 'firebase-admin/firestore';
+import { getFirestore, Firestore } from 'firebase-admin/firestore';
 
 const FIREBASE_PROJECT_ID = process.env.VITE_FIREBASE_PROJECT_ID;
 const FIREBASE_API_KEY = process.env.VITE_FIREBASE_API_KEY;
-const adminDb = getFirestore();
+
+let adminDb: Firestore | null = null;
+try {
+  if (adminAuth) {
+    adminDb = getFirestore();
+  }
+} catch (error) {
+  console.warn('⚠️ Firestore not initialized');
+}
 
 // Helper to query Firestore via REST API
 async function queryFirestore(collectionName: string, filters: Array<{ field: string; op: string; value: any }> = []) {
@@ -283,6 +291,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { email, password, role, phone, verificationCode, tokenExpiry } = req.body;
       console.log('💾 Creating pending registration for:', email);
 
+      if (!adminAuth || !adminDb) {
+        return res.status(503).json({
+          success: false,
+          error: "Firebase Admin not configured. Please contact administrator."
+        });
+      }
+
       // Check if email already exists in Firebase Auth
       try {
         const authUser = await adminAuth.getUserByEmail(email);
@@ -343,6 +358,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ 
           success: false, 
           error: "Code and email required" 
+        });
+      }
+
+      if (!adminAuth || !adminDb) {
+        return res.status(503).json({
+          success: false,
+          error: "Firebase Admin not configured. Please contact administrator."
         });
       }
 
@@ -427,6 +449,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { email } = req.body;
       console.log('🔄 Resend pending verification for:', email);
 
+      if (!adminDb) {
+        return res.status(503).json({
+          success: false,
+          error: "Firebase Admin not configured. Please contact administrator."
+        });
+      }
+
       // Get pending registration using Admin SDK
       const pendingRef = adminDb.collection('pending_registrations');
       const snapshot = await pendingRef.where('email', '==', email).get();
@@ -471,6 +500,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { email } = req.body;
       console.log('🗑️ Cancel pending registration for:', email);
+
+      if (!adminDb) {
+        return res.status(503).json({
+          success: false,
+          error: "Firebase Admin not configured. Please contact administrator."
+        });
+      }
 
       // Get and delete pending registration using Admin SDK
       const pendingRef = adminDb.collection('pending_registrations');
@@ -618,6 +654,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ 
           success: false, 
           error: "Email required" 
+        });
+      }
+
+      if (!adminAuth) {
+        return res.status(503).json({
+          success: false,
+          error: "Firebase Admin not configured. Please contact administrator."
         });
       }
 

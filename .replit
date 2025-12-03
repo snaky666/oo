@@ -1,5 +1,4 @@
-
-modules = ["nodejs-20", "web", "postgresql-16", "python-3.11"]
+modules = ["nodejs-20", "web"]
 [agent]
 expertMode = true
 integrations = ["resend:1.0.0"]
@@ -23,17 +22,21 @@ args = "Start application"
 name = "Start application"
 author = "agent"
 
+[workflows.workflow.metadata]
+outputType = "webview"
+
 [[workflows.workflow.tasks]]
 task = "shell.exec"
 args = "npm run dev"
 waitForPort = 5000
 
-[workflows.workflow.metadata]
-outputType = "webview"
-
 [[ports]]
 localPort = 5000
 externalPort = 80
+
+[[ports]]
+localPort = 40179
+externalPort = 3000
 
 [userenv]
 
@@ -50,9 +53,10 @@ SMTP_FROM_EMAIL = "verification@odhiyaty.com"
 RESEND_API_KEY = "re_8NuUrKwr_DLYT1fzS2mTNkysve4vVTnuS"
 
 [deployment]
-deploymentTarget = "static"
+deploymentTarget = "autoscale"
 publicDir = "dist/public"
 build = ["npm", "run", "build"]
+run = ["npm", "run", "start"]
 
 [[deployment.rewrites]]
 source = "/(.*)"

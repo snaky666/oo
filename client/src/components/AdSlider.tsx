@@ -1,7 +1,7 @@
-
 import { useState, useEffect } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import Link from "next/link";
 
 interface Ad {
   id: string;
@@ -87,7 +87,7 @@ export default function AdSlider({ ads, heroImage }: AdSliderProps) {
               filter: currentSlide.isHero ? 'brightness(0.85)' : 'brightness(0.9)',
             }}
           />
-          
+
           {/* Gradient Overlays */}
           {currentSlide.isHero ? (
             <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/40 to-transparent" />
@@ -112,12 +112,14 @@ export default function AdSlider({ ads, heroImage }: AdSliderProps) {
                     {currentSlide.description}
                   </p>
                   <div className="flex gap-4 justify-end pt-4">
-                    <Button
-                      size="lg"
-                      className="bg-primary hover:bg-primary/90 text-white font-bold px-8 py-6 text-lg shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105"
-                    >
-                      ابدأ الآن
-                    </Button>
+                    <Link href="/browse">
+                      <Button
+                        size="lg"
+                        className="bg-primary hover:bg-primary/90 text-white font-bold px-8 py-6 text-lg shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105"
+                      >
+                        ابدأ الآن
+                      </Button>
+                    </Link>
                   </div>
                 </div>
               )}
@@ -130,13 +132,13 @@ export default function AdSlider({ ads, heroImage }: AdSliderProps) {
                       <p className="text-sm md:text-base text-white/80 font-medium">إعلان</p>
                     </div>
                   )}
-                  
+
                   {currentSlide.companyName && (
                     <h2 className="text-3xl md:text-5xl lg:text-6xl font-black text-right text-white drop-shadow-2xl leading-tight">
                       {currentSlide.companyName}
                     </h2>
                   )}
-                  
+
                   {currentSlide.description && (
                     <p className="text-base md:text-lg lg:text-xl font-light text-white/90 text-right drop-shadow-lg max-w-2xl mr-auto leading-relaxed">
                       {currentSlide.description}

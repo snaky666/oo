@@ -323,6 +323,7 @@ export interface Ad {
   companyName: string; // Company name
   link?: string; // Optional company website link
   description: string; // Ad text/description
+  active: boolean; // Whether the ad is active
   createdAt: number;
 }
 

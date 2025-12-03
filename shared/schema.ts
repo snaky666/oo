@@ -315,3 +315,20 @@ export const algeriaCities = [
   "ورقلة",
   "وهران",
 ] as const;
+
+// Ad schema
+export interface Ad {
+  id: string;
+  image: string; // URL from ImgBB
+  link?: string; // Optional company website link
+  description: string; // Ad text/description
+  createdAt: number;
+}
+
+export const insertAdSchema = z.object({
+  image: z.string().url("يجب إدخال رابط صورة صحيح"),
+  link: z.string().url().optional().or(z.literal("")),
+  description: z.string().min(10, "الوصف يجب أن يكون 10 أحرف على الأقل"),
+});
+
+export type InsertAd = z.infer<typeof insertAdSchema>;

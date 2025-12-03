@@ -41,96 +41,62 @@ export default function LandingPage() {
     <div className="bg-background w-full">
       <Header />
 
-      {/* Hero Section with Ads Slider or Static Hero */}
-      {ads.length > 0 ? (
-        // Ads Slider as Hero
-        <section className="relative h-[500px] md:h-[600px] overflow-hidden">
+      {/* Ads Slider */}
+      {ads.length > 0 && (
+        <section className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8 py-8">
           <AdSlider ads={ads} autoSlideInterval={5000} />
-          
-          {/* Hero Content Overlay */}
-          <div className="absolute inset-0 flex items-center z-10">
-            <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8 w-full">
-              <div className="max-w-3xl text-white">
-                <h1 className="text-5xl md:text-6xl font-bold mb-6">
-                  منصة موثوقة لبيع وشراء الأغنام
-                </h1>
-                <p className="text-xl md:text-2xl mb-8 text-white/90">
-                  تواصل آمن بين البائعين والمشترين مع إشراف إداري كامل
-                </p>
-                <div className="flex flex-wrap gap-4">
-                  {(!user || user.role === "buyer" || user.role === "seller") && (
-                    <Link href="/register" data-testid="button-register-buyer">
-                      <Button size="lg" className="text-lg">
-                        ابدأ الشراء
-                      </Button>
-                    </Link>
-                  )}
-                  
-                  {(!user || user.role === "seller") && (
-                    <Link href="/register" data-testid="button-register-seller">
-                      <Button 
-                        size="lg" 
-                        variant="outline" 
-                        className="text-lg bg-white/10 backdrop-blur-sm border-white/20 text-white hover:bg-white/20"
-                      >
-                        ابدأ البيع
-                      </Button>
-                    </Link>
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-      ) : (
-        // Default Hero Section without Ads
-        <section className="relative h-[500px] md:h-[600px] overflow-hidden">
-          {/* Hero Image with Dark Overlay */}
-          <div className="absolute inset-0">
-            <img
-              src={heroImage}
-              alt="مزرعة أغنام"
-              className="w-full h-full object-cover"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/50 to-black/30" />
-          </div>
-
-          {/* Hero Content */}
-          <div className="relative h-full flex items-center">
-            <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8 w-full">
-              <div className="max-w-3xl text-white">
-                <h1 className="text-5xl md:text-6xl font-bold mb-6">
-                  منصة موثوقة لبيع وشراء الأغنام
-                </h1>
-                <p className="text-xl md:text-2xl mb-8 text-white/90">
-                  تواصل آمن بين البائعين والمشترين مع إشراف إداري كامل
-                </p>
-                <div className="flex flex-wrap gap-4">
-                  {(!user || user.role === "buyer" || user.role === "seller") && (
-                    <Link href="/register" data-testid="button-register-buyer">
-                      <Button size="lg" className="text-lg">
-                        ابدأ الشراء
-                      </Button>
-                    </Link>
-                  )}
-                  
-                  {(!user || user.role === "seller") && (
-                    <Link href="/register" data-testid="button-register-seller">
-                      <Button 
-                        size="lg" 
-                        variant="outline" 
-                        className="text-lg bg-white/10 backdrop-blur-sm border-white/20 text-white hover:bg-white/20"
-                      >
-                        ابدأ البيع
-                      </Button>
-                    </Link>
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
         </section>
       )}
+
+      {/* Hero Section */}
+      <section className="relative h-[500px] md:h-[600px] overflow-hidden">
+        {/* Hero Image with Dark Overlay */}
+        <div className="absolute inset-0">
+          <img
+            src={heroImage}
+            alt="مزرعة أغنام"
+            className="w-full h-full object-cover"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/50 to-black/30" />
+        </div>
+
+        {/* Hero Content */}
+        <div className="relative h-full flex items-center">
+          <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8 w-full">
+            <div className="max-w-3xl text-white">
+              <h1 className="text-5xl md:text-6xl font-bold mb-6">
+                منصة موثوقة لبيع وشراء الأغنام
+              </h1>
+              <p className="text-xl md:text-2xl mb-8 text-white/90">
+                تواصل آمن بين البائعين والمشترين مع إشراف إداري كامل
+              </p>
+              <div className="flex flex-wrap gap-4">
+                {/* Show "ابدأ الشراء" for buyers and sellers, hide for admins */}
+                {(!user || user.role === "buyer" || user.role === "seller") && (
+                  <Link href="/register" data-testid="button-register-buyer">
+                    <Button size="lg" className="text-lg">
+                      ابدأ الشراء
+                    </Button>
+                  </Link>
+                )}
+                
+                {/* Show "ابدأ البيع" only for sellers, hide for buyers and admins */}
+                {(!user || user.role === "seller") && (
+                  <Link href="/register" data-testid="button-register-seller">
+                    <Button 
+                      size="lg" 
+                      variant="outline" 
+                      className="text-lg bg-white/10 backdrop-blur-sm border-white/20 text-white hover:bg-white/20"
+                    >
+                      ابدأ البيع
+                    </Button>
+                  </Link>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
 
       {/* Stats Section */}
       <section className="py-12 md:py-16 bg-muted/50">

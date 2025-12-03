@@ -285,7 +285,7 @@ export default function LandingPage() {
       {/* Footer */}
       <footer className="border-t py-8 md:py-12 bg-muted/30">
         <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div>
               <h3 className="font-bold text-lg mb-4">أضحيتي</h3>
               <p className="text-sm text-muted-foreground">
@@ -316,12 +316,6 @@ export default function LandingPage() {
                   </Link>
                 </li>
               </ul>
-            </div>
-            <div>
-              <h3 className="font-semibold mb-4">تواصل معنا</h3>
-              <p className="text-sm text-muted-foreground">
-                odhiyaty@gmail.com
-              </p>
             </div>
           </div>
           <div className="mt-8 pt-8 border-t space-y-3 text-center text-sm text-muted-foreground">

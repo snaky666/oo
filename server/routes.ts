@@ -126,6 +126,24 @@ function extractFieldValue(value: any): any {
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Health check endpoint to diagnose Firebase Admin status
+  app.get("/api/health", (req, res) => {
+    res.json({
+      status: "ok",
+      firebase: {
+        adminAuth: adminAuth ? "initialized" : "not initialized",
+        adminDb: adminDb ? "initialized" : "not initialized",
+      },
+      env: {
+        hasServiceAccount: !!process.env.FIREBASE_SERVICE_ACCOUNT,
+        hasProjectId: !!process.env.VITE_FIREBASE_PROJECT_ID,
+        hasApiKey: !!process.env.VITE_FIREBASE_API_KEY,
+        hasResendKey: !!process.env.RESEND_API_KEY,
+      },
+      timestamp: new Date().toISOString()
+    });
+  });
+
   // Get sheep listings (public endpoint for guests and users)
   app.get("/api/sheep", async (req, res) => {
     try {

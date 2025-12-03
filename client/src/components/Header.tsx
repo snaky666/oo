@@ -152,16 +152,16 @@ export default function Header() {
                 </div>
               </div>
             )}
-            
-            {/* Algeria Flag */}
-            <img 
-              src={algeriaFlag} 
-              alt="علم الجزائر" 
-              className="h-6 md:h-7 w-auto rounded-sm"
-            />
           </div>
         </div>
       </div>
+      
+      {/* Algeria Flag - Far Left */}
+      <img 
+        src={algeriaFlag} 
+        alt="علم الجزائر" 
+        className="absolute left-4 top-1/2 -translate-y-1/2 h-6 md:h-7 w-auto rounded-sm"
+      />
     </header>
   );
 }

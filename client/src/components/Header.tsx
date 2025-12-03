@@ -5,6 +5,7 @@ import { Link, useLocation } from "wouter";
 import { Crown, LogOut, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
+import algeriaFlag from "@assets/1-algerie_1764805051994.gif";
 
 export default function Header() {
   const { user, signOut } = useAuth();
@@ -95,6 +96,11 @@ export default function Header() {
 
           {/* Right Actions */}
           <div className="flex items-center gap-2 ml-auto">
+            <img 
+              src={algeriaFlag} 
+              alt="علم الجزائر" 
+              className="h-8 md:h-10 w-auto rounded-sm"
+            />
             <ThemeToggle />
             
             {/* VIP Button */}

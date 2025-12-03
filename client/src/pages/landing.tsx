@@ -37,63 +37,82 @@ export default function LandingPage() {
     },
   });
 
+  // Combine hero and ads into one slider
+  const slides = [
+    {
+      id: "hero",
+      image: heroImage,
+      description: "منصة موثوقة لبيع وشراء الأغنام",
+      isHero: true,
+    },
+    ...ads.map((ad) => ({
+      id: ad.id,
+      image: ad.image,
+      description: ad.description,
+      link: ad.link,
+      isHero: false,
+    })),
+  ];
+
   return (
     <div className="bg-background w-full">
       <Header />
 
-      {/* Ads Slider */}
-      {ads.length > 0 && (
-        <section className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8 py-8">
-          <AdSlider ads={ads} autoSlideInterval={5000} />
-        </section>
-      )}
-
-      {/* Hero Section */}
-      <section className="relative h-[500px] md:h-[600px] overflow-hidden">
-        {/* Hero Image with Dark Overlay */}
-        <div className="absolute inset-0">
-          <img
-            src={heroImage}
-            alt="مزرعة أغنام"
-            className="w-full h-full object-cover"
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/50 to-black/30" />
-        </div>
-
-        {/* Hero Content */}
-        <div className="relative h-full flex items-center">
-          <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8 w-full">
-            <div className="max-w-3xl text-white">
-              <h1 className="text-5xl md:text-6xl font-bold mb-6">
-                منصة موثوقة لبيع وشراء الأغنام
-              </h1>
-              <p className="text-xl md:text-2xl mb-8 text-white/90">
-                تواصل آمن بين البائعين والمشترين مع إشراف إداري كامل
-              </p>
-              <div className="flex flex-wrap gap-4">
-                {/* Show "ابدأ الشراء" for buyers and sellers, hide for admins */}
-                {(!user || user.role === "buyer" || user.role === "seller") && (
-                  <Link href="/register" data-testid="button-register-buyer">
-                    <Button size="lg" className="text-lg">
-                      ابدأ الشراء
-                    </Button>
-                  </Link>
-                )}
-                
-                {/* Show "ابدأ البيع" only for sellers, hide for buyers and admins */}
-                {(!user || user.role === "seller") && (
-                  <Link href="/register" data-testid="button-register-seller">
-                    <Button 
-                      size="lg" 
-                      variant="outline" 
-                      className="text-lg bg-white/10 backdrop-blur-sm border-white/20 text-white hover:bg-white/20"
-                    >
-                      ابدأ البيع
-                    </Button>
-                  </Link>
-                )}
+      {/* Slider with Hero + Ads */}
+      <section>
+        {slides.length > 0 ? (
+          <AdSlider slides={slides} autoSlideInterval={5000} />
+        ) : (
+          <div className="relative h-[500px] md:h-[600px] overflow-hidden">
+            <div className="absolute inset-0">
+              <img
+                src={heroImage}
+                alt="مزرعة أغنام"
+                className="w-full h-full object-cover"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/50 to-black/30" />
+            </div>
+            <div className="relative h-full flex items-center">
+              <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8 w-full">
+                <div className="max-w-3xl text-white">
+                  <h1 className="text-5xl md:text-6xl font-bold mb-6">
+                    منصة موثوقة لبيع وشراء الأغنام
+                  </h1>
+                  <p className="text-xl md:text-2xl mb-8 text-white/90">
+                    تواصل آمن بين البائعين والمشترين مع إشراف إداري كامل
+                  </p>
+                </div>
               </div>
             </div>
+          </div>
+        )}
+      </section>
+
+      {/* CTA Buttons - Always Visible */}
+      <section className="bg-primary/5 border-t border-b">
+        <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8 py-8">
+          <div className="flex flex-wrap gap-4">
+            {/* Show "ابدأ الشراء" for buyers and sellers, hide for admins */}
+            {(!user || user.role === "buyer" || user.role === "seller") && (
+              <Link href="/register" data-testid="button-register-buyer">
+                <Button size="lg" className="text-lg">
+                  ابدأ الشراء
+                </Button>
+              </Link>
+            )}
+            
+            {/* Show "ابدأ البيع" only for sellers, hide for buyers and admins */}
+            {(!user || user.role === "seller") && (
+              <Link href="/register" data-testid="button-register-seller">
+                <Button 
+                  size="lg" 
+                  variant="outline" 
+                  className="text-lg"
+                >
+                  ابدأ البيع
+                </Button>
+              </Link>
+            )}
           </div>
         </div>
       </section>

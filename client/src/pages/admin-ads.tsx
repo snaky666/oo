@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Trash2, Loader2 } from "lucide-react";
+import { Plus, Trash2, Loader2, Upload, Image as ImageIcon } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -24,6 +24,8 @@ export default function AdminAdsPage() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [imagePreview, setImagePreview] = useState<string>("");
 
   const form = useForm({
     resolver: zodResolver(insertAdSchema),
@@ -33,6 +35,62 @@ export default function AdminAdsPage() {
       description: "",
     },
   });
+
+  const uploadImageToImgBB = async (file: File) => {
+    try {
+      setUploading(true);
+      const formData = new FormData();
+      formData.append("image", file);
+
+      const apiKey = import.meta.env.VITE_IMGBB_API_KEY;
+      if (!apiKey) {
+        throw new Error("ImgBB API key not found");
+      }
+
+      const response = await fetch(`https://api.imgbb.com/1/upload?key=${apiKey}`, {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to upload image");
+      }
+
+      const data = await response.json();
+      const imageUrl = data.data.url;
+
+      form.setValue("image", imageUrl);
+      setImagePreview(imageUrl);
+      toast({ title: "تم رفع الصورة بنجاح" });
+
+      return imageUrl;
+    } catch (error) {
+      toast({
+        title: "خطأ",
+        description: "فشل رفع الصورة إلى ImgBB",
+        variant: "destructive",
+      });
+      throw error;
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 32 * 1024 * 1024) {
+        toast({
+          title: "خطأ",
+          description: "حجم الصورة يجب أن يكون أقل من 32 MB",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      await uploadImageToImgBB(file);
+    }
+  };
 
   const { data: ads = [], isLoading } = useQuery({
     queryKey: ["/api/ads"],
@@ -79,6 +137,14 @@ export default function AdminAdsPage() {
   });
 
   const onSubmit = (data: any) => {
+    if (!data.image) {
+      toast({
+        title: "خطأ",
+        description: "يجب تحميل صورة للإعلان",
+        variant: "destructive",
+      });
+      return;
+    }
     createAdMutation.mutate(data);
   };
 
@@ -108,13 +174,38 @@ export default function AdminAdsPage() {
                   name="image"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>رابط صورة الإعلان (ImgBB)</FormLabel>
+                      <FormLabel>صورة الإعلان</FormLabel>
                       <FormControl>
-                        <Input
-                          placeholder="https://i.ibb.co/..."
-                          {...field}
-                          data-testid="input-ad-image"
-                        />
+                        <div className="space-y-3">
+                          <div className="flex items-center gap-2">
+                            <Input
+                              type="file"
+                              accept="image/*"
+                              onChange={handleImageChange}
+                              disabled={uploading}
+                              className="flex-1"
+                              data-testid="input-ad-image-file"
+                            />
+                            {uploading && <Loader2 className="h-4 w-4 animate-spin" />}
+                          </div>
+                          {imagePreview && (
+                            <div className="relative">
+                              <img
+                                src={imagePreview}
+                                alt="معاينة"
+                                className="w-full h-40 object-cover rounded-md border border-input"
+                              />
+                              <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-md">
+                                <ImageIcon className="h-8 w-8 text-white" />
+                              </div>
+                            </div>
+                          )}
+                          {field.value && (
+                            <p className="text-xs text-muted-foreground break-all">
+                              {field.value}
+                            </p>
+                          )}
+                        </div>
                       </FormControl>
                       <FormMessage />
                     </FormItem>

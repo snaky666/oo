@@ -60,7 +60,7 @@ export default function LandingPage() {
                 </Button>
               </Link>
             )}
-            
+
             {/* Show "ابدأ البيع" only for sellers, hide for buyers and admins */}
             {(!user || user.role === "seller") && (
               <Link href="/register" data-testid="button-register-seller">

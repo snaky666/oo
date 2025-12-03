@@ -37,12 +37,12 @@ export default function Header() {
 
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center gap-1 mr-auto ml-8">
-            <Link href="/browse">
+            <Link href="/landing">
               <Button
-                variant={isActive("/browse") ? "default" : "ghost"}
+                variant={isActive("/landing") ? "default" : "ghost"}
                 size="sm"
               >
-                ابدأ
+                الرئيسية
               </Button>
             </Link>
             <Link href="/browse">

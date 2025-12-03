@@ -22,6 +22,7 @@ import SheepCheckout from "@/pages/sheep-checkout";
 import VIPCheckout from "@/pages/vip-checkout";
 import OrdersPage from "@/pages/orders";
 import OrderDetailPage from "@/pages/order-detail";
+import ContactPage from "@/pages/contact";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import PublicRoute from "@/components/PublicRoute";
 import BottomNavigation from "@/components/BottomNavigation";
@@ -47,6 +48,7 @@ function Router() {
         </PublicRoute>
       </Route>
       <Route path="/landing" component={LandingPage} />
+      <Route path="/contact" component={ContactPage} />
       <Route path="/register">
         <PublicRoute>
           <Register />

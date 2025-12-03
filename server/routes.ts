@@ -546,10 +546,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      // Check if user exists in Firestore via REST API
-      const usersQuery = await queryFirestore('users', [{ field: 'email', op: 'EQUAL', value: email }]);
+      if (!adminDb) {
+        console.error('❌ Firebase Admin not configured');
+        return res.status(503).json({
+          success: false,
+          error: "خدمة إعادة تعيين كلمة المرور غير متاحة حالياً"
+        });
+      }
+
+      // Check if user exists in Firestore using Admin SDK
+      const usersRef = adminDb.collection('users');
+      const usersSnapshot = await usersRef.where('email', '==', email).get();
       
-      if (usersQuery.length === 0) {
+      if (usersSnapshot.empty) {
         // Don't reveal if email exists for security
         console.log('⚠️ User not found:', email);
         return res.json({ 
@@ -558,43 +567,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      const user = usersQuery[0];
+      const userDoc = usersSnapshot.docs[0];
+      const user = { uid: userDoc.id, ...userDoc.data() };
       console.log('✅ User found:', user.uid);
 
       // Generate reset code
       const resetCode = Math.floor(100000 + Math.random() * 900000).toString();
       const tokenExpiry = Date.now() + (15 * 60 * 1000); // 15 minutes
 
-      // Store reset code in Firestore via REST API
-      const resetDocPath = `password_resets/${user.uid}`;
-      const resetData = {
-        fields: {
-          email: { stringValue: email },
-          code: { stringValue: resetCode },
-          expiry: { integerValue: tokenExpiry.toString() },
-          createdAt: { integerValue: Date.now().toString() }
-        }
-      };
+      // Store reset code in Firestore using Admin SDK
+      await adminDb.collection('password_resets').doc(user.uid).set({
+        email: email,
+        code: resetCode,
+        expiry: tokenExpiry,
+        createdAt: Date.now()
+      });
 
-      const storeResponse = await fetch(
-        `https://firestore.googleapis.com/v1/projects/${FIREBASE_PROJECT_ID}/databases/(default)/documents/${resetDocPath}`,
-        {
-          method: "PATCH",
-          headers: {
-            "Content-Type": "application/json",
-            "X-Goog-Api-Key": FIREBASE_API_KEY || ""
-          },
-          body: JSON.stringify(resetData)
-        }
-      );
-
-      if (!storeResponse.ok) {
-        console.error('❌ Failed to store reset code');
-        return res.status(500).json({ 
-          success: false, 
-          error: "حدث خطأ أثناء إنشاء كود التحقق" 
-        });
-      }
+      console.log('✅ Reset code stored successfully');
 
       // Send reset email
       const emailResult = await sendResetPasswordEmail(email, resetCode);
@@ -628,7 +617,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log('🔐 Reset password request for:', email);
 
       // Check if Firebase Admin is available first
-      if (!adminAuth) {
+      if (!adminAuth || !adminDb) {
         console.error('❌ Firebase Admin SDK not available');
         return res.status(503).json({ 
           success: false, 
@@ -650,10 +639,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      // Get user from Firestore
-      const usersQuery = await queryFirestore('users', [{ field: 'email', op: 'EQUAL', value: email }]);
+      // Get user from Firestore using Admin SDK
+      const usersRef = adminDb.collection('users');
+      const usersSnapshot = await usersRef.where('email', '==', email).get();
       
-      if (usersQuery.length === 0) {
+      if (usersSnapshot.empty) {
         console.log('❌ User not found:', email);
         return res.status(404).json({ 
           success: false, 
@@ -661,23 +651,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      const user = usersQuery[0];
+      const userDoc = usersSnapshot.docs[0];
+      const user = { uid: userDoc.id, ...userDoc.data() };
       console.log('✅ User found:', user.uid);
 
-      // Get reset code from Firestore
-      const resetDoc = await getDocument('password_resets', user.uid);
-      console.log('📄 Reset document:', resetDoc ? 'found' : 'not found');
+      // Get reset code from Firestore using Admin SDK
+      const resetDocRef = adminDb.collection('password_resets').doc(user.uid);
+      const resetDocSnapshot = await resetDocRef.get();
+      console.log('📄 Reset document:', resetDocSnapshot.exists ? 'found' : 'not found');
 
-      if (!resetDoc) {
+      if (!resetDocSnapshot.exists) {
         return res.status(400).json({ 
           success: false, 
           error: "لم يتم طلب إعادة تعيين كلمة المرور. يرجى طلب كود جديد." 
         });
       }
 
+      const resetDoc = resetDocSnapshot.data();
+
       // Verify code
-      if (resetDoc.code !== code) {
-        console.log('❌ Invalid code. Expected:', resetDoc.code, 'Got:', code);
+      if (resetDoc?.code !== code) {
+        console.log('❌ Invalid code. Expected:', resetDoc?.code, 'Got:', code);
         return res.status(400).json({ 
           success: false, 
           error: "كود التحقق غير صحيح" 
@@ -685,17 +679,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Check expiry
-      const expiryTime = typeof resetDoc.expiry === 'number' ? resetDoc.expiry : parseInt(resetDoc.expiry);
+      const expiryTime = typeof resetDoc?.expiry === 'number' ? resetDoc.expiry : parseInt(resetDoc?.expiry);
       if (expiryTime < Date.now()) {
         console.log('❌ Code expired. Expiry:', expiryTime, 'Now:', Date.now());
-        // Delete expired reset code
-        await fetch(
-          `https://firestore.googleapis.com/v1/projects/${FIREBASE_PROJECT_ID}/databases/(default)/documents/password_resets/${user.uid}`,
-          {
-            method: "DELETE",
-            headers: { "X-Goog-Api-Key": FIREBASE_API_KEY || "" }
-          }
-        );
+        // Delete expired reset code using Admin SDK
+        await resetDocRef.delete();
         return res.status(400).json({ 
           success: false, 
           error: "انتهت صلاحية كود التحقق. يرجى طلب كود جديد." 
@@ -716,14 +704,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      // Delete reset code after successful password update
-      await fetch(
-        `https://firestore.googleapis.com/v1/projects/${FIREBASE_PROJECT_ID}/databases/(default)/documents/password_resets/${user.uid}`,
-        {
-          method: "DELETE",
-          headers: { "X-Goog-Api-Key": FIREBASE_API_KEY || "" }
-        }
-      );
+      // Delete reset code after successful password update using Admin SDK
+      await resetDocRef.delete();
 
       console.log('✅ Password reset completed successfully');
       res.json({ 

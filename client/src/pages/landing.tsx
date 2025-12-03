@@ -5,6 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Link } from "wouter";
 import { useAuth } from "@/contexts/AuthContext";
+import { useQuery } from "@tanstack/react-query";
 import { 
   ShieldCheck, 
   Search, 
@@ -17,13 +18,35 @@ import {
 } from "lucide-react";
 import heroImage from "@assets/generated_images/arabic_sheep_farm_hero.png";
 import trustImage from "@assets/generated_images/trust_verification_illustration.png";
+import AdSlider from "@/components/AdSlider";
+import { Ad } from "@shared/schema";
 
 export default function LandingPage() {
   const { user } = useAuth();
 
+  const { data: ads = [] } = useQuery({
+    queryKey: ["/api/ads"],
+    queryFn: async () => {
+      try {
+        const response = await fetch("/api/ads");
+        if (!response.ok) return [];
+        return response.json() as Promise<Ad[]>;
+      } catch {
+        return [];
+      }
+    },
+  });
+
   return (
     <div className="bg-background w-full">
       <Header />
+
+      {/* Ads Slider */}
+      {ads.length > 0 && (
+        <section className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8 py-8">
+          <AdSlider ads={ads} autoSlideInterval={5000} />
+        </section>
+      )}
 
       {/* Hero Section */}
       <section className="relative h-[500px] md:h-[600px] overflow-hidden">

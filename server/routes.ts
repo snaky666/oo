@@ -1098,6 +1098,102 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Ads endpoints
+  app.get("/api/ads", async (req, res) => {
+    try {
+      const response = await fetch(
+        `https://firestore.googleapis.com/v1/projects/${FIREBASE_PROJECT_ID}/databases/(default)/documents/ads`,
+        {
+          method: "GET",
+          headers: {
+            "X-Goog-Api-Key": FIREBASE_API_KEY || ""
+          }
+        }
+      );
+
+      if (!response.ok) {
+        return res.json([]);
+      }
+
+      const data = await response.json();
+      const ads = data.documents?.map((doc: any) => ({
+        id: doc.name.split('/').pop(),
+        ...extractDocumentData(doc.fields)
+      })) || [];
+
+      res.json(ads);
+    } catch (error: any) {
+      console.error("❌ Error fetching ads:", error?.message);
+      res.json([]);
+    }
+  });
+
+  app.post("/api/ads", async (req, res) => {
+    try {
+      const { image, link, description } = req.body;
+
+      if (!image || !description) {
+        return res.status(400).json({ error: "Image and description are required" });
+      }
+
+      const adId = `ad_${Date.now()}`;
+      const adData = {
+        fields: {
+          image: { stringValue: image },
+          link: link ? { stringValue: link } : { stringValue: "" },
+          description: { stringValue: description },
+          createdAt: { integerValue: Date.now() }
+        }
+      };
+
+      const response = await fetch(
+        `https://firestore.googleapis.com/v1/projects/${FIREBASE_PROJECT_ID}/databases/(default)/documents/ads/${adId}`,
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            "X-Goog-Api-Key": FIREBASE_API_KEY || ""
+          },
+          body: JSON.stringify(adData)
+        }
+      );
+
+      if (!response.ok) {
+        return res.status(500).json({ error: "Failed to create ad" });
+      }
+
+      res.json({ success: true, id: adId });
+    } catch (error: any) {
+      console.error("❌ Error creating ad:", error?.message);
+      res.status(500).json({ error: "Failed to create ad" });
+    }
+  });
+
+  app.delete("/api/ads/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+
+      const response = await fetch(
+        `https://firestore.googleapis.com/v1/projects/${FIREBASE_PROJECT_ID}/databases/(default)/documents/ads/${id}`,
+        {
+          method: "DELETE",
+          headers: {
+            "X-Goog-Api-Key": FIREBASE_API_KEY || ""
+          }
+        }
+      );
+
+      if (!response.ok) {
+        return res.status(500).json({ error: "Failed to delete ad" });
+      }
+
+      res.json({ success: true });
+    } catch (error: any) {
+      console.error("❌ Error deleting ad:", error?.message);
+      res.status(500).json({ error: "Failed to delete ad" });
+    }
+  });
+
   const httpServer = createServer(app);
 
   return httpServer;

@@ -241,7 +241,7 @@ export default function BrowseSheep() {
           </div>
 
           <div className="flex gap-2 items-center">
-            {user && (
+            {user && user.role !== "admin" && (
               <Button onClick={() => setLocation("/vip-upgrade")} variant="outline" className="border-amber-500 text-amber-700 hover:bg-amber-50">
                 <Crown className="ml-2 h-4 w-4" />
                 {user?.vipStatus && user.vipStatus !== "none" ? "أنت VIP ⭐" : "ترقية إلى VIP"}

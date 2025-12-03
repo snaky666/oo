@@ -320,6 +320,7 @@ export const algeriaCities = [
 export interface Ad {
   id: string;
   image: string; // URL from ImgBB
+  companyName: string; // Company name
   link?: string; // Optional company website link
   description: string; // Ad text/description
   createdAt: number;
@@ -327,6 +328,7 @@ export interface Ad {
 
 export const insertAdSchema = z.object({
   image: z.string().url("يجب إدخال رابط صورة صحيح"),
+  companyName: z.string().min(2, "اسم الشركة يجب أن يكون على الأقل 2 أحرف").max(50, "اسم الشركة يجب أن لا يزيد عن 50 حرف"),
   link: z.string().url().optional().or(z.literal("")),
   description: z.string().min(10, "الوصف يجب أن يكون 10 أحرف على الأقل"),
 });

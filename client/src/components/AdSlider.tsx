@@ -7,30 +7,31 @@ interface SlideContent {
   id: string;
   image: string;
   description?: string;
+  companyName?: string;
   link?: string;
   isHero?: boolean;
 }
 
 interface AdSliderProps {
-  slides: SlideContent[];
+  slides?: SlideContent[];
   autoSlideInterval?: number;
 }
 
-export default function AdSlider({ slides, autoSlideInterval = 5000 }: AdSliderProps) {
+export default function AdSlider({ slides = [], autoSlideInterval = 5000 }: AdSliderProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isVisible, setIsVisible] = useState(true);
 
   useEffect(() => {
-    if (!isVisible || slides.length === 0) return;
+    if (!isVisible || !slides || slides.length === 0) return;
 
     const timer = setInterval(() => {
       setCurrentIndex((prev) => (prev + 1) % slides.length);
     }, autoSlideInterval);
 
     return () => clearInterval(timer);
-  }, [slides.length, autoSlideInterval, isVisible]);
+  }, [slides?.length, autoSlideInterval, isVisible]);
 
-  if (slides.length === 0) return null;
+  if (!slides || slides.length === 0) return null;
 
   const currentSlide = slides[currentIndex];
   const isHero = currentSlide.isHero;
@@ -56,9 +57,19 @@ export default function AdSlider({ slides, autoSlideInterval = 5000 }: AdSliderP
 
       {/* Content */}
       {currentSlide.description && (
-        <div className="absolute inset-0 flex flex-col justify-end p-6 md:p-8">
+        <div className="absolute inset-0 flex flex-col justify-between p-6 md:p-8">
+          {/* Company Name at top */}
+          {currentSlide.companyName && !isHero && (
+            <div className="flex items-start">
+              <h2 className="text-white text-3xl md:text-5xl font-bold">
+                {currentSlide.companyName}
+              </h2>
+            </div>
+          )}
+          
+          {/* Description and CTA at bottom */}
           <div className="max-w-2xl">
-            <p className="text-white text-lg md:text-2xl font-semibold mb-4">
+            <p className="text-white text-lg md:text-2xl font-semibold mb-4 leading-relaxed">
               {currentSlide.description}
             </p>
             {currentSlide.link && currentSlide.link !== "" && !isHero && (

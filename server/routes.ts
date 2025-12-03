@@ -1130,16 +1130,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/ads", async (req, res) => {
     try {
-      const { image, link, description } = req.body;
+      const { image, companyName, link, description } = req.body;
 
-      if (!image || !description) {
-        return res.status(400).json({ error: "Image and description are required" });
+      if (!image || !description || !companyName) {
+        return res.status(400).json({ error: "Image, company name and description are required" });
       }
 
       const adId = `ad_${Date.now()}`;
       const adData = {
         fields: {
           image: { stringValue: image },
+          companyName: { stringValue: companyName },
           link: link ? { stringValue: link } : { stringValue: "" },
           description: { stringValue: description },
           active: { booleanValue: true },

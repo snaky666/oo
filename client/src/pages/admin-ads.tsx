@@ -31,6 +31,7 @@ export default function AdminAdsPage() {
     resolver: zodResolver(insertAdSchema),
     defaultValues: {
       image: "",
+      companyName: "",
       link: "",
       description: "",
     },
@@ -214,13 +215,31 @@ export default function AdminAdsPage() {
 
                 <FormField
                   control={form.control}
+                  name="companyName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>اسم الشركة</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="أدخل اسم الشركة أو العلامة التجارية"
+                          {...field}
+                          data-testid="input-ad-company-name"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
                   name="description"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>وصف الإعلان</FormLabel>
                       <FormControl>
                         <Textarea
-                          placeholder="أدخل وصف الإعلان أو نص الشركة"
+                          placeholder="أدخل وصف الإعلان أو رسالة الشركة"
                           {...field}
                           data-testid="input-ad-description"
                         />
@@ -286,7 +305,10 @@ export default function AdminAdsPage() {
                   alt="إعلان"
                   className="w-full h-40 object-cover rounded-md"
                 />
-                <p className="text-sm line-clamp-2">{ad.description}</p>
+                <div>
+                  <p className="font-bold text-lg text-primary">{ad.companyName}</p>
+                  <p className="text-sm text-muted-foreground line-clamp-2 mt-1">{ad.description}</p>
+                </div>
                 {ad.link && ad.link !== "" && (
                   <a
                     href={ad.link}

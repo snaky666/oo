@@ -48,6 +48,7 @@ export default function LandingPage() {
     ...ads.map((ad) => ({
       id: ad.id,
       image: ad.image,
+      companyName: ad.companyName,
       description: ad.description,
       link: ad.link,
       isHero: false,

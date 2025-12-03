@@ -182,7 +182,9 @@ service cloud.firestore {
     // ================= ADVERTISEMENTS COLLECTION =================
     match /ads/{adId} {
       // Read: Public can read active ads, admin can read all
-      allow read: if resource.data.active == true || (isAuthenticated() && isAdmin());
+      allow read: if resource.data.active == true || 
+                     (isAuthenticated() && isAdmin()) ||
+                     request.auth == null;  // Allow backend to read
       
       // Create: Admin or backend server (no auth required for server operations)
       allow create: if (isAuthenticated() && isAdmin()) || 

@@ -126,11 +126,9 @@ export async function sendVerificationEmail(email: string, code: string) {
   });
 }
 
-export async function sendResetPasswordEmail(email: string, token: string) {
-  const baseUrl = getBaseUrl();
-  const resetLink = `${baseUrl}/reset-password?token=${token}&email=${encodeURIComponent(email)}`;
-  
-  console.log('📧 Sending password reset to:', email);
+export async function sendResetPasswordEmail(email: string, code: string) {
+  console.log('📧 Sending password reset code to:', email);
+  console.log('🔢 Reset code:', code);
 
   const html = `
     <!DOCTYPE html>
@@ -153,18 +151,21 @@ export async function sendResetPasswordEmail(email: string, token: string) {
           </p>
           
           <p style="color: #333; font-size: 16px; line-height: 1.6; margin-bottom: 25px;">
-            تلقينا طلباً لإعادة تعيين كلمة المرور لحسابك في أضحيتي. للمتابعة، يرجى النقر على الزر أدناه:
+            تلقينا طلباً لإعادة تعيين كلمة المرور لحسابك في أضحيتي. استخدم الكود التالي لإعادة تعيين كلمة المرور:
           </p>
           
-          <div style="text-align: center; margin: 30px 0;">
-            <a href="${resetLink}" style="display: inline-block; background-color: #1a472a; color: white; padding: 15px 40px; text-decoration: none; border-radius: 5px; font-weight: bold; font-size: 16px;">
-              🔒 إعادة تعيين كلمة المرور
-            </a>
+          <div style="text-align: center; margin: 40px 0;">
+            <div style="display: inline-block; background: linear-gradient(135deg, #1a472a 0%, #2d6b3f 100%); padding: 25px 50px; border-radius: 12px; box-shadow: 0 4px 15px rgba(26, 71, 42, 0.3);">
+              <p style="color: #fff; font-size: 14px; margin: 0 0 10px 0; opacity: 0.9;">كود إعادة التعيين</p>
+              <p style="color: #fff; font-size: 42px; font-weight: bold; letter-spacing: 8px; margin: 0; font-family: 'Courier New', monospace;">
+                ${code}
+              </p>
+            </div>
           </div>
           
           <div style="background-color: #fff3cd; border: 1px solid #ffc107; border-radius: 5px; padding: 15px; margin: 25px 0;">
             <p style="color: #856404; font-size: 14px; margin: 0; font-weight: bold;">
-              ⚠️ تنبيه هام: صلاحية هذا الرابط تنتهي بعد ساعة واحدة فقط.
+              ⚠️ تنبيه هام: صلاحية هذا الكود تنتهي بعد 15 دقيقة فقط.
             </p>
           </div>
           
@@ -174,6 +175,9 @@ export async function sendResetPasswordEmail(email: string, token: string) {
             </p>
             <p style="color: #999; font-size: 12px; margin: 15px 0 5px 0;">
               مع تحيات فريق أضحيتي
+            </p>
+            <p style="color: #ccc; font-size: 11px; margin: 5px 0;">
+              ${email}
             </p>
           </div>
         </div>
@@ -187,10 +191,9 @@ export async function sendResetPasswordEmail(email: string, token: string) {
 
 تلقينا طلباً لإعادة تعيين كلمة المرور لحسابك في أضحيتي.
 
-لإعادة تعيين كلمة المرور، يرجى زيارة الرابط التالي:
-${resetLink}
+كود إعادة التعيين: ${code}
 
-تنبيه: صلاحية هذا الرابط تنتهي بعد ساعة واحدة.
+تنبيه: صلاحية هذا الكود تنتهي بعد 15 دقيقة.
 
 إذا لم تطلب إعادة تعيين كلمة المرور، يرجى تجاهل هذا البريد.
 
@@ -199,7 +202,7 @@ ${resetLink}
 
   return sendEmail({
     to: email,
-    subject: 'إعادة تعيين كلمة المرور - أضحيتي',
+    subject: 'كود إعادة تعيين كلمة المرور - أضحيتي',
     html,
     text,
   });

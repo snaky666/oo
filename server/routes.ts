@@ -543,19 +543,286 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Send password reset email
-  app.post("/api/auth/send-reset", async (req, res) => {
+  // Request password reset - sends code to email
+  app.post("/api/auth/request-password-reset", async (req, res) => {
     try {
-      const { email, token } = req.body;
-      if (!email || !token) {
-        return res.status(400).json({ error: "Email and token required" });
+      const { email } = req.body;
+      console.log('🔐 Password reset request for:', email);
+
+      if (!email) {
+        return res.status(400).json({ 
+          success: false, 
+          error: "البريد الإلكتروني مطلوب" 
+        });
       }
 
-      const result = await sendResetPasswordEmail(email, token);
-      res.json(result);
+      // Check if user exists in Firestore via REST API
+      const usersQuery = await queryFirestore('users', [{ field: 'email', op: 'EQUAL', value: email }]);
+      
+      if (usersQuery.length === 0) {
+        // Don't reveal if email exists for security
+        console.log('⚠️ User not found:', email);
+        return res.json({ 
+          success: true, 
+          message: "إذا كان البريد الإلكتروني مسجلاً، سيتم إرسال كود التحقق" 
+        });
+      }
+
+      const user = usersQuery[0];
+      console.log('✅ User found:', user.uid);
+
+      // Generate reset code
+      const resetCode = Math.floor(100000 + Math.random() * 900000).toString();
+      const tokenExpiry = Date.now() + (15 * 60 * 1000); // 15 minutes
+
+      // Store reset code in Firestore via REST API
+      const resetDocPath = `password_resets/${user.uid}`;
+      const resetData = {
+        fields: {
+          email: { stringValue: email },
+          code: { stringValue: resetCode },
+          expiry: { integerValue: tokenExpiry.toString() },
+          createdAt: { integerValue: Date.now().toString() }
+        }
+      };
+
+      const storeResponse = await fetch(
+        `https://firestore.googleapis.com/v1/projects/${FIREBASE_PROJECT_ID}/databases/(default)/documents/${resetDocPath}`,
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            "X-Goog-Api-Key": FIREBASE_API_KEY || ""
+          },
+          body: JSON.stringify(resetData)
+        }
+      );
+
+      if (!storeResponse.ok) {
+        console.error('❌ Failed to store reset code');
+        return res.status(500).json({ 
+          success: false, 
+          error: "حدث خطأ أثناء إنشاء كود التحقق" 
+        });
+      }
+
+      // Send reset email
+      const emailResult = await sendResetPasswordEmail(email, resetCode);
+
+      if (emailResult.success) {
+        console.log('✅ Password reset code sent');
+        res.json({ 
+          success: true, 
+          message: "تم إرسال كود التحقق إلى بريدك الإلكتروني" 
+        });
+      } else {
+        console.error('❌ Failed to send reset email:', emailResult.error);
+        res.status(500).json({ 
+          success: false, 
+          error: "فشل في إرسال البريد الإلكتروني" 
+        });
+      }
     } catch (error: any) {
-      console.error("❌ Send reset error:", error?.message);
-      res.status(500).json({ error: error?.message });
+      console.error("❌ Password reset request error:", error?.message);
+      res.status(500).json({ 
+        success: false, 
+        error: "حدث خطأ غير متوقع" 
+      });
+    }
+  });
+
+  // Verify reset code and update password
+  app.post("/api/auth/reset-password", async (req, res) => {
+    try {
+      const { email, code, newPassword } = req.body;
+      console.log('🔐 Reset password request for:', email);
+
+      if (!email || !code || !newPassword) {
+        return res.status(400).json({ 
+          success: false, 
+          error: "جميع الحقول مطلوبة" 
+        });
+      }
+
+      if (newPassword.length < 6) {
+        return res.status(400).json({ 
+          success: false, 
+          error: "كلمة المرور يجب أن تكون 6 أحرف على الأقل" 
+        });
+      }
+
+      // Get user from Firestore
+      const usersQuery = await queryFirestore('users', [{ field: 'email', op: 'EQUAL', value: email }]);
+      
+      if (usersQuery.length === 0) {
+        return res.status(404).json({ 
+          success: false, 
+          error: "المستخدم غير موجود" 
+        });
+      }
+
+      const user = usersQuery[0];
+
+      // Get reset code from Firestore
+      const resetDoc = await getDocument('password_resets', user.uid);
+
+      if (!resetDoc) {
+        return res.status(400).json({ 
+          success: false, 
+          error: "لم يتم طلب إعادة تعيين كلمة المرور" 
+        });
+      }
+
+      // Verify code
+      if (resetDoc.code !== code) {
+        console.log('❌ Invalid code. Expected:', resetDoc.code, 'Got:', code);
+        return res.status(400).json({ 
+          success: false, 
+          error: "كود التحقق غير صحيح" 
+        });
+      }
+
+      // Check expiry
+      if (resetDoc.expiry < Date.now()) {
+        return res.status(400).json({ 
+          success: false, 
+          error: "انتهت صلاحية كود التحقق" 
+        });
+      }
+
+      // Update password in Firebase Auth using REST API
+      const updatePasswordResponse = await fetch(
+        `https://identitytoolkit.googleapis.com/v1/accounts:update?key=${FIREBASE_API_KEY}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            localId: user.uid,
+            password: newPassword,
+            returnSecureToken: false
+          })
+        }
+      );
+
+      // If direct update doesn't work, we need to use Admin SDK
+      if (!updatePasswordResponse.ok) {
+        // Try using Admin SDK if available
+        if (adminAuth) {
+          try {
+            await adminAuth.updateUser(user.uid, { password: newPassword });
+            console.log('✅ Password updated via Admin SDK');
+          } catch (adminError: any) {
+            console.error('❌ Admin SDK error:', adminError?.message);
+            return res.status(500).json({ 
+              success: false, 
+              error: "فشل في تحديث كلمة المرور" 
+            });
+          }
+        } else {
+          console.error('❌ Cannot update password - Admin SDK not available');
+          return res.status(500).json({ 
+            success: false, 
+            error: "خدمة تحديث كلمة المرور غير متاحة حالياً" 
+          });
+        }
+      } else {
+        console.log('✅ Password updated via REST API');
+      }
+
+      // Delete reset code
+      await fetch(
+        `https://firestore.googleapis.com/v1/projects/${FIREBASE_PROJECT_ID}/databases/(default)/documents/password_resets/${user.uid}`,
+        {
+          method: "DELETE",
+          headers: { "X-Goog-Api-Key": FIREBASE_API_KEY || "" }
+        }
+      );
+
+      console.log('✅ Password reset completed');
+      res.json({ 
+        success: true, 
+        message: "تم تغيير كلمة المرور بنجاح" 
+      });
+    } catch (error: any) {
+      console.error("❌ Reset password error:", error?.message);
+      res.status(500).json({ 
+        success: false, 
+        error: "حدث خطأ غير متوقع" 
+      });
+    }
+  });
+
+  // Resend password reset code
+  app.post("/api/auth/resend-reset-code", async (req, res) => {
+    try {
+      const { email } = req.body;
+      console.log('🔄 Resend reset code for:', email);
+
+      if (!email) {
+        return res.status(400).json({ 
+          success: false, 
+          error: "البريد الإلكتروني مطلوب" 
+        });
+      }
+
+      // Check if user exists
+      const usersQuery = await queryFirestore('users', [{ field: 'email', op: 'EQUAL', value: email }]);
+      
+      if (usersQuery.length === 0) {
+        return res.json({ 
+          success: true, 
+          message: "إذا كان البريد الإلكتروني مسجلاً، سيتم إرسال كود جديد" 
+        });
+      }
+
+      const user = usersQuery[0];
+
+      // Generate new reset code
+      const resetCode = Math.floor(100000 + Math.random() * 900000).toString();
+      const tokenExpiry = Date.now() + (15 * 60 * 1000);
+
+      // Update reset code in Firestore
+      const resetData = {
+        fields: {
+          email: { stringValue: email },
+          code: { stringValue: resetCode },
+          expiry: { integerValue: tokenExpiry.toString() },
+          createdAt: { integerValue: Date.now().toString() }
+        }
+      };
+
+      await fetch(
+        `https://firestore.googleapis.com/v1/projects/${FIREBASE_PROJECT_ID}/databases/(default)/documents/password_resets/${user.uid}`,
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            "X-Goog-Api-Key": FIREBASE_API_KEY || ""
+          },
+          body: JSON.stringify(resetData)
+        }
+      );
+
+      // Send reset email
+      const emailResult = await sendResetPasswordEmail(email, resetCode);
+
+      if (emailResult.success) {
+        res.json({ 
+          success: true, 
+          message: "تم إرسال كود جديد" 
+        });
+      } else {
+        res.status(500).json({ 
+          success: false, 
+          error: "فشل في إرسال البريد الإلكتروني" 
+        });
+      }
+    } catch (error: any) {
+      console.error("❌ Resend reset code error:", error?.message);
+      res.status(500).json({ 
+        success: false, 
+        error: "حدث خطأ غير متوقع" 
+      });
     }
   });
 

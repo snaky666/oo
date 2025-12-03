@@ -6,6 +6,16 @@ let adminApp: App | null = null;
 let adminAuth: Auth | null = null;
 let adminDb: Firestore | null = null;
 
+function formatPrivateKey(key: string): string {
+  let formattedKey = key;
+  formattedKey = formattedKey.replace(/\\n/g, '\n');
+  formattedKey = formattedKey.replace(/"/g, '');
+  if (!formattedKey.includes('-----BEGIN')) {
+    formattedKey = `-----BEGIN PRIVATE KEY-----\n${formattedKey}\n-----END PRIVATE KEY-----\n`;
+  }
+  return formattedKey;
+}
+
 // Initialize Firebase Admin only if service account is provided
 if (getApps().length === 0) {
   try {
@@ -27,12 +37,18 @@ if (getApps().length === 0) {
       console.log('✅ Firebase Admin initialized with service account JSON');
     } else if (privateKey && clientEmail && projectId) {
       // Build service account from individual environment variables
+      const formattedPrivateKey = formatPrivateKey(privateKey);
+      
       const serviceAccount = {
         type: 'service_account',
         project_id: projectId,
-        private_key: privateKey.replace(/\\n/g, '\n'),
+        private_key: formattedPrivateKey,
         client_email: clientEmail,
       };
+      
+      console.log('🔧 Attempting to initialize with individual credentials...');
+      console.log('📧 Client Email:', clientEmail);
+      console.log('🔑 Private key format check:', formattedPrivateKey.substring(0, 30) + '...');
       
       adminApp = initializeApp({
         credential: cert(serviceAccount as any),
@@ -47,8 +63,8 @@ if (getApps().length === 0) {
       console.warn('⚠️ Required: FIREBASE_PRIVATE_KEY, FIREBASE_CLIENT_EMAIL, VITE_FIREBASE_PROJECT_ID');
       console.warn('⚠️ Some backend features may be limited');
     }
-  } catch (error) {
-    console.error('❌ Failed to initialize Firebase Admin:', error);
+  } catch (error: any) {
+    console.error('❌ Failed to initialize Firebase Admin:', error?.message || error);
     console.warn('⚠️ Some backend features may be limited');
   }
 } else {

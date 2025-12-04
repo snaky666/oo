@@ -1,3 +1,4 @@
+replit_final_file>
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { useState, useEffect } from "react";
@@ -169,6 +170,44 @@ export default function SheepDetail() {
       setCreatingOrder(false);
     }
   };
+
+  // New function added based on the user request
+  const handleBuyNow = () => {
+    if (!user) {
+      setLocation("/login");
+      return;
+    }
+
+    if (user.role === "seller") {
+      toast({
+        title: "غير مسموح",
+        description: "لا يمكن للبائعين شراء الأغنام",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Check if sheep is VIP and user is not VIP
+    if (sheep?.isVIP && (!user.vipStatus || user.vipStatus === "none")) {
+      toast({
+        title: "منتج VIP حصري",
+        description: "يرجى الاشتراك في خدمة VIP للوصول إلى هذا المنتج",
+        variant: "destructive",
+        action: (
+          <button
+            onClick={() => setLocation("/vip-packages")}
+            className="bg-amber-500 hover:bg-amber-600 text-white px-3 py-1 rounded text-sm"
+          >
+            الاشتراك الآن
+          </button>
+        ),
+      });
+      return;
+    }
+
+    setLocation(`/checkout/${sheep?.id}`); // Use sheep?.id here
+  };
+
 
   if (loading) {
     return (
@@ -472,3 +511,4 @@ export default function SheepDetail() {
     </div>
   );
 }
+</replit_final_file>

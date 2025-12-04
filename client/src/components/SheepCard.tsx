@@ -1,10 +1,12 @@
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Sheep, SheepStatus } from "@shared/schema";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { MapPin, Calendar, Weight, Crown } from "lucide-react";
 import placeholderImage from "@assets/generated_images/sheep_product_placeholder.png";
+import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/hooks/use-toast";
 
 interface SheepCardProps {
   sheep: Sheep;
@@ -12,6 +14,10 @@ interface SheepCardProps {
 }
 
 export default function SheepCard({ sheep, showStatus = false }: SheepCardProps) {
+  const { user } = useAuth();
+  const [, setLocation] = useLocation();
+  const { toast } = useToast();
+
   const getStatusColor = (status: SheepStatus) => {
     switch (status) {
       case "approved":
@@ -36,88 +42,115 @@ export default function SheepCard({ sheep, showStatus = false }: SheepCardProps)
 
   const mainImage = sheep.images && sheep.images.length > 0 ? sheep.images[0] : placeholderImage;
 
+  const handleClick = (e: React.MouseEvent) => {
+    // Check if sheep is VIP and user is not VIP
+    if (sheep.isVIP && (!user || !user.vipStatus || user.vipStatus === "none")) {
+      e.preventDefault();
+      toast({
+        title: "منتج VIP حصري",
+        description: "يرجى الاشتراك في خدمة VIP للوصول إلى هذا المنتج",
+        variant: "destructive",
+        action: (
+          <button
+            onClick={() => setLocation("/vip-packages")}
+            className="bg-amber-500 hover:bg-amber-600 text-white px-3 py-1 rounded text-sm"
+          >
+            الاشتراك الآن
+          </button>
+        ),
+      });
+      return;
+    }
+
+    setLocation(`/sheep/${sheep.id}`);
+  };
+
+
   return (
-    <Card className="overflow-hidden hover-elevate transition-all" data-testid={`card-sheep-${sheep.id}`}>
-      {/* Image Container */}
-      <div className="relative aspect-[4/3] overflow-hidden bg-muted">
-        <img
-          src={mainImage}
-          alt={`خروف في ${sheep.city}`}
-          className="w-full h-full object-cover transition-transform hover:scale-105"
-          onError={(e) => {
-            (e.target as HTMLImageElement).src = placeholderImage;
-          }}
-        />
-        
-        {/* Price Badge */}
-        <div className="absolute top-2 right-2 flex flex-col gap-2">
-          <Badge className="text-base font-bold px-3 py-1 bg-primary/90 backdrop-blur-sm">
-            {sheep.price.toLocaleString()} DA
-          </Badge>
-          {sheep.isVIP && (
-            <Badge className="bg-gradient-to-r from-amber-400 to-yellow-500 backdrop-blur-sm text-white shadow-lg border-2 border-amber-300/50 px-2 py-1 animate-pulse">
-              <Crown className="h-3 w-3 mr-0.5 drop-shadow-md" />
-              <span className="font-bold text-xs">VIP</span>
+    <div onClick={handleClick}>
+      <Card className="overflow-hidden hover:shadow-lg transition-shadow cursor-pointer h-full flex flex-col">
+        {/* Image Container */}
+        <div className="relative aspect-[4/3] overflow-hidden bg-muted">
+          <img
+            src={mainImage}
+            alt={`خروف في ${sheep.city}`}
+            className="w-full h-full object-cover transition-transform hover:scale-105"
+            onError={(e) => {
+              (e.target as HTMLImageElement).src = placeholderImage;
+            }}
+          />
+
+          {/* Price Badge */}
+          <div className="absolute top-2 right-2 flex flex-col gap-2">
+            <Badge className="text-base font-bold px-3 py-1 bg-primary/90 backdrop-blur-sm">
+              {sheep.price.toLocaleString()} DA
             </Badge>
+            {sheep.isVIP && (
+              <Badge className="bg-gradient-to-r from-amber-400 to-yellow-500 backdrop-blur-sm text-white shadow-lg border-2 border-amber-300/50 px-2 py-1 animate-pulse">
+                <Crown className="h-3 w-3 mr-0.5 drop-shadow-md" />
+                <span className="font-bold text-xs">VIP</span>
+              </Badge>
+            )}
+          </div>
+
+          {/* Status Badge (for seller/admin) */}
+          {showStatus && (
+            <div className="absolute top-2 left-2">
+              <div className="flex flex-col gap-1">
+                <Badge className={getStatusColor(sheep.status)}>
+                  {getStatusLabel(sheep.status)}
+                </Badge>
+                {sheep.status === "rejected" && sheep.rejectionReason && (
+                  <div className="bg-red-500/90 backdrop-blur-sm rounded text-white text-xs p-1 max-w-[150px] line-clamp-2">
+                    {sheep.rejectionReason}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Image Count Indicator */}
+          {sheep.images && sheep.images.length > 1 && (
+            <div className="absolute bottom-2 left-2">
+              <Badge variant="secondary" className="text-xs">
+                {sheep.images.length} صور
+              </Badge>
+            </div>
           )}
         </div>
 
-        {/* Status Badge (for seller/admin) */}
-        {showStatus && (
-          <div className="absolute top-2 left-2">
-            <div className="flex flex-col gap-1">
-              <Badge className={getStatusColor(sheep.status)}>
-                {getStatusLabel(sheep.status)}
-              </Badge>
-              {sheep.status === "rejected" && sheep.rejectionReason && (
-                <div className="bg-red-500/90 backdrop-blur-sm rounded text-white text-xs p-1 max-w-[150px] line-clamp-2">
-                  {sheep.rejectionReason}
-                </div>
-              )}
+        {/* Card Content */}
+        <CardContent className="p-4">
+          {/* Metadata Grid */}
+          <div className="grid grid-cols-3 gap-2 mb-4 text-sm">
+            <div className="flex items-center gap-1 text-muted-foreground">
+              <Calendar className="h-4 w-4 flex-shrink-0" />
+              <span>{sheep.age} شهر</span>
+            </div>
+            <div className="flex items-center gap-1 text-muted-foreground">
+              <Weight className="h-4 w-4 flex-shrink-0" />
+              <span>{sheep.weight} كجم</span>
+            </div>
+            <div className="flex items-center gap-1 text-muted-foreground">
+              <MapPin className="h-4 w-4 flex-shrink-0" />
+              <span className="truncate">{sheep.city}</span>
             </div>
           </div>
-        )}
 
-        {/* Image Count Indicator */}
-        {sheep.images && sheep.images.length > 1 && (
-          <div className="absolute bottom-2 left-2">
-            <Badge variant="secondary" className="text-xs">
-              {sheep.images.length} صور
-            </Badge>
-          </div>
-        )}
-      </div>
+          {/* Description */}
+          <p className="text-sm text-muted-foreground line-clamp-2 mb-4">
+            {sheep.description}
+          </p>
 
-      {/* Card Content */}
-      <CardContent className="p-4">
-        {/* Metadata Grid */}
-        <div className="grid grid-cols-3 gap-2 mb-4 text-sm">
-          <div className="flex items-center gap-1 text-muted-foreground">
-            <Calendar className="h-4 w-4 flex-shrink-0" />
-            <span>{sheep.age} شهر</span>
-          </div>
-          <div className="flex items-center gap-1 text-muted-foreground">
-            <Weight className="h-4 w-4 flex-shrink-0" />
-            <span>{sheep.weight} كجم</span>
-          </div>
-          <div className="flex items-center gap-1 text-muted-foreground">
-            <MapPin className="h-4 w-4 flex-shrink-0" />
-            <span className="truncate">{sheep.city}</span>
-          </div>
-        </div>
-
-        {/* Description */}
-        <p className="text-sm text-muted-foreground line-clamp-2 mb-4">
-          {sheep.description}
-        </p>
-
-        {/* View Button */}
-        <Link href={`/sheep/${sheep.id}`}>
-          <Button className="w-full" data-testid={`button-view-${sheep.id}`}>
-            عرض التفاصيل
-          </Button>
-        </Link>
-      </CardContent>
-    </Card>
+          {/* View Button */}
+          {/* This button is no longer directly clickable due to the div wrapper with onClick handler */}
+          <Link href={`/sheep/${sheep.id}`}>
+            <Button className="w-full" data-testid={`button-view-${sheep.id}`} disabled={sheep.isVIP && (!user || !user.vipStatus || user.vipStatus === "none")}>
+              عرض التفاصيل
+            </Button>
+          </Link>
+        </CardContent>
+      </Card>
+    </div>
   );
 }

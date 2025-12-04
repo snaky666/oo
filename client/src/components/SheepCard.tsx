@@ -55,9 +55,9 @@ export default function SheepCard({ sheep, showStatus = false }: SheepCardProps)
             {sheep.price.toLocaleString()} DA
           </Badge>
           {sheep.isVIP && (
-            <Badge className="bg-amber-500/90 backdrop-blur-sm text-white">
-              <Crown className="h-3 w-3 mr-1" />
-              VIP
+            <Badge className="bg-gradient-to-r from-amber-400 to-yellow-500 backdrop-blur-sm text-white shadow-lg border-2 border-amber-300/50 px-3 py-1.5 animate-pulse">
+              <Crown className="h-4 w-4 mr-1 drop-shadow-md" />
+              <span className="font-bold text-sm">VIP</span>
             </Badge>
           )}
         </div>

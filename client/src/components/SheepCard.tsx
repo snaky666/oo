@@ -3,7 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Sheep, SheepStatus } from "@shared/schema";
 import { Link } from "wouter";
-import { MapPin, Calendar, Weight } from "lucide-react";
+import { MapPin, Calendar, Weight, Crown } from "lucide-react";
 import placeholderImage from "@assets/generated_images/sheep_product_placeholder.png";
 
 interface SheepCardProps {
@@ -50,10 +50,16 @@ export default function SheepCard({ sheep, showStatus = false }: SheepCardProps)
         />
         
         {/* Price Badge */}
-        <div className="absolute top-2 right-2">
+        <div className="absolute top-2 right-2 flex flex-col gap-2">
           <Badge className="text-base font-bold px-3 py-1 bg-primary/90 backdrop-blur-sm">
             {sheep.price.toLocaleString()} DA
           </Badge>
+          {sheep.isVIP && (
+            <Badge className="bg-amber-500/90 backdrop-blur-sm text-white">
+              <Crown className="h-3 w-3 mr-1" />
+              VIP
+            </Badge>
+          )}
         </div>
 
         {/* Status Badge (for seller/admin) */}

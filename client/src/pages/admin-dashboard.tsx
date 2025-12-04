@@ -127,11 +127,11 @@ export default function AdminDashboard() {
         status: approved ? "approved" : "rejected",
         updatedAt: Date.now(),
       };
-      
+
       if (!approved && rejectionReason) {
         updateData.rejectionReason = rejectionReason;
       }
-      
+
       await updateDoc(doc(db, "sheep", sheepId), updateData);
 
       toast({
@@ -182,7 +182,7 @@ export default function AdminDashboard() {
 
   const handleDeleteSheep = async (sheepId: string) => {
     if (!confirm("هل أنت متأكد من حذف هذا العرض؟")) return;
-    
+
     setReviewing(true);
     try {
       await deleteDoc(doc(db, "sheep", sheepId));
@@ -198,6 +198,32 @@ export default function AdminDashboard() {
       toast({
         title: "خطأ",
         description: "حدث خطأ أثناء الحذف",
+        variant: "destructive",
+      });
+    } finally {
+      setReviewing(false);
+    }
+  };
+
+  const handleToggleVIP = async (sheepId: string, isCurrentlyVIP: boolean) => {
+    setReviewing(true);
+    try {
+      await updateDoc(doc(db, "sheep", sheepId), {
+        isVIP: !isCurrentlyVIP,
+        updatedAt: Date.now(),
+      });
+
+      toast({
+        title: isCurrentlyVIP ? "تم إلغاء VIP للخروف" : "تم تفعيل VIP للخروف",
+        description: isCurrentlyVIP ? "تم إلغاء ميزة VIP بنجاح" : "تم تفعيل ميزة VIP بنجاح",
+      });
+
+      fetchSheep();
+    } catch (error) {
+      console.error("Error toggling VIP:", error);
+      toast({
+        title: "خطأ",
+        description: "حدث خطأ أثناء تفعيل/إلغاء VIP",
         variant: "destructive",
       });
     } finally {
@@ -237,7 +263,7 @@ export default function AdminDashboard() {
 
   const handleVIPUpdate = async () => {
     if (!selectedUserVIP) return;
-    
+
     setUpdatingVIP(true);
     try {
       const updateData: any = {
@@ -514,6 +540,7 @@ export default function AdminDashboard() {
                       <TableHead>المدينة</TableHead>
                       <TableHead>البائع</TableHead>
                       <TableHead>الحالة</TableHead>
+                      <TableHead>VIP</TableHead>
                       <TableHead>الإجراءات</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -521,7 +548,7 @@ export default function AdminDashboard() {
                     {sheep.map(s => (
                       <TableRow key={s.id}>
                         <TableCell>
-                          <img
+                        <img
                             src={s.images?.[0] || placeholderImage}
                             alt="خروف"
                             className="h-12 w-12 rounded object-cover"
@@ -546,17 +573,39 @@ export default function AdminDashboard() {
                           </Badge>
                         </TableCell>
                         <TableCell>
-                          {s.status === "approved" && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleDeleteSheep(s.id)}
-                              disabled={reviewing}
-                              className="text-red-500 hover:text-red-700"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
+                          {s.isVIP ? (
+                            <Badge className="bg-amber-500 text-white">
+                              <Crown className="h-3 w-3 mr-1" />
+                              VIP
+                            </Badge>
+                          ) : (
+                            <Badge variant="outline">عادي</Badge>
                           )}
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex gap-2">
+                            {s.status === "approved" && (
+                              <>
+                                <Button
+                                  variant={s.isVIP ? "outline" : "default"}
+                                  size="sm"
+                                  onClick={() => handleToggleVIP(s.id, s.isVIP || false)}
+                                  disabled={reviewing}
+                                  className={s.isVIP ? "" : "bg-amber-500 hover:bg-amber-600"}
+                                >
+                                  <Crown className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  variant="destructive"
+                                  size="sm"
+                                  onClick={() => handleDeleteSheep(s.id)}
+                                  disabled={reviewing}
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </>
+                            )}
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))}
@@ -734,7 +783,7 @@ export default function AdminDashboard() {
                 {selectedUserVIP.email}
               </DialogDescription>
             </DialogHeader>
-            
+
             <div className="space-y-4">
               <div>
                 <Label className="block mb-2 font-semibold">حالة VIP</Label>
@@ -809,7 +858,7 @@ export default function AdminDashboard() {
                 قم بمراجعة تفاصيل الطلب واتخاذ القرار بالقبول أو الرفض
               </DialogDescription>
             </DialogHeader>
-            
+
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
@@ -862,7 +911,7 @@ export default function AdminDashboard() {
                 قم بمراجعة التفاصيل واتخاذ القرار بالقبول أو الرفض
               </DialogDescription>
             </DialogHeader>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <img

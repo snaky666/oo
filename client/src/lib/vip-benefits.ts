@@ -48,13 +48,22 @@ export function getSellerPriority(seller: User | null): number {
 }
 
 /**
- * Sort sheep listings with VIP sellers first
+ * Sort sheep listings with VIP sellers first and VIP sheep first
  */
 export async function sortByVIPPriority(
   sheep: Sheep[],
   sellersMap: Map<string, User>
 ): Promise<Sheep[]> {
   return sheep.sort((a, b) => {
+    // First priority: VIP sheep
+    const aIsVIPSheep = a.isVIP ? 1 : 0;
+    const bIsVIPSheep = b.isVIP ? 1 : 0;
+    
+    if (aIsVIPSheep !== bIsVIPSheep) {
+      return bIsVIPSheep - aIsVIPSheep;
+    }
+    
+    // Second priority: VIP sellers
     const sellerA = sellersMap.get(a.sellerId);
     const sellerB = sellersMap.get(b.sellerId);
     

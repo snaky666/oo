@@ -35,6 +35,15 @@ export default function BottomNavigation() {
     navItems = [
       { icon: <Home className="h-5 w-5" />, label: "الرئيسية", href: "/" },
       { icon: <MessageSquare className="h-5 w-5" />, label: "تواصل", href: "/contact" },
+      { icon: <User className="h-5 w-5" />, label: "دخول", href: "/login" },
+    ];
+  } else if (isGuest) {
+    // Guest mode - show login option
+    navItems = [
+      { icon: <Home className="h-5 w-5" />, label: "الرئيسية", href: "/landing" },
+      { icon: <ShoppingCart className="h-5 w-5" />, label: "الأضاحي", href: "/browse" },
+      { icon: <MessageSquare className="h-5 w-5" />, label: "تواصل", href: "/contact" },
+      { icon: <User className="h-5 w-5" />, label: "دخول", href: "/login" },
     ];
   } else {
     // Logged in or guest - full nav

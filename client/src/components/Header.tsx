@@ -115,8 +115,22 @@ export default function Header() {
               </Link>
             )}
 
+            {/* Login Button for Guests or Not Logged In */}
+            {(!user || isGuest) && (
+              <Link href="/login">
+                <Button
+                  variant="default"
+                  size="sm"
+                  className="gap-2"
+                >
+                  <User className="h-5 w-5" />
+                  <span className="hidden sm:inline text-sm">تسجيل الدخول</span>
+                </Button>
+              </Link>
+            )}
+
             {/* Profile Dropdown (Desktop) */}
-            {user && (
+            {user && !isGuest && (
               <div className="relative group hidden md:block">
                 <Button
                   variant="ghost"

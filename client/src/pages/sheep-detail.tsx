@@ -510,4 +510,3 @@ export default function SheepDetail() {
     </div>
   );
 }
-</replit_final_file>

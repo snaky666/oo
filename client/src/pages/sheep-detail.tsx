@@ -16,7 +16,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { MapPin, Calendar, Weight, ArrowRight, ShoppingCart } from "lucide-react";
+import { MapPin, Calendar, Weight, ArrowRight, ShoppingCart, Crown } from "lucide-react";
 import { useLocation } from "wouter";
 import {
   Dialog,
@@ -84,6 +84,32 @@ export default function SheepDetail() {
       fetchSheep(params.id);
     }
   }, [params?.id]);
+
+  // Check VIP access when sheep data loads
+  useEffect(() => {
+    if (sheep && sheep.isVIP && (!user || !user.vipStatus || user.vipStatus === "none")) {
+      toast({
+        title: (
+          <div className="flex items-center gap-2">
+            <Crown className="h-5 w-5 text-amber-500" />
+            <span>منتج VIP حصري</span>
+          </div>
+        ),
+        description: "يجب الاشتراك في خدمة VIP للوصول إلى هذا المنتج وعرض تفاصيله",
+        variant: "destructive",
+        action: (
+          <button
+            onClick={() => setLocation("/vip-packages")}
+            className="bg-amber-500 hover:bg-amber-600 text-white px-3 py-1 rounded text-sm flex items-center gap-1"
+          >
+            <Crown className="h-3 w-3" />
+            الاشتراك الآن
+          </button>
+        ),
+      });
+      setLocation("/browse");
+    }
+  }, [sheep, user]);
 
   useEffect(() => {
     if (user) {

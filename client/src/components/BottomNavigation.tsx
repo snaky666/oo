@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Link, useLocation } from "wouter";
-import { Home, MessageSquare, ShoppingBag, LayoutDashboard, Settings, LogOut, ShoppingCart } from "lucide-react";
+import { Home, MessageSquare, ShoppingBag, LayoutDashboard, Settings, LogOut, ShoppingCart, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 

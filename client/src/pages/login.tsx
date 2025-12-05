@@ -76,6 +76,9 @@ export default function Login() {
         return;
       }
       
+      // Clear guest mode on successful login
+      localStorage.removeItem("guestMode");
+      
       toast({
         title: "تم تسجيل الدخول بنجاح",
         description: `مرحباً بك ${userData.email}`,

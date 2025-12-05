@@ -69,6 +69,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     await firebaseSignOut(auth);
     setUser(null);
     setFirebaseUser(null);
+    // Clear guest mode when signing out
+    localStorage.removeItem("guestMode");
   };
 
   const signInAsGuest = async (): Promise<{ success: boolean; error?: string }> => {

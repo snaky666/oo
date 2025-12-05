@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Link, useLocation } from "wouter";
 import { Home, MessageSquare, ShoppingBag, LayoutDashboard, Settings, LogOut, ShoppingCart, User } from "lucide-react";
@@ -16,7 +16,25 @@ interface NavItem {
 export default function BottomNavigation() {
   const { user, signOut } = useAuth();
   const [location, setLocation] = useLocation();
-  const isGuest = typeof window !== 'undefined' && localStorage.getItem("guestMode") === "true";
+  const [isGuest, setIsGuest] = useState(false);
+  
+  // Track guest mode changes reactively
+  useEffect(() => {
+    const checkGuestMode = () => {
+      const guestMode = typeof window !== 'undefined' && localStorage.getItem("guestMode") === "true";
+      setIsGuest(guestMode);
+    };
+    
+    // Check on mount and location/user change
+    checkGuestMode();
+    
+    // Listen for storage changes
+    window.addEventListener('storage', checkGuestMode);
+    
+    return () => {
+      window.removeEventListener('storage', checkGuestMode);
+    };
+  }, [location, user]);
 
   const isActive = (path: string) => {
     return location === path;

@@ -4,14 +4,32 @@ import ThemeToggle from "@/components/ThemeToggle";
 import { Link, useLocation } from "wouter";
 import { Crown, LogOut, User } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import algeriaFlag from "@assets/1-algerie_1764805051994.gif";
 
 export default function Header() {
   const { user, signOut } = useAuth();
   const [location, setLocation] = useLocation();
   const [profileOpen, setProfileOpen] = useState(false);
-  const isGuest = typeof window !== 'undefined' && localStorage.getItem("guestMode") === "true";
+  const [isGuest, setIsGuest] = useState(false);
+  
+  // Track guest mode changes reactively
+  useEffect(() => {
+    const checkGuestMode = () => {
+      const guestMode = typeof window !== 'undefined' && localStorage.getItem("guestMode") === "true";
+      setIsGuest(guestMode);
+    };
+    
+    // Check on mount and location change
+    checkGuestMode();
+    
+    // Listen for storage changes (from other tabs or components)
+    window.addEventListener('storage', checkGuestMode);
+    
+    return () => {
+      window.removeEventListener('storage', checkGuestMode);
+    };
+  }, [location, user]);
 
   const isActive = (path: string) => {
     return location === path;

@@ -1,7 +1,7 @@
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { useState, useEffect } from "react";
-import { collection, query, where, getDocs, doc, getDoc, limit, orderBy } from "firebase/firestore";
+import { collection, query, where, getDocs, doc, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent } from "@/components/ui/card";
@@ -51,110 +51,75 @@ export default function OrdersPage() {
 
     const fetchOrders = async () => {
       try {
-        console.log("🔍 جاري جلب الطلبات...");
-        const startTime = Date.now();
-
-        // استعلام محسّن مع ترتيب وحد أقصى
+        // للمشترين - طلباتهم
+        // للبائعين - الطلبات على منتجاتهم + طلباتهم الخاصة كمشترين
         let q;
         if (user.role === "buyer") {
-          q = query(
-            collection(db, "orders"),
-            where("buyerId", "==", user.uid),
-            orderBy("createdAt", "desc"),
-            limit(50)
-          );
+          q = query(collection(db, "orders"), where("buyerId", "==", user.uid));
         } else if (user.role === "seller") {
-          q = query(
-            collection(db, "orders"),
-            orderBy("createdAt", "desc"),
-            limit(50)
-          );
+          q = query(collection(db, "orders"));
         } else {
-          q = query(
-            collection(db, "orders"),
-            orderBy("createdAt", "desc"),
-            limit(50)
-          );
+          q = query(collection(db, "orders"));
         }
 
         const snapshot = await getDocs(q);
-        console.log(`✅ تم جلب ${snapshot.docs.length} طلب في ${Date.now() - startTime}ms`);
-
-        // تجميع IDs للبيانات المطلوبة
-        const sheepIds = new Set<string>();
-        const sellerIds = new Set<string>();
-        const filteredOrders: any[] = [];
-
-        snapshot.docs.forEach((orderDoc) => {
+        const ordersPromises = snapshot.docs.map(async (orderDoc) => {
           const orderData = orderDoc.data();
 
-          // تصفية الطلبات
-          if (user.role === "buyer" && orderData.buyerId !== user.uid) return;
-          if (user.role === "seller" && orderData.buyerId !== user.uid && orderData.sellerId !== user.uid) return;
+          // تصفية الطلبات:
+          // المشترين - طلباتهم فقط
+          // البائعين - طلباتهم + الطلبات على منتجاتهم
+          if (user.role === "buyer" && orderData.buyerId !== user.uid) return null;
+          if (user.role === "seller" && orderData.buyerId !== user.uid && orderData.sellerId !== user.uid) return null;
 
-          filteredOrders.push({
-            id: orderDoc.id,
-            ...orderData,
-          });
+          // جلب البيانات بشكل متوازي
+          const [sheepData, sellerData] = await Promise.all([
+            // جلب بيانات الأغنم
+            orderData.sheepId
+              ? getDoc(doc(db, "sheep", orderData.sheepId))
+                  .then(snap => snap.exists() ? snap.data() : null)
+                  .catch(err => {
+                    console.error("Error fetching sheep:", err);
+                    return null;
+                  })
+              : Promise.resolve(null),
+            // جلب بيانات البائع
+            orderData.sellerId
+              ? getDoc(doc(db, "users", orderData.sellerId))
+                  .then(snap => snap.exists() ? snap.data() : null)
+                  .catch(err => {
+                    console.error("Error fetching seller:", err);
+                    return null;
+                  })
+              : Promise.resolve(null),
+          ]);
 
-          if (orderData.sheepId) sheepIds.add(orderData.sheepId);
-          if (orderData.sellerId) sellerIds.add(orderData.sellerId);
-        });
+          // إضافة البيانات المجلوبة
+          if (sheepData) {
+            orderData.sheepImages = sheepData.images || [];
+            orderData.sheepType = sheepData.type || "غنم";
+            orderData.sheepAge = sheepData.age;
+            orderData.sheepWeight = sheepData.weight;
+          }
 
-        console.log(`📊 طلبات مصفاة: ${filteredOrders.length}, أغنام: ${sheepIds.size}, بائعين: ${sellerIds.size}`);
-
-        // جلب بيانات الأغنام دفعة واحدة
-        const sheepCache = new Map();
-        if (sheepIds.size > 0) {
-          const sheepPromises = Array.from(sheepIds).map(async (sheepId) => {
-            try {
-              const sheepSnap = await getDoc(doc(db, "sheep", sheepId));
-              if (sheepSnap.exists()) {
-                sheepCache.set(sheepId, sheepSnap.data());
-              }
-            } catch (err) {
-              console.error("خطأ في جلب بيانات الأغنام:", err);
-            }
-          });
-          await Promise.all(sheepPromises);
-        }
-
-        // جلب بيانات البائعين دفعة واحدة
-        const sellerCache = new Map();
-        if (sellerIds.size > 0) {
-          const sellerPromises = Array.from(sellerIds).map(async (sellerId) => {
-            try {
-              const sellerSnap = await getDoc(doc(db, "users", sellerId));
-              if (sellerSnap.exists()) {
-                sellerCache.set(sellerId, sellerSnap.data());
-              }
-            } catch (err) {
-              console.error("خطأ في جلب بيانات البائعين:", err);
-            }
-          });
-          await Promise.all(sellerPromises);
-        }
-
-        // دمج البيانات
-        const ordersData: OrderItem[] = filteredOrders.map((order) => {
-          const sheepData = sheepCache.get(order.sheepId);
-          const sellerData = sellerCache.get(order.sellerId);
+          if (sellerData) {
+            orderData.sellerName = sellerData.fullName || sellerData.email;
+            orderData.sellerPhone = sellerData.phone;
+          }
 
           return {
-            ...order,
-            sheepImages: sheepData?.images || [],
-            sheepType: sheepData?.type || "غنم",
-            sheepAge: sheepData?.age,
-            sheepWeight: sheepData?.weight,
-            sellerName: sellerData?.fullName || sellerData?.email,
-            sellerPhone: sellerData?.phone,
+            id: orderDoc.id,
+            ...orderData,
           } as OrderItem;
         });
 
-        console.log(`✅ اكتمل التحميل في ${Date.now() - startTime}ms`);
+        const ordersData = (await Promise.all(ordersPromises))
+          .filter((order): order is OrderItem => order !== null)
+          .sort((a, b) => b.createdAt - a.createdAt);
+
         setOrders(ordersData);
       } catch (error) {
-        console.error("خطأ في جلب الطلبات:", error);
+        console.error("Error fetching orders:", error);
       } finally {
         setLoading(false);
       }
@@ -257,13 +222,13 @@ export default function OrdersPage() {
                     <Skeleton className="h-24 w-24 rounded-lg" />
                     <div className="space-y-2">
                       <Skeleton className="h-4 w-32" />
-                      <Skeleton className="h-6 w-24" />
-                      <Skeleton className="h-4 w-40" />
+                      <Skeleton className="h-4 w-24" />
+                      <Skeleton className="h-4 w-28" />
                     </div>
                     <div className="space-y-2">
-                      <Skeleton className="h-4 w-28" />
-                      <Skeleton className="h-6 w-32" />
-                      <Skeleton className="h-5 w-24" />
+                      <Skeleton className="h-6 w-28" />
+                      <Skeleton className="h-4 w-24" />
+                      <Skeleton className="h-6 w-20" />
                     </div>
                     <div className="space-y-2">
                       <Skeleton className="h-10 w-full" />

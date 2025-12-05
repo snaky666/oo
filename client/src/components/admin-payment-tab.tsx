@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { collection, getDocs, updateDoc, doc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import { CIBReceipt, Payment, VIP_PACKAGES } from "@shared/schema";
+import { CIBReceipt, Payment, VIP_PACKAGES, Order } from "@shared/schema";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -43,9 +43,10 @@ export default function AdminPaymentTab() {
   const fetchPaymentData = async () => {
     setLoading(true);
     try {
-      const [receiptsSnapshot, paymentsSnapshot] = await Promise.all([
+      const [receiptsSnapshot, paymentsSnapshot, ordersSnapshot] = await Promise.all([
         getDocs(collection(db, "cibReceipts")),
         getDocs(collection(db, "payments")),
+        getDocs(collection(db, "orders")),
       ]);
 
       const receiptsData = receiptsSnapshot.docs.map((doc) => ({
@@ -58,8 +59,27 @@ export default function AdminPaymentTab() {
         ...doc.data(),
       })) as Payment[];
 
+      // تحويل الطلبات إلى صيغة مدفوعات للعرض
+      const ordersData = ordersSnapshot.docs.map((doc) => {
+        const orderData = doc.data();
+        return {
+          id: doc.id,
+          orderId: doc.id,
+          userId: orderData.buyerId,
+          userEmail: orderData.buyerEmail || "",
+          amount: orderData.totalPrice || 0,
+          method: orderData.paymentMethod || "cash",
+          status: orderData.status === "confirmed" ? "verified" : orderData.status === "rejected" ? "rejected" : "pending",
+          vipUpgrade: false,
+          createdAt: orderData.createdAt,
+        } as Payment;
+      });
+
+      // دمج المدفوعات مع الطلبات
+      const allPayments = [...paymentsData, ...ordersData];
+
       setCIBReceipts(receiptsData.sort((a, b) => b.createdAt - a.createdAt));
-      setPayments(paymentsData.sort((a, b) => b.createdAt - a.createdAt));
+      setPayments(allPayments.sort((a, b) => b.createdAt - a.createdAt));
     } catch (error) {
       console.error("Error fetching payment data:", error);
       toast({

@@ -24,6 +24,7 @@ import {
   Clock,
   Truck,
   MapPin,
+  Package,
 } from "lucide-react";
 import { format } from "date-fns";
 import { ar } from "date-fns/locale";
@@ -36,7 +37,7 @@ interface Order {
   totalPrice: number;
   paymentMethod: "cash" | "card" | "installment";
   paymentStatus: "pending" | "verified" | "rejected" | "completed";
-  orderStatus: "new" | "preparing" | "shipping" | "delivered" | "cancelled";
+  orderStatus: "new" | "confirmed" | "ready" | "delivered" | "cancelled";
   createdAt: number;
   sheepPrice?: number;
   sheepAge?: number;
@@ -220,8 +221,7 @@ export default function OrderDetailPage({ params }: { params: { id: string } }) 
   }
 
   const canCancel =
-    user?.uid === order.buyerId && ["new", "preparing"].includes(order.orderStatus);
-  const isShipping = order.orderStatus === "shipping";
+    user?.uid === order.buyerId && ["new"].includes(order.orderStatus);
 
   return (
     <div className="min-h-screen bg-background">
@@ -246,11 +246,11 @@ export default function OrderDetailPage({ params }: { params: { id: string } }) 
             </p>
           </div>
           <Badge className="bg-primary text-white py-2 px-4 text-base">
-            {order.orderStatus === "new" && "🆕 جديد"}
-            {order.orderStatus === "preparing" && "⚙️ قيد التحضير"}
-            {order.orderStatus === "shipping" && "🚚 في الطريق"}
-            {order.orderStatus === "delivered" && "✅ مكتمل"}
-            {order.orderStatus === "cancelled" && "❌ ملغى"}
+            {order.orderStatus === "new" && "بانتظار التأكيد"}
+            {order.orderStatus === "confirmed" && "تم التأكيد"}
+            {order.orderStatus === "ready" && "جاهز للتسليم"}
+            {order.orderStatus === "delivered" && "تم التسليم"}
+            {order.orderStatus === "cancelled" && "ملغى"}
           </Badge>
         </div>
 
@@ -319,15 +319,15 @@ export default function OrderDetailPage({ params }: { params: { id: string } }) 
                   {/* Timeline */}
                   <div className="space-y-3">
                     {[
-                      { status: "new", label: "تم استلام الطلب", icon: CheckCircle },
-                      { status: "preparing", label: "قيد التجهيز", icon: Clock },
-                      { status: "shipping", label: "في الطريق", icon: Truck },
-                      { status: "delivered", label: "مكتمل", icon: CheckCircle },
+                      { status: "new", label: "بانتظار تأكيد البائع", description: "تم إرسال طلبك للبائع", icon: Clock },
+                      { status: "confirmed", label: "تم تأكيد الطلب", description: "البائع وافق على طلبك", icon: CheckCircle },
+                      { status: "ready", label: "جاهز للتسليم", description: "الأضحية جاهزة للاستلام أو التوصيل", icon: Package },
+                      { status: "delivered", label: "تم التسليم", description: "تم تسليم الأضحية بنجاح", icon: CheckCircle },
                     ].map((step) => {
-                      const stepIndex = ["new", "preparing", "shipping", "delivered"].indexOf(
+                      const stepIndex = ["new", "confirmed", "ready", "delivered"].indexOf(
                         step.status
                       );
-                      const currentIndex = ["new", "preparing", "shipping", "delivered"].indexOf(
+                      const currentIndex = ["new", "confirmed", "ready", "delivered"].indexOf(
                         order.orderStatus
                       );
                       const isCompleted = stepIndex <= currentIndex;
@@ -338,8 +338,8 @@ export default function OrderDetailPage({ params }: { params: { id: string } }) 
                           <div
                             className={`mt-1 h-8 w-8 rounded-full flex items-center justify-center flex-shrink-0 ${
                               isCompleted
-                                ? "bg-green-100 text-green-700"
-                                : "bg-gray-100 text-gray-400"
+                                ? "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300"
+                                : "bg-gray-100 text-gray-400 dark:bg-gray-800 dark:text-gray-500"
                             }`}
                           >
                             <step.icon className="h-4 w-4" />
@@ -352,20 +352,34 @@ export default function OrderDetailPage({ params }: { params: { id: string } }) 
                             >
                               {step.label}
                             </p>
+                            {isCurrent && (
+                              <p className="text-sm text-muted-foreground">{step.description}</p>
+                            )}
                           </div>
                         </div>
                       );
                     })}
                   </div>
 
-                  {/* رسالة في الطريق */}
-                  {isShipping && (
-                    <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg flex items-start gap-2">
-                      <Truck className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                  {/* رسالة حسب الحالة */}
+                  {order.orderStatus === "new" && (
+                    <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg flex items-start gap-2 dark:bg-yellow-900/20 dark:border-yellow-800">
+                      <Clock className="h-5 w-5 text-yellow-600 flex-shrink-0 mt-0.5" />
                       <div>
-                        <p className="font-semibold text-blue-900">طلبك في الطريق</p>
-                        <p className="text-sm text-blue-700">
-                          سيصل إليك قريباً. يمكنك التواصل مع البائع للاستفسار عن التفاصيل
+                        <p className="font-semibold text-yellow-900 dark:text-yellow-200">بانتظار رد البائع</p>
+                        <p className="text-sm text-yellow-700 dark:text-yellow-300">
+                          سيتم إشعارك فور تأكيد البائع للطلب
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                  {order.orderStatus === "ready" && (
+                    <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg flex items-start gap-2 dark:bg-blue-900/20 dark:border-blue-800">
+                      <Package className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                      <div>
+                        <p className="font-semibold text-blue-900 dark:text-blue-200">أضحيتك جاهزة</p>
+                        <p className="text-sm text-blue-700 dark:text-blue-300">
+                          تواصل مع البائع لترتيب موعد الاستلام أو التوصيل
                         </p>
                       </div>
                     </div>

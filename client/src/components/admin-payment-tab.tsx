@@ -1,5 +1,6 @@
+
 import { useState, useEffect } from "react";
-import { collection, getDocs, updateDoc, doc, query, where } from "firebase/firestore";
+import { collection, getDocs, updateDoc, doc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { CIBReceipt, Payment, VIP_PACKAGES } from "@shared/schema";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -99,7 +100,7 @@ export default function AdminPaymentTab() {
 
       toast({
         title: "تم التحقق من الوصل",
-        description: "تم تفعيل الترقية VIP بنجاح",
+        description: selectedReceipt.vipUpgrade ? "تم تفعيل الترقية VIP بنجاح" : "تم تأكيد الدفع بنجاح",
       });
 
       setSelectedReceipt(null);
@@ -148,6 +149,12 @@ export default function AdminPaymentTab() {
     }
   };
 
+  // فصل البيانات حسب النوع
+  const vipPayments = payments.filter((p) => p.vipUpgrade);
+  const sheepPayments = payments.filter((p) => !p.vipUpgrade);
+  const vipReceipts = cibReceipts.filter((r) => r.vipUpgrade);
+  const sheepReceipts = cibReceipts.filter((r) => !r.vipUpgrade);
+
   const pendingReceipts = cibReceipts.filter((r) => r.status === "pending");
   const verifiedReceipts = cibReceipts.filter((r) => r.status === "verified");
   const rejectedReceipts = cibReceipts.filter((r) => r.status === "rejected");
@@ -180,6 +187,19 @@ export default function AdminPaymentTab() {
     }
   };
 
+  const getPaymentMethodLabel = (method: string) => {
+    switch (method) {
+      case "card":
+        return "تحويل بنكي (CIB)";
+      case "cash":
+        return "دفع نقدي";
+      case "installment":
+        return "تقسيط";
+      default:
+        return method;
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex justify-center items-center h-64">
@@ -190,6 +210,7 @@ export default function AdminPaymentTab() {
 
   return (
     <div className="space-y-6">
+      {/* إحصائيات */}
       <div className="grid md:grid-cols-3 gap-4">
         <Card>
           <CardContent className="pt-6">
@@ -217,86 +238,86 @@ export default function AdminPaymentTab() {
         </Card>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>وصلات التحويل البنكي (CIB)</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>البريد الإلكتروني</TableHead>
-                  <TableHead>المبلغ</TableHead>
-                  <TableHead>النوع</TableHead>
-                  <TableHead>التاريخ</TableHead>
-                  <TableHead>الحالة</TableHead>
-                  <TableHead>الإجراء</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {cibReceipts.map((receipt) => (
-                  <TableRow key={receipt.id}>
-                    <TableCell className="font-medium">{receipt.userEmail}</TableCell>
-                    <TableCell>{receipt.amount.toLocaleString()} DA</TableCell>
-                    <TableCell>
-                      {receipt.vipUpgrade ? (
-                        <Badge className="bg-purple-500/10 text-purple-700 dark:text-purple-400">
-                          ترقية VIP
-                        </Badge>
-                      ) : (
-                        <Badge className="bg-blue-500/10 text-blue-700 dark:text-blue-400">
-                          طلب شراء
-                        </Badge>
-                      )}
-                    </TableCell>
-                    <TableCell>{new Date(receipt.createdAt).toLocaleDateString("ar-DZ")}</TableCell>
-                    <TableCell>{getStatusBadge(receipt.status)}</TableCell>
-                    <TableCell>
-                      {receipt.status === "pending" && (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => setSelectedReceipt(receipt)}
-                        >
-                          <Eye className="h-4 w-4" />
-                          مراجعة
-                        </Button>
-                      )}
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-        </CardContent>
-      </Card>
+      {/* قسم مدفوعات VIP */}
+      <div className="space-y-4">
+        <div className="flex items-center gap-2 mb-4">
+          <span className="text-2xl">💎</span>
+          <h2 className="text-2xl font-bold">مدفوعات VIP</h2>
+        </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <span className="text-purple-600">💎</span>
-            مدفوعات VIP
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>البريد الإلكتروني</TableHead>
-                  <TableHead>المبلغ</TableHead>
-                  <TableHead>الباقة</TableHead>
-                  <TableHead>طريقة الدفع</TableHead>
-                  <TableHead>الحالة</TableHead>
-                  <TableHead>التاريخ</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {payments
-                  .filter((p) => p.vipUpgrade)
-                  .slice(0, 10)
-                  .map((payment) => (
+        {/* وصلات التحويل البنكي VIP */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">التحويلات البنكية (CIB) - VIP</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>البريد الإلكتروني</TableHead>
+                    <TableHead>المبلغ</TableHead>
+                    <TableHead>الباقة</TableHead>
+                    <TableHead>التاريخ</TableHead>
+                    <TableHead>الحالة</TableHead>
+                    <TableHead>الإجراء</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {vipReceipts.map((receipt) => (
+                    <TableRow key={receipt.id}>
+                      <TableCell className="font-medium">{receipt.userEmail}</TableCell>
+                      <TableCell>{receipt.amount.toLocaleString()} DA</TableCell>
+                      <TableCell>
+                        {receipt.vipPackage && VIP_PACKAGES[receipt.vipPackage as keyof typeof VIP_PACKAGES]
+                          ? VIP_PACKAGES[receipt.vipPackage as keyof typeof VIP_PACKAGES].nameAr
+                          : "-"}
+                      </TableCell>
+                      <TableCell>{new Date(receipt.createdAt).toLocaleDateString("ar-DZ")}</TableCell>
+                      <TableCell>{getStatusBadge(receipt.status)}</TableCell>
+                      <TableCell>
+                        {receipt.status === "pending" && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => setSelectedReceipt(receipt)}
+                          >
+                            <Eye className="h-4 w-4" />
+                            مراجعة
+                          </Button>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+              {vipReceipts.length === 0 && (
+                <p className="text-center py-8 text-muted-foreground">لا توجد تحويلات بنكية VIP</p>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* جميع مدفوعات VIP */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">جميع المدفوعات - VIP</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>البريد الإلكتروني</TableHead>
+                    <TableHead>المبلغ</TableHead>
+                    <TableHead>الباقة</TableHead>
+                    <TableHead>طريقة الدفع</TableHead>
+                    <TableHead>الحالة</TableHead>
+                    <TableHead>التاريخ</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {vipPayments.map((payment) => (
                     <TableRow key={payment.id}>
                       <TableCell className="font-medium">{payment.userEmail}</TableCell>
                       <TableCell>{payment.amount.toLocaleString()} DA</TableCell>
@@ -305,77 +326,121 @@ export default function AdminPaymentTab() {
                           ? VIP_PACKAGES[payment.vipPackage as keyof typeof VIP_PACKAGES].nameAr
                           : "-"}
                       </TableCell>
-                      <TableCell>
-                        {payment.method === "card"
-                          ? "تحويل بنكي"
-                          : payment.method === "cash"
-                          ? "دفع نقدي"
-                          : "تقسيط"}
-                      </TableCell>
+                      <TableCell>{getPaymentMethodLabel(payment.method)}</TableCell>
                       <TableCell>{getStatusBadge(payment.status)}</TableCell>
                       <TableCell>{new Date(payment.createdAt).toLocaleDateString("ar-DZ")}</TableCell>
                     </TableRow>
                   ))}
-              </TableBody>
-            </Table>
-            {payments.filter((p) => p.vipUpgrade).length === 0 && (
-              <p className="text-center py-8 text-muted-foreground">لا توجد مدفوعات VIP</p>
-            )}
-          </div>
-        </CardContent>
-      </Card>
+                </TableBody>
+              </Table>
+              {vipPayments.length === 0 && (
+                <p className="text-center py-8 text-muted-foreground">لا توجد مدفوعات VIP</p>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <span className="text-green-600">🐑</span>
-            مدفوعات الأضاحي
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>البريد الإلكتروني</TableHead>
-                  <TableHead>المبلغ</TableHead>
-                  <TableHead>رقم الطلب</TableHead>
-                  <TableHead>طريقة الدفع</TableHead>
-                  <TableHead>الحالة</TableHead>
-                  <TableHead>التاريخ</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {payments
-                  .filter((p) => !p.vipUpgrade)
-                  .slice(0, 10)
-                  .map((payment) => (
+      {/* قسم مدفوعات الأضاحي */}
+      <div className="space-y-4">
+        <div className="flex items-center gap-2 mb-4">
+          <span className="text-2xl">🐑</span>
+          <h2 className="text-2xl font-bold">مدفوعات الأضاحي</h2>
+        </div>
+
+        {/* وصلات التحويل البنكي الأضاحي */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">التحويلات البنكية (CIB) - الأضاحي</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>البريد الإلكتروني</TableHead>
+                    <TableHead>المبلغ</TableHead>
+                    <TableHead>رقم الطلب</TableHead>
+                    <TableHead>التاريخ</TableHead>
+                    <TableHead>الحالة</TableHead>
+                    <TableHead>الإجراء</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {sheepReceipts.map((receipt) => (
+                    <TableRow key={receipt.id}>
+                      <TableCell className="font-medium">{receipt.userEmail}</TableCell>
+                      <TableCell>{receipt.amount.toLocaleString()} DA</TableCell>
+                      <TableCell className="font-mono text-xs">
+                        {receipt.orderId ? receipt.orderId.slice(0, 8) : "-"}
+                      </TableCell>
+                      <TableCell>{new Date(receipt.createdAt).toLocaleDateString("ar-DZ")}</TableCell>
+                      <TableCell>{getStatusBadge(receipt.status)}</TableCell>
+                      <TableCell>
+                        {receipt.status === "pending" && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => setSelectedReceipt(receipt)}
+                          >
+                            <Eye className="h-4 w-4" />
+                            مراجعة
+                          </Button>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+              {sheepReceipts.length === 0 && (
+                <p className="text-center py-8 text-muted-foreground">لا توجد تحويلات بنكية للأضاحي</p>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* جميع مدفوعات الأضاحي */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">جميع المدفوعات - الأضاحي</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>البريد الإلكتروني</TableHead>
+                    <TableHead>المبلغ</TableHead>
+                    <TableHead>رقم الطلب</TableHead>
+                    <TableHead>طريقة الدفع</TableHead>
+                    <TableHead>الحالة</TableHead>
+                    <TableHead>التاريخ</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {sheepPayments.map((payment) => (
                     <TableRow key={payment.id}>
                       <TableCell className="font-medium">{payment.userEmail}</TableCell>
                       <TableCell>{payment.amount.toLocaleString()} DA</TableCell>
                       <TableCell className="font-mono text-xs">
                         {payment.orderId ? payment.orderId.slice(0, 8) : "-"}
                       </TableCell>
-                      <TableCell>
-                        {payment.method === "card"
-                          ? "تحويل بنكي"
-                          : payment.method === "cash"
-                          ? "دفع نقدي"
-                          : "تقسيط"}
-                      </TableCell>
+                      <TableCell>{getPaymentMethodLabel(payment.method)}</TableCell>
                       <TableCell>{getStatusBadge(payment.status)}</TableCell>
                       <TableCell>{new Date(payment.createdAt).toLocaleDateString("ar-DZ")}</TableCell>
                     </TableRow>
                   ))}
-              </TableBody>
-            </Table>
-            {payments.filter((p) => !p.vipUpgrade).length === 0 && (
-              <p className="text-center py-8 text-muted-foreground">لا توجد مدفوعات أضاحي</p>
-            )}
-          </div>
-        </CardContent>
-      </Card>
+                </TableBody>
+              </Table>
+              {sheepPayments.length === 0 && (
+                <p className="text-center py-8 text-muted-foreground">لا توجد مدفوعات أضاحي</p>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
 
+      {/* نافذة مراجعة الوصل */}
       <Dialog open={!!selectedReceipt} onOpenChange={(open) => !open && setSelectedReceipt(null)}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
@@ -392,9 +457,29 @@ export default function AdminPaymentTab() {
                 <p className="font-semibold">{selectedReceipt.userEmail}</p>
               </div>
               <div>
+                <p className="text-sm text-muted-foreground">النوع</p>
+                <p className="font-semibold">
+                  {selectedReceipt.vipUpgrade ? "ترقية VIP" : "شراء أضحية"}
+                </p>
+              </div>
+              <div>
                 <p className="text-sm text-muted-foreground">المبلغ</p>
                 <p className="font-semibold text-lg">{selectedReceipt.amount.toLocaleString()} DA</p>
               </div>
+              {selectedReceipt.vipPackage && (
+                <div>
+                  <p className="text-sm text-muted-foreground">الباقة</p>
+                  <p className="font-semibold">
+                    {VIP_PACKAGES[selectedReceipt.vipPackage as keyof typeof VIP_PACKAGES]?.nameAr}
+                  </p>
+                </div>
+              )}
+              {selectedReceipt.orderId && (
+                <div>
+                  <p className="text-sm text-muted-foreground">رقم الطلب</p>
+                  <p className="font-semibold font-mono text-xs">{selectedReceipt.orderId}</p>
+                </div>
+              )}
               <div>
                 <p className="text-sm text-muted-foreground mb-2">صورة الوصل</p>
                 <img

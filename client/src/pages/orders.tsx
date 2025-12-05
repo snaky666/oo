@@ -7,6 +7,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useLocation } from "wouter";
 import { ShoppingBag, Calendar, DollarSign, Truck } from "lucide-react";
 import { format } from "date-fns";
@@ -62,56 +63,61 @@ export default function OrdersPage() {
         }
 
         const snapshot = await getDocs(q);
-        const ordersData: OrderItem[] = [];
-
-        for (const orderDoc of snapshot.docs) {
+        const ordersPromises = snapshot.docs.map(async (orderDoc) => {
           const orderData = orderDoc.data();
 
           // تصفية الطلبات:
           // المشترين - طلباتهم فقط
           // البائعين - طلباتهم + الطلبات على منتجاتهم
-          if (user.role === "buyer" && orderData.buyerId !== user.uid) continue;
-          if (user.role === "seller" && orderData.buyerId !== user.uid && orderData.sellerId !== user.uid) continue;
+          if (user.role === "buyer" && orderData.buyerId !== user.uid) return null;
+          if (user.role === "seller" && orderData.buyerId !== user.uid && orderData.sellerId !== user.uid) return null;
 
-          // جلب بيانات الأغنم
-          if (orderData.sheepId) {
-            try {
-              const sheepRef = doc(db, "sheep", orderData.sheepId);
-              const sheepSnap = await getDoc(sheepRef);
-              if (sheepSnap.exists()) {
-                const sheepData = sheepSnap.data();
-                orderData.sheepImages = sheepData.images || [];
-                orderData.sheepType = sheepData.type || "غنم";
-                orderData.sheepAge = sheepData.age;
-                orderData.sheepWeight = sheepData.weight;
-              }
-            } catch (err) {
-              console.error("Error fetching sheep details:", err);
-            }
+          // جلب البيانات بشكل متوازي
+          const [sheepData, sellerData] = await Promise.all([
+            // جلب بيانات الأغنم
+            orderData.sheepId
+              ? getDoc(doc(db, "sheep", orderData.sheepId))
+                  .then(snap => snap.exists() ? snap.data() : null)
+                  .catch(err => {
+                    console.error("Error fetching sheep:", err);
+                    return null;
+                  })
+              : Promise.resolve(null),
+            // جلب بيانات البائع
+            orderData.sellerId
+              ? getDoc(doc(db, "users", orderData.sellerId))
+                  .then(snap => snap.exists() ? snap.data() : null)
+                  .catch(err => {
+                    console.error("Error fetching seller:", err);
+                    return null;
+                  })
+              : Promise.resolve(null),
+          ]);
+
+          // إضافة البيانات المجلوبة
+          if (sheepData) {
+            orderData.sheepImages = sheepData.images || [];
+            orderData.sheepType = sheepData.type || "غنم";
+            orderData.sheepAge = sheepData.age;
+            orderData.sheepWeight = sheepData.weight;
           }
 
-          // جلب بيانات البائع
-          if (orderData.sellerId) {
-            try {
-              const sellerRef = doc(db, "users", orderData.sellerId);
-              const sellerSnap = await getDoc(sellerRef);
-              if (sellerSnap.exists()) {
-                const sellerData = sellerSnap.data();
-                orderData.sellerName = sellerData.fullName || sellerData.email;
-                orderData.sellerPhone = sellerData.phone;
-              }
-            } catch (err) {
-              console.error("Error fetching seller details:", err);
-            }
+          if (sellerData) {
+            orderData.sellerName = sellerData.fullName || sellerData.email;
+            orderData.sellerPhone = sellerData.phone;
           }
 
-          ordersData.push({
+          return {
             id: orderDoc.id,
             ...orderData,
-          } as OrderItem);
-        }
+          } as OrderItem;
+        });
 
-        setOrders(ordersData.sort((a, b) => b.createdAt - a.createdAt));
+        const ordersData = (await Promise.all(ordersPromises))
+          .filter((order): order is OrderItem => order !== null)
+          .sort((a, b) => b.createdAt - a.createdAt);
+
+        setOrders(ordersData);
       } catch (error) {
         console.error("Error fetching orders:", error);
       } finally {
@@ -208,11 +214,31 @@ export default function OrdersPage() {
         </div>
 
         {loading ? (
-          <Card>
-            <CardContent className="p-12 text-center">
-              <p className="text-lg text-muted-foreground">جاري التحميل...</p>
-            </CardContent>
-          </Card>
+          <div className="space-y-4">
+            {[1, 2, 3].map((i) => (
+              <Card key={i}>
+                <CardContent className="p-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <Skeleton className="h-24 w-24 rounded-lg" />
+                    <div className="space-y-2">
+                      <Skeleton className="h-4 w-32" />
+                      <Skeleton className="h-4 w-24" />
+                      <Skeleton className="h-4 w-28" />
+                    </div>
+                    <div className="space-y-2">
+                      <Skeleton className="h-6 w-28" />
+                      <Skeleton className="h-4 w-24" />
+                      <Skeleton className="h-6 w-20" />
+                    </div>
+                    <div className="space-y-2">
+                      <Skeleton className="h-10 w-full" />
+                      <Skeleton className="h-10 w-full" />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
         ) : orders.length === 0 ? (
           <Card>
             <CardContent className="p-12 text-center">

@@ -134,7 +134,7 @@ export default function Header() {
             )}
 
             {/* Login Button for Guests or Not Logged In */}
-            {(!user || isGuest) && (
+            {!user && (
               <Link href="/login">
                 <Button
                   variant="default"
@@ -148,7 +148,7 @@ export default function Header() {
             )}
 
             {/* Profile Dropdown (Desktop) */}
-            {user && !isGuest && (
+            {user && (
               <div className="relative group hidden md:block">
                 <Button
                   variant="ghost"

@@ -48,23 +48,8 @@ export default function BottomNavigation() {
   // Build navigation items based on user role
   let navItems: NavItem[] = [];
 
-  if (!user && !isGuest) {
-    // Not logged in - minimal nav
-    navItems = [
-      { icon: <Home className="h-5 w-5" />, label: "الرئيسية", href: "/" },
-      { icon: <MessageSquare className="h-5 w-5" />, label: "تواصل", href: "/contact" },
-      { icon: <User className="h-5 w-5" />, label: "دخول", href: "/login" },
-    ];
-  } else if (isGuest) {
-    // Guest mode - show login option
-    navItems = [
-      { icon: <Home className="h-5 w-5" />, label: "الرئيسية", href: "/landing" },
-      { icon: <ShoppingCart className="h-5 w-5" />, label: "الأضاحي", href: "/browse" },
-      { icon: <MessageSquare className="h-5 w-5" />, label: "تواصل", href: "/contact" },
-      { icon: <User className="h-5 w-5" />, label: "دخول", href: "/login" },
-    ];
-  } else {
-    // Logged in or guest - full nav
+  if (user) {
+    // User is logged in - show full navigation with account
     navItems = [
       { icon: <Home className="h-5 w-5" />, label: "الرئيسية", href: "/landing" },
       { icon: <ShoppingCart className="h-5 w-5" />, label: "الأضاحي", href: "/browse" },
@@ -98,6 +83,21 @@ export default function BottomNavigation() {
       { icon: <MessageSquare className="h-5 w-5" />, label: "تواصل", href: "/contact" },
       { icon: <Settings className="h-5 w-5" />, label: "الحساب", href: "#profile" }
     );
+  } else if (isGuest) {
+    // Guest mode - show login option
+    navItems = [
+      { icon: <Home className="h-5 w-5" />, label: "الرئيسية", href: "/landing" },
+      { icon: <ShoppingCart className="h-5 w-5" />, label: "الأضاحي", href: "/browse" },
+      { icon: <MessageSquare className="h-5 w-5" />, label: "تواصل", href: "/contact" },
+      { icon: <User className="h-5 w-5" />, label: "دخول", href: "/login" },
+    ];
+  } else {
+    // Not logged in - minimal nav
+    navItems = [
+      { icon: <Home className="h-5 w-5" />, label: "الرئيسية", href: "/" },
+      { icon: <MessageSquare className="h-5 w-5" />, label: "تواصل", href: "/contact" },
+      { icon: <User className="h-5 w-5" />, label: "دخول", href: "/login" },
+    ];
   }
 
   return (

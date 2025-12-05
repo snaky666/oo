@@ -173,16 +173,15 @@ export default function OrdersPage() {
 
   const getPaymentStatusLabel = (status: string) => {
     switch (status) {
-      case "pending":
-        return "قيد التحقق";
       case "verified":
-        return "✅ مدفوع";
+        return "مدفوع";
       case "completed":
-        return "✅ مدفوع";
+        return "مدفوع";
       case "rejected":
-        return "❌ مرفوض";
+        return "مرفوض";
+      case "pending":
       default:
-        return status;
+        return "قيد التحقق";
     }
   };
 
@@ -293,13 +292,14 @@ export default function OrdersPage() {
                       >
                         عرض التفاصيل
                       </Button>
-                      {order.sellerPhone && (
+                      {/* زر واتساب البائع - يظهر للبائع والأدمن فقط */}
+                      {order.sellerPhone && (user?.uid === order.sellerId || user?.role === "admin") && (
                         <Button
                           variant="outline"
                           className="w-full"
                           onClick={() => {
                             window.open(
-                              `https://wa.me/${order.sellerPhone.replace(/\D/g, "")}?text=السلام عليكم، أتواصل معك بخصوص الطلب ${order.id}`,
+                              `https://wa.me/${order.sellerPhone!.replace(/\D/g, "")}?text=السلام عليكم، أتواصل معك بخصوص الطلب ${order.id}`,
                               "_blank"
                             );
                           }}

@@ -398,17 +398,17 @@ export default function OrderDetailPage({ params }: { params: { id: string } }) 
                       order.paymentStatus === "verified" ? (
                         <>
                           <CheckCircle className="h-4 w-4 text-green-600" />
-                          <p className="font-semibold text-green-600">✅ مدفوع</p>
+                          <p className="font-semibold text-green-600">مدفوع</p>
                         </>
-                      ) : order.paymentStatus === "pending" ? (
+                      ) : order.paymentStatus === "rejected" ? (
                         <>
-                          <Clock className="h-4 w-4 text-yellow-600" />
-                          <p className="font-semibold text-yellow-600">⏳ قيد التحقق</p>
+                          <AlertTriangle className="h-4 w-4 text-red-600" />
+                          <p className="font-semibold text-red-600">مرفوض</p>
                         </>
                       ) : (
                         <>
-                          <AlertTriangle className="h-4 w-4 text-red-600" />
-                          <p className="font-semibold text-red-600">❌ مرفوض</p>
+                          <Clock className="h-4 w-4 text-yellow-600" />
+                          <p className="font-semibold text-yellow-600">قيد التحقق</p>
                         </>
                       )}
                     </div>
@@ -464,57 +464,59 @@ export default function OrderDetailPage({ params }: { params: { id: string } }) 
               </CardContent>
             </Card>
 
-            {/* معلومات البائع */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">بيانات البائع</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div>
-                  <p className="text-xs text-muted-foreground">الاسم</p>
-                  <p className="font-semibold text-sm">{order.sellerName}</p>
-                </div>
-                {order.sellerPhone && (
+            {/* معلومات البائع - تظهر للبائع والأدمن فقط */}
+            {(user?.uid === order.sellerId || user?.role === "admin") && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-base">بيانات البائع</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
                   <div>
-                    <p className="text-xs text-muted-foreground">الهاتف</p>
-                    <p className="font-semibold text-sm">{order.sellerPhone}</p>
+                    <p className="text-xs text-muted-foreground">الاسم</p>
+                    <p className="font-semibold text-sm">{order.sellerName}</p>
                   </div>
-                )}
-                {order.sellerCity && (
-                  <div>
-                    <p className="text-xs text-muted-foreground">المدينة</p>
-                    <p className="font-semibold text-sm">{order.sellerCity}</p>
+                  {order.sellerPhone && (
+                    <div>
+                      <p className="text-xs text-muted-foreground">الهاتف</p>
+                      <p className="font-semibold text-sm">{order.sellerPhone}</p>
+                    </div>
+                  )}
+                  {order.sellerCity && (
+                    <div>
+                      <p className="text-xs text-muted-foreground">المدينة</p>
+                      <p className="font-semibold text-sm">{order.sellerCity}</p>
+                    </div>
+                  )}
+                  <div className="space-y-2 pt-2 border-t">
+                    {order.sellerPhone && (
+                      <Button
+                        variant="outline"
+                        className="w-full justify-start"
+                        onClick={() => window.open(`tel:${order.sellerPhone}`, "_blank")}
+                      >
+                        <Phone className="mr-2 h-4 w-4" />
+                        اتصال
+                      </Button>
+                    )}
+                    {order.sellerPhone && (
+                      <Button
+                        variant="outline"
+                        className="w-full justify-start"
+                        onClick={() => {
+                          window.open(
+                            `https://wa.me/${order.sellerPhone!.replace(/\D/g, "")}?text=السلام عليكم، أتواصل معك بخصوص الطلب ${order.id}`,
+                            "_blank"
+                          );
+                        }}
+                      >
+                        <MessageCircle className="mr-2 h-4 w-4" />
+                        واتساب
+                      </Button>
+                    )}
                   </div>
-                )}
-                <div className="space-y-2 pt-2 border-t">
-                  {order.sellerPhone && (
-                    <Button
-                      variant="outline"
-                      className="w-full justify-start"
-                      onClick={() => window.open(`tel:${order.sellerPhone}`, "_blank")}
-                    >
-                      <Phone className="mr-2 h-4 w-4" />
-                      اتصال
-                    </Button>
-                  )}
-                  {order.sellerPhone && (
-                    <Button
-                      variant="outline"
-                      className="w-full justify-start"
-                      onClick={() => {
-                        window.open(
-                          `https://wa.me/${order.sellerPhone!.replace(/\D/g, "")}?text=السلام عليكم، أتواصل معك بخصوص الطلب ${order.id}`,
-                          "_blank"
-                        );
-                      }}
-                    >
-                      <MessageCircle className="mr-2 h-4 w-4" />
-                      واتساب
-                    </Button>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            )}
 
             {/* الإجراءات */}
             {canCancel && (

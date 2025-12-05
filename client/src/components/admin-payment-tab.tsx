@@ -345,58 +345,7 @@ export default function AdminPaymentTab() {
           <h2 className="text-2xl font-bold">مدفوعات الأضاحي</h2>
         </div>
 
-        {/* وصلات التحويل البنكي الأضاحي */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">التحويلات البنكية (CIB) - الأضاحي</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>البريد الإلكتروني</TableHead>
-                    <TableHead>المبلغ</TableHead>
-                    <TableHead>رقم الطلب</TableHead>
-                    <TableHead>التاريخ</TableHead>
-                    <TableHead>الحالة</TableHead>
-                    <TableHead>الإجراء</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {sheepReceipts.map((receipt) => (
-                    <TableRow key={receipt.id}>
-                      <TableCell className="font-medium">{receipt.userEmail}</TableCell>
-                      <TableCell>{receipt.amount.toLocaleString()} DA</TableCell>
-                      <TableCell className="font-mono text-xs">
-                        {receipt.orderId ? receipt.orderId.slice(0, 8) : "-"}
-                      </TableCell>
-                      <TableCell>{new Date(receipt.createdAt).toLocaleDateString("ar-DZ")}</TableCell>
-                      <TableCell>{getStatusBadge(receipt.status)}</TableCell>
-                      <TableCell>
-                        {receipt.status === "pending" && (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => setSelectedReceipt(receipt)}
-                          >
-                            <Eye className="h-4 w-4" />
-                            مراجعة
-                          </Button>
-                        )}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-              {sheepReceipts.length === 0 && (
-                <p className="text-center py-8 text-muted-foreground">لا توجد تحويلات بنكية للأضاحي</p>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* جميع مدفوعات الأضاحي */}
+        {/* جميع مدفوعات الأضاحي - جدول موحد */}
         <Card>
           <CardHeader>
             <CardTitle className="text-lg">جميع المدفوعات - الأضاحي</CardTitle>
@@ -412,11 +361,38 @@ export default function AdminPaymentTab() {
                     <TableHead>طريقة الدفع</TableHead>
                     <TableHead>الحالة</TableHead>
                     <TableHead>التاريخ</TableHead>
+                    <TableHead>الإجراء</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
+                  {/* عرض التحويلات البنكية أولاً */}
+                  {sheepReceipts.map((receipt) => (
+                    <TableRow key={`receipt-${receipt.id}`}>
+                      <TableCell className="font-medium">{receipt.userEmail}</TableCell>
+                      <TableCell>{receipt.amount.toLocaleString()} DA</TableCell>
+                      <TableCell className="font-mono text-xs">
+                        {receipt.orderId ? receipt.orderId.slice(0, 8) : "-"}
+                      </TableCell>
+                      <TableCell>تحويل بنكي (CIB)</TableCell>
+                      <TableCell>{getStatusBadge(receipt.status)}</TableCell>
+                      <TableCell>{new Date(receipt.createdAt).toLocaleDateString("ar-DZ")}</TableCell>
+                      <TableCell>
+                        {receipt.status === "pending" && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => setSelectedReceipt(receipt)}
+                          >
+                            <Eye className="h-4 w-4" />
+                            مراجعة
+                          </Button>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                  {/* عرض باقي المدفوعات */}
                   {sheepPayments.map((payment) => (
-                    <TableRow key={payment.id}>
+                    <TableRow key={`payment-${payment.id}`}>
                       <TableCell className="font-medium">{payment.userEmail}</TableCell>
                       <TableCell>{payment.amount.toLocaleString()} DA</TableCell>
                       <TableCell className="font-mono text-xs">
@@ -425,11 +401,12 @@ export default function AdminPaymentTab() {
                       <TableCell>{getPaymentMethodLabel(payment.method)}</TableCell>
                       <TableCell>{getStatusBadge(payment.status)}</TableCell>
                       <TableCell>{new Date(payment.createdAt).toLocaleDateString("ar-DZ")}</TableCell>
+                      <TableCell>-</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
               </Table>
-              {sheepPayments.length === 0 && (
+              {sheepReceipts.length === 0 && sheepPayments.length === 0 && (
                 <p className="text-center py-8 text-muted-foreground">لا توجد مدفوعات أضاحي</p>
               )}
             </div>

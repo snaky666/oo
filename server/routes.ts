@@ -712,10 +712,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Update password using Firebase Admin SDK
       try {
-        await adminAuth.updateUser(user.uid, { password: newPassword });
+        // First get the Firebase Auth user by email to ensure they exist
+        const firebaseAuthUser = await adminAuth.getUserByEmail(email);
+        console.log('✅ Firebase Auth user found:', firebaseAuthUser.uid);
+        
+        // Update password using the Firebase Auth UID
+        await adminAuth.updateUser(firebaseAuthUser.uid, { password: newPassword });
         console.log('✅ Password updated via Admin SDK');
+        
+        // Update Firestore document with correct UID if different
+        if (firebaseAuthUser.uid !== user.uid) {
+          console.log('⚠️ UID mismatch - Firestore:', user.uid, 'Auth:', firebaseAuthUser.uid);
+        }
       } catch (adminError: any) {
         console.error('❌ Admin SDK error:', adminError?.message);
+        
+        // Check if user doesn't exist in Firebase Auth
+        if (adminError?.code === 'auth/user-not-found') {
+          return res.status(404).json({ 
+            success: false, 
+            error: "هذا الحساب غير مسجل. يرجى إنشاء حساب جديد." 
+          });
+        }
+        
         return res.status(500).json({ 
           success: false, 
           error: "فشل في تحديث كلمة المرور. يرجى المحاولة لاحقاً." 

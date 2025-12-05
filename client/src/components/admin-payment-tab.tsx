@@ -274,7 +274,10 @@ export default function AdminPaymentTab() {
 
       <Card>
         <CardHeader>
-          <CardTitle>إجمالي المدفوعات</CardTitle>
+          <CardTitle className="flex items-center gap-2">
+            <span className="text-purple-600">💎</span>
+            مدفوعات VIP
+          </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto">
@@ -283,29 +286,92 @@ export default function AdminPaymentTab() {
                 <TableRow>
                   <TableHead>البريد الإلكتروني</TableHead>
                   <TableHead>المبلغ</TableHead>
+                  <TableHead>الباقة</TableHead>
                   <TableHead>طريقة الدفع</TableHead>
                   <TableHead>الحالة</TableHead>
                   <TableHead>التاريخ</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {payments.slice(0, 10).map((payment) => (
-                  <TableRow key={payment.id}>
-                    <TableCell className="font-medium">{payment.userEmail}</TableCell>
-                    <TableCell>{payment.amount.toLocaleString()} DA</TableCell>
-                    <TableCell>
-                      {payment.method === "card"
-                        ? "تحويل بنكي"
-                        : payment.method === "cash"
-                        ? "دفع نقدي"
-                        : "تقسيط"}
-                    </TableCell>
-                    <TableCell>{getStatusBadge(payment.status)}</TableCell>
-                    <TableCell>{new Date(payment.createdAt).toLocaleDateString("ar-DZ")}</TableCell>
-                  </TableRow>
-                ))}
+                {payments
+                  .filter((p) => p.vipUpgrade)
+                  .slice(0, 10)
+                  .map((payment) => (
+                    <TableRow key={payment.id}>
+                      <TableCell className="font-medium">{payment.userEmail}</TableCell>
+                      <TableCell>{payment.amount.toLocaleString()} DA</TableCell>
+                      <TableCell>
+                        {payment.vipPackage && VIP_PACKAGES[payment.vipPackage as keyof typeof VIP_PACKAGES]
+                          ? VIP_PACKAGES[payment.vipPackage as keyof typeof VIP_PACKAGES].nameAr
+                          : "-"}
+                      </TableCell>
+                      <TableCell>
+                        {payment.method === "card"
+                          ? "تحويل بنكي"
+                          : payment.method === "cash"
+                          ? "دفع نقدي"
+                          : "تقسيط"}
+                      </TableCell>
+                      <TableCell>{getStatusBadge(payment.status)}</TableCell>
+                      <TableCell>{new Date(payment.createdAt).toLocaleDateString("ar-DZ")}</TableCell>
+                    </TableRow>
+                  ))}
               </TableBody>
             </Table>
+            {payments.filter((p) => p.vipUpgrade).length === 0 && (
+              <p className="text-center py-8 text-muted-foreground">لا توجد مدفوعات VIP</p>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <span className="text-green-600">🐑</span>
+            مدفوعات الأضاحي
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>البريد الإلكتروني</TableHead>
+                  <TableHead>المبلغ</TableHead>
+                  <TableHead>رقم الطلب</TableHead>
+                  <TableHead>طريقة الدفع</TableHead>
+                  <TableHead>الحالة</TableHead>
+                  <TableHead>التاريخ</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {payments
+                  .filter((p) => !p.vipUpgrade)
+                  .slice(0, 10)
+                  .map((payment) => (
+                    <TableRow key={payment.id}>
+                      <TableCell className="font-medium">{payment.userEmail}</TableCell>
+                      <TableCell>{payment.amount.toLocaleString()} DA</TableCell>
+                      <TableCell className="font-mono text-xs">
+                        {payment.orderId ? payment.orderId.slice(0, 8) : "-"}
+                      </TableCell>
+                      <TableCell>
+                        {payment.method === "card"
+                          ? "تحويل بنكي"
+                          : payment.method === "cash"
+                          ? "دفع نقدي"
+                          : "تقسيط"}
+                      </TableCell>
+                      <TableCell>{getStatusBadge(payment.status)}</TableCell>
+                      <TableCell>{new Date(payment.createdAt).toLocaleDateString("ar-DZ")}</TableCell>
+                    </TableRow>
+                  ))}
+              </TableBody>
+            </Table>
+            {payments.filter((p) => !p.vipUpgrade).length === 0 && (
+              <p className="text-center py-8 text-muted-foreground">لا توجد مدفوعات أضاحي</p>
+            )}
           </div>
         </CardContent>
       </Card>

@@ -169,67 +169,6 @@ export default function AdminPaymentTab() {
     }
   };
 
-  const handleVerifyPayment = async (paymentId: string, isOrder: boolean) => {
-    setProcessing(true);
-    try {
-      const collectionName = isOrder ? "orders" : "payments";
-      
-      await updateDoc(doc(db, collectionName, paymentId), {
-        status: isOrder ? "confirmed" : "verified",
-        verifiedBy: "admin",
-        verifiedAt: Date.now(),
-        updatedAt: Date.now(),
-      });
-
-      toast({
-        title: "تم قبول المدفوعة",
-        description: "تم تأكيد الدفع بنجاح",
-      });
-
-      fetchPaymentData();
-    } catch (error) {
-      console.error("Error verifying payment:", error);
-      toast({
-        title: "خطأ",
-        description: "فشل قبول المدفوعة",
-        variant: "destructive",
-      });
-    } finally {
-      setProcessing(false);
-    }
-  };
-
-  const handleRejectPayment = async (paymentId: string, isOrder: boolean) => {
-    setProcessing(true);
-    try {
-      const collectionName = isOrder ? "orders" : "payments";
-      
-      await updateDoc(doc(db, collectionName, paymentId), {
-        status: "rejected",
-        verifiedBy: "admin",
-        verifiedAt: Date.now(),
-        updatedAt: Date.now(),
-      });
-
-      toast({
-        title: "تم رفض المدفوعة",
-        description: "تم رفض الدفع",
-        variant: "destructive",
-      });
-
-      fetchPaymentData();
-    } catch (error) {
-      console.error("Error rejecting payment:", error);
-      toast({
-        title: "خطأ",
-        description: "فشل رفض المدفوعة",
-        variant: "destructive",
-      });
-    } finally {
-      setProcessing(false);
-    }
-  };
-
   // فصل البيانات حسب النوع
   const vipPayments = payments.filter((p) => p.vipUpgrade);
   const sheepPayments = payments.filter((p) => !p.vipUpgrade);
@@ -386,32 +325,7 @@ export default function AdminPaymentTab() {
                       <TableCell>{getPaymentMethodLabel(payment.method)}</TableCell>
                       <TableCell>{getStatusBadge(payment.status)}</TableCell>
                       <TableCell>{new Date(payment.createdAt).toLocaleDateString("ar-DZ")}</TableCell>
-                      <TableCell>
-                        {payment.status === "pending" && (
-                          <div className="flex gap-2">
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="text-green-600 hover:text-green-700"
-                              onClick={() => handleVerifyPayment(payment.id, !!payment.orderId)}
-                              disabled={processing}
-                            >
-                              <CheckCircle className="h-4 w-4" />
-                              قبول
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="text-red-600 hover:text-red-700"
-                              onClick={() => handleRejectPayment(payment.id, !!payment.orderId)}
-                              disabled={processing}
-                            >
-                              <XCircle className="h-4 w-4" />
-                              رفض
-                            </Button>
-                          </div>
-                        )}
-                      </TableCell>
+                      <TableCell>-</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -487,32 +401,7 @@ export default function AdminPaymentTab() {
                       <TableCell>{getPaymentMethodLabel(payment.method)}</TableCell>
                       <TableCell>{getStatusBadge(payment.status)}</TableCell>
                       <TableCell>{new Date(payment.createdAt).toLocaleDateString("ar-DZ")}</TableCell>
-                      <TableCell>
-                        {payment.status === "pending" && (
-                          <div className="flex gap-2">
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="text-green-600 hover:text-green-700"
-                              onClick={() => handleVerifyPayment(payment.id, !!payment.orderId)}
-                              disabled={processing}
-                            >
-                              <CheckCircle className="h-4 w-4" />
-                              قبول
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="text-red-600 hover:text-red-700"
-                              onClick={() => handleRejectPayment(payment.id, !!payment.orderId)}
-                              disabled={processing}
-                            >
-                              <XCircle className="h-4 w-4" />
-                              رفض
-                            </Button>
-                          </div>
-                        )}
-                      </TableCell>
+                      <TableCell>-</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>

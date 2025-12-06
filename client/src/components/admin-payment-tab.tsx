@@ -35,6 +35,7 @@ export default function AdminPaymentTab() {
   const [selectedReceipt, setSelectedReceipt] = useState<CIBReceipt | null>(null);
   const [rejectionReason, setRejectionReason] = useState("");
   const [processing, setProcessing] = useState(false);
+  const [paymentFilter, setPaymentFilter] = useState<"all" | "vip" | "local" | "foreign">("all");
 
   useEffect(() => {
     fetchPaymentData();
@@ -236,8 +237,68 @@ export default function AdminPaymentTab() {
     );
   }
 
+  // Filter data based on selected filter
+  const getFilteredData = () => {
+    if (paymentFilter === "vip") {
+      return {
+        receipts: vipReceipts,
+        payments: vipPayments,
+        title: "مدفوعات VIP",
+        icon: "💎"
+      };
+    } else if (paymentFilter === "local") {
+      return {
+        receipts: sheepReceipts.filter(r => !r.sheepOrigin || r.sheepOrigin === "local"),
+        payments: sheepPayments.filter(p => !p.sheepOrigin || p.sheepOrigin === "local"),
+        title: "مدفوعات الأضاحي المحلية",
+        icon: "🐑"
+      };
+    } else if (paymentFilter === "foreign") {
+      return {
+        receipts: sheepReceipts.filter(r => r.sheepOrigin === "foreign"),
+        payments: sheepPayments.filter(p => p.sheepOrigin === "foreign"),
+        title: "مدفوعات الأضاحي الأجنبية",
+        icon: "🌍"
+      };
+    } else {
+      return {
+        receipts: cibReceipts,
+        payments: payments,
+        title: "جميع المدفوعات",
+        icon: "💰"
+      };
+    }
+  };
+
+  const filteredData = getFilteredData();
+
   return (
     <div className="space-y-6">
+      {/* أزرار الفلترة */}
+      <div className="flex flex-wrap gap-3">
+        <Button
+          variant={paymentFilter === "vip" ? "default" : "outline"}
+          onClick={() => setPaymentFilter("vip")}
+          className={paymentFilter === "vip" ? "bg-amber-500 hover:bg-amber-600" : ""}
+        >
+          💎 مدفوعات VIP ({vipReceipts.length + vipPayments.length})
+        </Button>
+        <Button
+          variant={paymentFilter === "local" ? "default" : "outline"}
+          onClick={() => setPaymentFilter("local")}
+          className={paymentFilter === "local" ? "bg-green-500 hover:bg-green-600" : ""}
+        >
+          🐑 أضاحي محلية ({sheepReceipts.filter(r => !r.sheepOrigin || r.sheepOrigin === "local").length + sheepPayments.filter(p => !p.sheepOrigin || p.sheepOrigin === "local").length})
+        </Button>
+        <Button
+          variant={paymentFilter === "foreign" ? "default" : "outline"}
+          onClick={() => setPaymentFilter("foreign")}
+          className={paymentFilter === "foreign" ? "bg-blue-500 hover:bg-blue-600" : ""}
+        >
+          🌍 أضاحي أجنبية ({sheepReceipts.filter(r => r.sheepOrigin === "foreign").length + sheepPayments.filter(p => p.sheepOrigin === "foreign").length})
+        </Button>
+      </div>
+
       {/* إحصائيات */}
       <div className="grid md:grid-cols-3 gap-4">
         <Card>
@@ -266,17 +327,16 @@ export default function AdminPaymentTab() {
         </Card>
       </div>
 
-      {/* قسم مدفوعات VIP */}
+      {/* قسم المدفوعات المفلترة */}
       <div className="space-y-4">
         <div className="flex items-center gap-2 mb-4">
-          <span className="text-2xl">💎</span>
-          <h2 className="text-2xl font-bold">مدفوعات VIP</h2>
+          <span className="text-2xl">{filteredData.icon}</span>
+          <h2 className="text-2xl font-bold">{filteredData.title}</h2>
         </div>
 
-        {/* جميع مدفوعات VIP - جدول موحد */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-lg">جميع المدفوعات - VIP</CardTitle>
+            <CardTitle className="text-lg">{filteredData.title}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="overflow-x-auto">
@@ -285,7 +345,11 @@ export default function AdminPaymentTab() {
                   <TableRow>
                     <TableHead>البريد الإلكتروني</TableHead>
                     <TableHead>المبلغ</TableHead>
-                    <TableHead>الباقة</TableHead>
+                    {paymentFilter === "vip" ? (
+                      <TableHead>الباقة</TableHead>
+                    ) : (
+                      <TableHead>رقم الطلب</TableHead>
+                    )}
                     <TableHead>طريقة الدفع</TableHead>
                     <TableHead>الحالة</TableHead>
                     <TableHead>التاريخ</TableHead>
@@ -294,14 +358,20 @@ export default function AdminPaymentTab() {
                 </TableHeader>
                 <TableBody>
                   {/* عرض التحويلات البنكية أولاً */}
-                  {vipReceipts.map((receipt) => (
+                  {filteredData.receipts.map((receipt) => (
                     <TableRow key={`receipt-${receipt.id}`}>
                       <TableCell className="font-medium">{receipt.userEmail}</TableCell>
                       <TableCell>{receipt.amount.toLocaleString()} DA</TableCell>
                       <TableCell>
-                        {receipt.vipPackage && VIP_PACKAGES[receipt.vipPackage as keyof typeof VIP_PACKAGES]
-                          ? VIP_PACKAGES[receipt.vipPackage as keyof typeof VIP_PACKAGES].nameAr
-                          : "-"}
+                        {paymentFilter === "vip" ? (
+                          receipt.vipPackage && VIP_PACKAGES[receipt.vipPackage as keyof typeof VIP_PACKAGES]
+                            ? VIP_PACKAGES[receipt.vipPackage as keyof typeof VIP_PACKAGES].nameAr
+                            : "-"
+                        ) : (
+                          <span className="font-mono text-xs">
+                            {receipt.orderId ? receipt.orderId.slice(0, 8) : "-"}
+                          </span>
+                        )}
                       </TableCell>
                       <TableCell>تحويل بنكي (CIB)</TableCell>
                       <TableCell>{getStatusBadge(receipt.status)}</TableCell>
@@ -321,91 +391,21 @@ export default function AdminPaymentTab() {
                     </TableRow>
                   ))}
                   {/* عرض باقي المدفوعات */}
-                  {vipPayments.map((payment) => (
+                  {filteredData.payments.map((payment) => (
                     <TableRow key={`payment-${payment.id}`}>
                       <TableCell className="font-medium">{payment.userEmail}</TableCell>
                       <TableCell>{payment.amount.toLocaleString()} DA</TableCell>
                       <TableCell>
-                        {payment.vipPackage && VIP_PACKAGES[payment.vipPackage as keyof typeof VIP_PACKAGES]
-                          ? VIP_PACKAGES[payment.vipPackage as keyof typeof VIP_PACKAGES].nameAr
-                          : "-"}
-                      </TableCell>
-                      <TableCell>{getPaymentMethodLabel(payment.method)}</TableCell>
-                      <TableCell>{getStatusBadge(payment.status)}</TableCell>
-                      <TableCell>{formatDate(payment.createdAt)}</TableCell>
-                      <TableCell>-</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-              {vipReceipts.length === 0 && vipPayments.length === 0 && (
-                <p className="text-center py-8 text-muted-foreground">لا توجد مدفوعات VIP</p>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* قسم مدفوعات الأضاحي */}
-      <div className="space-y-4">
-        <div className="flex items-center gap-2 mb-4">
-          <span className="text-2xl">🐑</span>
-          <h2 className="text-2xl font-bold">مدفوعات الأضاحي</h2>
-        </div>
-
-        {/* جميع مدفوعات الأضاحي - جدول موحد */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">جميع المدفوعات - الأضاحي</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>البريد الإلكتروني</TableHead>
-                    <TableHead>المبلغ</TableHead>
-                    <TableHead>رقم الطلب</TableHead>
-                    <TableHead>طريقة الدفع</TableHead>
-                    <TableHead>الحالة</TableHead>
-                    <TableHead>التاريخ</TableHead>
-                    <TableHead>الإجراء</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {/* عرض التحويلات البنكية أولاً */}
-                  {sheepReceipts.map((receipt) => (
-                    <TableRow key={`receipt-${receipt.id}`}>
-                      <TableCell className="font-medium">{receipt.userEmail}</TableCell>
-                      <TableCell>{receipt.amount.toLocaleString()} DA</TableCell>
-                      <TableCell className="font-mono text-xs">
-                        {receipt.orderId ? receipt.orderId.slice(0, 8) : "-"}
-                      </TableCell>
-                      <TableCell>تحويل بنكي (CIB)</TableCell>
-                      <TableCell>{getStatusBadge(receipt.status)}</TableCell>
-                      <TableCell>{formatDate(receipt.createdAt)}</TableCell>
-                      <TableCell>
-                        {receipt.status === "pending" && (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => setSelectedReceipt(receipt)}
-                          >
-                            <Eye className="h-4 w-4" />
-                            مراجعة
-                          </Button>
+                        {paymentFilter === "vip" ? (
+                          payment.vipPackage && VIP_PACKAGES[payment.vipPackage as keyof typeof VIP_PACKAGES]
+                            ? VIP_PACKAGES[payment.vipPackage as keyof typeof VIP_PACKAGES].nameAr
+                            : "-"
+                        ) : (
+                          <span className="font-mono text-xs">
+                            {payment.orderId ? payment.orderId.slice(0, 8) : "-"}
+                          </span>
                         )}
                       </TableCell>
-                    </TableRow>
-                  ))}
-                  {/* عرض باقي المدفوعات */}
-                  {sheepPayments.map((payment) => (
-                    <TableRow key={`payment-${payment.id}`}>
-                      <TableCell className="font-medium">{payment.userEmail}</TableCell>
-                      <TableCell>{payment.amount.toLocaleString()} DA</TableCell>
-                      <TableCell className="font-mono text-xs">
-                        {payment.orderId ? payment.orderId.slice(0, 8) : "-"}
-                      </TableCell>
                       <TableCell>{getPaymentMethodLabel(payment.method)}</TableCell>
                       <TableCell>{getStatusBadge(payment.status)}</TableCell>
                       <TableCell>{formatDate(payment.createdAt)}</TableCell>
@@ -414,8 +414,10 @@ export default function AdminPaymentTab() {
                   ))}
                 </TableBody>
               </Table>
-              {sheepReceipts.length === 0 && sheepPayments.length === 0 && (
-                <p className="text-center py-8 text-muted-foreground">لا توجد مدفوعات أضاحي</p>
+              {filteredData.receipts.length === 0 && filteredData.payments.length === 0 && (
+                <p className="text-center py-8 text-muted-foreground">
+                  لا توجد {filteredData.title.toLowerCase()}
+                </p>
               )}
             </div>
           </CardContent>

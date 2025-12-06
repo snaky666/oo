@@ -564,9 +564,6 @@ export default function AdminDashboard() {
             <TabsTrigger value="vip" data-testid="tab-vip">
               إدارة VIP ({users.filter(u => u.vipStatus && u.vipStatus !== "none").length})
             </TabsTrigger>
-            <TabsTrigger value="orders" data-testid="tab-orders">
-              الطلبات
-            </TabsTrigger>
             <TabsTrigger value="payments" data-testid="tab-payments">
               <CreditCard className="h-4 w-4 ml-1" />
               الدفع
@@ -1075,128 +1072,7 @@ export default function AdminDashboard() {
             </Card>
           </TabsContent>
 
-          {/* Orders Tab */}
-          <TabsContent value="orders">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-                  <span>الطلبات ({orders.length})</span>
-                  <div className="flex flex-wrap gap-2">
-                    <Button
-                      variant={ordersOriginFilter === "all" ? "default" : "outline"}
-                      size="sm"
-                      onClick={() => setOrdersOriginFilter("all")}
-                      data-testid="button-orders-filter-all"
-                    >
-                      الكل ({orders.length})
-                    </Button>
-                    <Button
-                      variant={ordersOriginFilter === "local" ? "default" : "outline"}
-                      size="sm"
-                      onClick={() => setOrdersOriginFilter("local")}
-                      data-testid="button-orders-filter-local"
-                    >
-                      محلية ({localOrdersCount})
-                    </Button>
-                    <Button
-                      variant={ordersOriginFilter === "foreign" ? "default" : "outline"}
-                      size="sm"
-                      onClick={() => setOrdersOriginFilter("foreign")}
-                      data-testid="button-orders-filter-foreign"
-                    >
-                      <Globe className="h-4 w-4 ml-1" />
-                      أجنبية ({foreignOrdersCount})
-                    </Button>
-                  </div>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {loading ? (
-                  <p className="text-center text-muted-foreground">جاري التحميل...</p>
-                ) : filteredOrders.length === 0 ? (
-                  <Card>
-                    <CardContent className="p-12 text-center">
-                      <ShoppingBag className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
-                      <p className="text-lg text-muted-foreground">
-                        {ordersOriginFilter === "all" 
-                          ? "لا توجد طلبات حتى الآن"
-                          : ordersOriginFilter === "local"
-                          ? "لا توجد طلبات محلية"
-                          : "لا توجد طلبات أجنبية"}
-                      </p>
-                    </CardContent>
-                  </Card>
-                ) : (
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>المشتري</TableHead>
-                        <TableHead>البائع</TableHead>
-                        <TableHead>النوع</TableHead>
-                        <TableHead>السعر</TableHead>
-                        <TableHead>الحالة</TableHead>
-                        <TableHead>التاريخ</TableHead>
-                        <TableHead>الإجراءات</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {filteredOrders.map(o => (
-                        <TableRow key={o.id} data-testid={`row-order-${o.id}`}>
-                          <TableCell className="text-sm">{o.buyerEmail || o.buyerId.slice(0, 8)}</TableCell>
-                          <TableCell className="text-sm">{o.sellerEmail || o.sellerId.slice(0, 8)}</TableCell>
-                          <TableCell>
-                            <Badge
-                              className={
-                                getSheepOrigin(o.sheepId) === "foreign"
-                                  ? "bg-blue-500/10 text-blue-700 dark:text-blue-400"
-                                  : "bg-green-500/10 text-green-700 dark:text-green-400"
-                              }
-                            >
-                              {getSheepOrigin(o.sheepId) === "foreign" ? (
-                                <><Globe className="h-3 w-3 ml-1 inline" /> أجنبية</>
-                              ) : (
-                                "محلية"
-                              )}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>{o.totalPrice.toLocaleString()} DA</TableCell>
-                          <TableCell>
-                            <Badge
-                              className={
-                                o.status === "confirmed"
-                                  ? "bg-green-500/10 text-green-700"
-                                  : (!o.status || o.status === "pending")
-                                  ? "bg-yellow-500/10 text-yellow-700"
-                                  : "bg-red-500/10 text-red-700"
-                              }
-                            >
-                              {!o.status || o.status === "pending" ? "قيد المراجعة" : o.status === "confirmed" ? "مؤكد" : "مرفوض"}
-                            </Badge>
-                          </TableCell>
-                          <TableCell className="text-sm text-muted-foreground">
-                            {formatGregorianDate(o.createdAt)}
-                          </TableCell>
-                          <TableCell>
-                            {(!o.status || o.status === "pending") && (
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                onClick={() => setSelectedOrder(o)}
-                                data-testid={`button-review-order-${o.id}`}
-                              >
-                                مراجعة
-                              </Button>
-                            )}
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
+          </Tabs>
       </div>
 
       {/* VIP Management Dialog */}

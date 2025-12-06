@@ -82,6 +82,9 @@ export default function AdminDashboard() {
   // Filter state for all sheep tab
   const [allSheepOriginFilter, setAllSheepOriginFilter] = useState<"all" | "local" | "foreign">("all");
 
+  // Filter state for orders tab
+  const [ordersOriginFilter, setOrdersOriginFilter] = useState<"all" | "local" | "foreign">("all");
+
   // Helper function to format date as Gregorian (Miladi)
   const formatGregorianDate = (date: any) => {
     const d = new Date(date);
@@ -262,6 +265,23 @@ export default function AdminDashboard() {
     const sheepOrigin = s.origin || "local";
     return sheepOrigin === allSheepOriginFilter;
   });
+
+  // Helper function to get sheep origin from sheepId
+  const getSheepOrigin = (sheepId: string): "local" | "foreign" => {
+    const foundSheep = sheep.find(s => s.id === sheepId);
+    return (foundSheep?.origin || "local") as "local" | "foreign";
+  };
+
+  // Filter orders based on origin for "Orders" tab
+  const filteredOrders = orders.filter(o => {
+    if (ordersOriginFilter === "all") return true;
+    const orderOrigin = getSheepOrigin(o.sheepId);
+    return orderOrigin === ordersOriginFilter;
+  });
+
+  // Count orders by origin
+  const localOrdersCount = orders.filter(o => getSheepOrigin(o.sheepId) === "local").length;
+  const foreignOrdersCount = orders.filter(o => getSheepOrigin(o.sheepId) === "foreign").length;
 
   const stats = {
     totalSheep: sheep.length,
@@ -1059,17 +1079,50 @@ export default function AdminDashboard() {
           <TabsContent value="orders">
             <Card>
               <CardHeader>
-                <CardTitle>الطلبات ({orders.length})</CardTitle>
+                <CardTitle className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                  <span>الطلبات ({orders.length})</span>
+                  <div className="flex flex-wrap gap-2">
+                    <Button
+                      variant={ordersOriginFilter === "all" ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setOrdersOriginFilter("all")}
+                      data-testid="button-orders-filter-all"
+                    >
+                      الكل ({orders.length})
+                    </Button>
+                    <Button
+                      variant={ordersOriginFilter === "local" ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setOrdersOriginFilter("local")}
+                      data-testid="button-orders-filter-local"
+                    >
+                      محلية ({localOrdersCount})
+                    </Button>
+                    <Button
+                      variant={ordersOriginFilter === "foreign" ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setOrdersOriginFilter("foreign")}
+                      data-testid="button-orders-filter-foreign"
+                    >
+                      <Globe className="h-4 w-4 ml-1" />
+                      أجنبية ({foreignOrdersCount})
+                    </Button>
+                  </div>
+                </CardTitle>
               </CardHeader>
               <CardContent>
                 {loading ? (
                   <p className="text-center text-muted-foreground">جاري التحميل...</p>
-                ) : orders.length === 0 ? (
+                ) : filteredOrders.length === 0 ? (
                   <Card>
                     <CardContent className="p-12 text-center">
                       <ShoppingBag className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
                       <p className="text-lg text-muted-foreground">
-                        لا توجد طلبات حتى الآن
+                        {ordersOriginFilter === "all" 
+                          ? "لا توجد طلبات حتى الآن"
+                          : ordersOriginFilter === "local"
+                          ? "لا توجد طلبات محلية"
+                          : "لا توجد طلبات أجنبية"}
                       </p>
                     </CardContent>
                   </Card>
@@ -1079,6 +1132,7 @@ export default function AdminDashboard() {
                       <TableRow>
                         <TableHead>المشتري</TableHead>
                         <TableHead>البائع</TableHead>
+                        <TableHead>النوع</TableHead>
                         <TableHead>السعر</TableHead>
                         <TableHead>الحالة</TableHead>
                         <TableHead>التاريخ</TableHead>
@@ -1086,10 +1140,25 @@ export default function AdminDashboard() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {orders.map(o => (
-                        <TableRow key={o.id}>
+                      {filteredOrders.map(o => (
+                        <TableRow key={o.id} data-testid={`row-order-${o.id}`}>
                           <TableCell className="text-sm">{o.buyerEmail || o.buyerId.slice(0, 8)}</TableCell>
                           <TableCell className="text-sm">{o.sellerEmail || o.sellerId.slice(0, 8)}</TableCell>
+                          <TableCell>
+                            <Badge
+                              className={
+                                getSheepOrigin(o.sheepId) === "foreign"
+                                  ? "bg-blue-500/10 text-blue-700 dark:text-blue-400"
+                                  : "bg-green-500/10 text-green-700 dark:text-green-400"
+                              }
+                            >
+                              {getSheepOrigin(o.sheepId) === "foreign" ? (
+                                <><Globe className="h-3 w-3 ml-1 inline" /> أجنبية</>
+                              ) : (
+                                "محلية"
+                              )}
+                            </Badge>
+                          </TableCell>
                           <TableCell>{o.totalPrice.toLocaleString()} DA</TableCell>
                           <TableCell>
                             <Badge
@@ -1113,6 +1182,7 @@ export default function AdminDashboard() {
                                 size="sm"
                                 variant="ghost"
                                 onClick={() => setSelectedOrder(o)}
+                                data-testid={`button-review-order-${o.id}`}
                               >
                                 مراجعة
                               </Button>

@@ -85,6 +85,9 @@ export default function AdminDashboard() {
   // Filter state for orders tab
   const [ordersOriginFilter, setOrdersOriginFilter] = useState<"all" | "local" | "foreign">("all");
 
+  // Filter state for users tab
+  const [usersRoleFilter, setUsersRoleFilter] = useState<"all" | "seller" | "buyer">("all");
+
   // Helper function to format date as Gregorian (Miladi)
   const formatGregorianDate = (date: any) => {
     const d = new Date(date);
@@ -282,6 +285,12 @@ export default function AdminDashboard() {
   // Count orders by origin
   const localOrdersCount = orders.filter(o => getSheepOrigin(o.sheepId) === "local").length;
   const foreignOrdersCount = orders.filter(o => getSheepOrigin(o.sheepId) === "foreign").length;
+
+  // Filter users based on role
+  const filteredUsers = users.filter(u => {
+    if (usersRoleFilter === "all") return true;
+    return u.role === usersRoleFilter;
+  });
 
   const stats = {
     totalSheep: sheep.length,
@@ -1044,6 +1053,34 @@ export default function AdminDashboard() {
                 <CardTitle>المستخدمون ({users.length})</CardTitle>
               </CardHeader>
               <CardContent>
+                {/* Role Filter Buttons */}
+                <div className="flex gap-3 mb-6">
+                  <Button
+                    variant={usersRoleFilter === "all" ? "default" : "outline"}
+                    onClick={() => setUsersRoleFilter("all")}
+                    size="sm"
+                    data-testid="button-users-all"
+                  >
+                    الكل ({users.length})
+                  </Button>
+                  <Button
+                    variant={usersRoleFilter === "seller" ? "default" : "outline"}
+                    onClick={() => setUsersRoleFilter("seller")}
+                    size="sm"
+                    data-testid="button-users-sellers"
+                  >
+                    البائعون ({users.filter(u => u.role === "seller").length})
+                  </Button>
+                  <Button
+                    variant={usersRoleFilter === "buyer" ? "default" : "outline"}
+                    onClick={() => setUsersRoleFilter("buyer")}
+                    size="sm"
+                    data-testid="button-users-buyers"
+                  >
+                    المشترون ({users.filter(u => u.role === "buyer").length})
+                  </Button>
+                </div>
+
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -1054,7 +1091,7 @@ export default function AdminDashboard() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {users.map(u => (
+                    {filteredUsers.map(u => (
                       <TableRow key={u.uid}>
                         <TableCell>{u.email}</TableCell>
                         <TableCell>{getRoleBadge(u.role)}</TableCell>

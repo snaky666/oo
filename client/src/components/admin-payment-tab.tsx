@@ -587,51 +587,40 @@ export default function AdminPaymentTab() {
               {/* معلومات البائع للأضاحي المحلية */}
               {selectedReceipt.orderId && ordersMap[selectedReceipt.orderId] && 
                ordersMap[selectedReceipt.orderId].sellerId && 
+               ordersMap[selectedReceipt.orderId].sheepOrigin !== "foreign" &&
                usersMap[ordersMap[selectedReceipt.orderId].sellerId] && (
                 <div className="border-t pt-4 space-y-3">
                   <h4 className="font-semibold text-base">معلومات البائع</h4>
                   
-                  {usersMap[ordersMap[selectedReceipt.orderId].sellerId].fullName && (
-                    <div>
-                      <p className="text-sm text-muted-foreground">اسم البائع</p>
-                      <p className="font-semibold">{usersMap[ordersMap[selectedReceipt.orderId].sellerId].fullName}</p>
-                    </div>
-                  )}
+                  <div>
+                    <p className="text-sm text-muted-foreground">اسم البائع</p>
+                    <p className="font-semibold">{usersMap[ordersMap[selectedReceipt.orderId].sellerId].fullName || "غير متوفر"}</p>
+                  </div>
                   
-                  {usersMap[ordersMap[selectedReceipt.orderId].sellerId].email && (
-                    <div>
-                      <p className="text-sm text-muted-foreground">البريد الإلكتروني</p>
-                      <p className="font-semibold">{usersMap[ordersMap[selectedReceipt.orderId].sellerId].email}</p>
-                    </div>
-                  )}
+                  <div>
+                    <p className="text-sm text-muted-foreground">البريد الإلكتروني</p>
+                    <p className="font-semibold">{usersMap[ordersMap[selectedReceipt.orderId].sellerId].email || "غير متوفر"}</p>
+                  </div>
                   
-                  {usersMap[ordersMap[selectedReceipt.orderId].sellerId].phone && (
-                    <div>
-                      <p className="text-sm text-muted-foreground">رقم الهاتف</p>
-                      <p className="font-semibold" dir="ltr">{usersMap[ordersMap[selectedReceipt.orderId].sellerId].phone}</p>
-                    </div>
-                  )}
+                  <div>
+                    <p className="text-sm text-muted-foreground">رقم الهاتف</p>
+                    <p className="font-semibold" dir="ltr">{usersMap[ordersMap[selectedReceipt.orderId].sellerId].phone || "غير متوفر"}</p>
+                  </div>
                   
-                  {usersMap[ordersMap[selectedReceipt.orderId].sellerId].city && (
-                    <div>
-                      <p className="text-sm text-muted-foreground">الولاية</p>
-                      <p className="font-semibold">{usersMap[ordersMap[selectedReceipt.orderId].sellerId].city}</p>
-                    </div>
-                  )}
+                  <div>
+                    <p className="text-sm text-muted-foreground">الولاية</p>
+                    <p className="font-semibold">{usersMap[ordersMap[selectedReceipt.orderId].sellerId].city || "غير متوفر"}</p>
+                  </div>
                   
-                  {usersMap[ordersMap[selectedReceipt.orderId].sellerId].municipality && (
-                    <div>
-                      <p className="text-sm text-muted-foreground">البلدية</p>
-                      <p className="font-semibold">{usersMap[ordersMap[selectedReceipt.orderId].sellerId].municipality}</p>
-                    </div>
-                  )}
+                  <div>
+                    <p className="text-sm text-muted-foreground">البلدية</p>
+                    <p className="font-semibold">{usersMap[ordersMap[selectedReceipt.orderId].sellerId].municipality || "غير متوفر"}</p>
+                  </div>
                   
-                  {usersMap[ordersMap[selectedReceipt.orderId].sellerId].address && (
-                    <div>
-                      <p className="text-sm text-muted-foreground">العنوان</p>
-                      <p className="font-semibold">{usersMap[ordersMap[selectedReceipt.orderId].sellerId].address}</p>
-                    </div>
-                  )}
+                  <div>
+                    <p className="text-sm text-muted-foreground">العنوان</p>
+                    <p className="font-semibold">{usersMap[ordersMap[selectedReceipt.orderId].sellerId].address || "غير متوفر"}</p>
+                  </div>
                 </div>
               )}
 

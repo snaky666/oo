@@ -27,7 +27,7 @@ export default function BrowseSheep() {
   const [weightRange, setWeightRange] = useState<[number, number]>([0, 100]);
   const [selectedCities, setSelectedCities] = useState<string[]>([]);
   const [filtersOpen, setFiltersOpen] = useState(false);
-  const [selectedOrigin, setSelectedOrigin] = useState<SheepOrigin | "all">("all");
+  const [selectedOrigin, setSelectedOrigin] = useState<SheepOrigin | "all">("local");
 
   const { data: ads = [] } = useQuery({
     queryKey: ["/api/ads"],

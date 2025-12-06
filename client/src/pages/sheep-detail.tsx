@@ -181,33 +181,42 @@ export default function SheepDetail() {
         workDocImageUrl = workDocUrl;
       }
 
-      const orderData: Record<string, unknown> = {
+      // Base order data - only include fields that are common to all orders
+      const baseOrderData: Record<string, any> = {
         buyerId: user.uid,
-        buyerEmail: user.email,
+        buyerEmail: user.email || "",
         buyerName: formData.fullName,
         buyerPhone: formData.phone,
         buyerCity: formData.city,
         buyerAddress: formData.address,
         sellerId: sheep.sellerId,
         sellerEmail: sheep.sellerEmail || "",
-        sheepId: sheep.id,
+        sheepId: sheep.id || "",
         sheepPrice: sheep.price,
         sheepAge: sheep.age,
         sheepWeight: sheep.weight,
         sheepCity: sheep.city,
-        sheepOrigin: sheep.origin || "local",
         totalPrice: sheep.price,
         status: "pending",
+        paymentMethod: "cash",
+        paymentStatus: "pending",
+        orderStatus: "new",
         createdAt: Date.now(),
       };
 
-      if (isForeignSheep) {
-        orderData.nationalId = formData.nationalId;
-        orderData.paySlipImageUrl = paySlipImageUrl;
-        orderData.workDocImageUrl = workDocImageUrl;
+      // Add foreign sheep specific fields only if it's a foreign sheep
+      if (isForeignSheep && formData.nationalId && paySlipImageUrl && workDocImageUrl) {
+        baseOrderData.sheepOrigin = "foreign";
+        baseOrderData.nationalId = formData.nationalId.trim();
+        baseOrderData.paySlipImageUrl = paySlipImageUrl;
+        baseOrderData.workDocImageUrl = workDocImageUrl;
+      } else if (!isForeignSheep) {
+        baseOrderData.sheepOrigin = "local";
       }
 
-      const orderRef = await addDoc(collection(db, "orders"), orderData);
+      console.log("📝 Order data to be created:", baseOrderData);
+
+      const orderRef = await addDoc(collection(db, "orders"), baseOrderData);
 
       localStorage.setItem("pendingOrderId", orderRef.id);
       localStorage.setItem("pendingOrderAmount", sheep.price.toString());

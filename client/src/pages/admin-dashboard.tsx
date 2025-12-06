@@ -386,8 +386,14 @@ export default function AdminDashboard() {
 
     setAddingForeignSheep(true);
     try {
+      console.log("🔄 بدء رفع الصور...");
       // Upload images to ImgBB
       const imageUrls = await uploadMultipleImagesToImgBB(foreignSheepImages);
+      console.log("✅ تم رفع الصور:", imageUrls);
+
+      if (!imageUrls || imageUrls.length === 0) {
+        throw new Error("فشل رفع الصور");
+      }
 
       // Create sheep data with origin="foreign" and status="approved"
       const sheepData = {
@@ -397,6 +403,7 @@ export default function AdminDashboard() {
         age,
         weight,
         city: foreignSheepForm.city,
+        municipality: foreignSheepForm.city, // Use city as municipality for foreign sheep
         description: foreignSheepForm.description,
         images: imageUrls,
         status: "approved", // Foreign sheep are approved immediately
@@ -404,10 +411,49 @@ export default function AdminDashboard() {
         createdAt: Date.now(),
       };
 
+      console.log("🔄 إضافة الأضحية إلى قاعدة البيانات...");
       await addDoc(collection(db, "sheep"), sheepData);
+      console.log("✅ تمت إضافة الأضحية بنجاح");
 
       toast({
         title: "تم إضافة الأضحية الأجنبية بنجاح",
+        description: "الأضحية متاحة الآن للمشترين",
+      });
+
+      // Reset form
+      setForeignSheepForm({
+        price: "",
+        age: "",
+        weight: "",
+        city: "",
+        description: "",
+      });
+      setForeignSheepImages([]);
+      setForeignSheepImagePreviews([]);
+
+      // Refresh sheep list
+      fetchSheep();
+    } catch (error: any) {
+      console.error("❌ خطأ في إضافة الأضحية:", error);
+      let errorMessage = "حدث خطأ أثناء إضافة الأضحية";
+      
+      if (error?.message?.includes("ImgBB")) {
+        errorMessage = "فشل رفع الصور. تأكد من وجود API key صحيح";
+      } else if (error?.message?.includes("permission")) {
+        errorMessage = "ليس لديك صلاحية لإضافة أضاحي";
+      } else if (error?.message) {
+        errorMessage = error.message;
+      }
+
+      toast({
+        title: "خطأ",
+        description: errorMessage,
+        variant: "destructive",
+      });
+    } finally {
+      setAddingForeignSheep(false);
+    }
+  }; الأجنبية بنجاح",
         description: "الأضحية متاحة الآن للمشترين",
       });
 

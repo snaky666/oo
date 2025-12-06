@@ -66,6 +66,7 @@ export default function AdminDashboard() {
   const [vipExpiryDate, setVipExpiryDate] = useState("");
   const [vipStatus, setVipStatus] = useState<VIPStatus>("none");
   const [updatingVIP, setUpdatingVIP] = useState(false);
+  const [selectedUserDetails, setSelectedUserDetails] = useState<User | null>(null);
 
   // Foreign sheep form state
   const [foreignSheepForm, setForeignSheepForm] = useState({
@@ -306,6 +307,24 @@ export default function AdminDashboard() {
       case "buyer": return "مشتري";
       default: return role;
     }
+  };
+
+  // حساب إحصائيات المستخدم
+  const getUserStats = (userId: string, userRole: string) => {
+    const userOrders = orders.filter(o => 
+      userRole === "buyer" ? o.buyerId === userId : o.sellerId === userId
+    );
+    const userSheep = sheep.filter(s => s.sellerId === userId);
+    
+    return {
+      totalOrders: userOrders.length,
+      pendingOrders: userOrders.filter(o => o.status === "pending").length,
+      completedOrders: userOrders.filter(o => o.status === "confirmed").length,
+      totalSheep: userSheep.length,
+      approvedSheep: userSheep.filter(s => s.status === "approved").length,
+      pendingSheep: userSheep.filter(s => s.status === "pending").length,
+      rejectedSheep: userSheep.filter(s => s.status === "rejected").length,
+    };
   };
 
   const getRoleBadge = (role: string) => {
@@ -1038,11 +1057,12 @@ export default function AdminDashboard() {
                       <TableHead>الدور</TableHead>
                       <TableHead>رقم الجوال</TableHead>
                       <TableHead>تاريخ التسجيل</TableHead>
+                      <TableHead>الإجراءات</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {filteredUsers.map(u => (
-                      <TableRow key={u.uid}>
+                      <TableRow key={u.uid} className="cursor-pointer hover:bg-muted/50">
                         <TableCell>{u.email}</TableCell>
                         <TableCell>{getRoleBadge(u.role)}</TableCell>
                         <TableCell className="text-sm text-muted-foreground">
@@ -1050,6 +1070,17 @@ export default function AdminDashboard() {
                         </TableCell>
                         <TableCell className="text-sm text-muted-foreground">
                           {formatGregorianDate(u.createdAt)}
+                        </TableCell>
+                        <TableCell>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setSelectedUserDetails(u)}
+                            data-testid={`button-view-user-${u.uid}`}
+                          >
+                            <Users className="h-4 w-4 ml-1" />
+                            عرض التفاصيل
+                          </Button>
                         </TableCell>
                       </TableRow>
                     ))}
@@ -1061,6 +1092,157 @@ export default function AdminDashboard() {
 
           </Tabs>
       </div>
+
+      {/* User Details Dialog */}
+      {selectedUserDetails && (
+        <Dialog open={!!selectedUserDetails} onOpenChange={() => setSelectedUserDetails(null)}>
+          <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="text-2xl flex items-center gap-2">
+                <Users className="h-6 w-6" />
+                معلومات المستخدم
+              </DialogTitle>
+            </DialogHeader>
+
+            <div className="space-y-6">
+              {/* المعلومات الشخصية */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">المعلومات الشخصية</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-sm text-muted-foreground">البريد الإلكتروني</p>
+                      <p className="font-semibold">{selectedUserDetails.email}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">الاسم الكامل</p>
+                      <p className="font-semibold">{selectedUserDetails.fullName || "-"}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">رقم الهاتف</p>
+                      <p className="font-semibold">{selectedUserDetails.phone || "-"}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">نوع الحساب</p>
+                      <div className="mt-1">{getRoleBadge(selectedUserDetails.role)}</div>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">المدينة</p>
+                      <p className="font-semibold">{selectedUserDetails.city || "-"}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">البلدية</p>
+                      <p className="font-semibold">{selectedUserDetails.municipality || "-"}</p>
+                    </div>
+                    <div className="md:col-span-2">
+                      <p className="text-sm text-muted-foreground">العنوان</p>
+                      <p className="font-semibold">{selectedUserDetails.address || "-"}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">تاريخ التسجيل</p>
+                      <p className="font-semibold">{formatGregorianDate(selectedUserDetails.createdAt)}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">حالة VIP</p>
+                      <div className="mt-1">
+                        {selectedUserDetails.vipStatus === "none" || !selectedUserDetails.vipStatus ? (
+                          <Badge variant="outline">عادي</Badge>
+                        ) : (
+                          <Badge className="bg-amber-500/10 text-amber-700">
+                            <Crown className="h-3 w-3 ml-1" />
+                            {VIP_PACKAGES[selectedUserDetails.vipStatus as keyof typeof VIP_PACKAGES]?.nameAr || "VIP"}
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* إحصائيات الطلبات */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <ShoppingBag className="h-5 w-5" />
+                    إحصائيات الطلبات
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {(() => {
+                    const stats = getUserStats(selectedUserDetails.uid, selectedUserDetails.role);
+                    return (
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                        <div className="bg-muted/50 p-4 rounded-lg">
+                          <p className="text-2xl font-bold text-primary">{stats.totalOrders}</p>
+                          <p className="text-sm text-muted-foreground">
+                            {selectedUserDetails.role === "buyer" ? "إجمالي الطلبات" : "إجمالي المبيعات"}
+                          </p>
+                        </div>
+                        <div className="bg-yellow-500/10 p-4 rounded-lg">
+                          <p className="text-2xl font-bold text-yellow-700">{stats.pendingOrders}</p>
+                          <p className="text-sm text-muted-foreground">قيد المراجعة</p>
+                        </div>
+                        <div className="bg-green-500/10 p-4 rounded-lg">
+                          <p className="text-2xl font-bold text-green-700">{stats.completedOrders}</p>
+                          <p className="text-sm text-muted-foreground">مكتملة</p>
+                        </div>
+                      </div>
+                    );
+                  })()}
+                </CardContent>
+              </Card>
+
+              {/* إحصائيات الأضاحي (للبائعين فقط) */}
+              {selectedUserDetails.role === "seller" && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg flex items-center gap-2">
+                      <Package className="h-5 w-5" />
+                      إحصائيات الأضاحي
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {(() => {
+                      const stats = getUserStats(selectedUserDetails.uid, selectedUserDetails.role);
+                      return (
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                          <div className="bg-muted/50 p-4 rounded-lg">
+                            <p className="text-2xl font-bold text-primary">{stats.totalSheep}</p>
+                            <p className="text-sm text-muted-foreground">إجمالي الأضاحي</p>
+                          </div>
+                          <div className="bg-green-500/10 p-4 rounded-lg">
+                            <p className="text-2xl font-bold text-green-700">{stats.approvedSheep}</p>
+                            <p className="text-sm text-muted-foreground">مقبولة</p>
+                          </div>
+                          <div className="bg-yellow-500/10 p-4 rounded-lg">
+                            <p className="text-2xl font-bold text-yellow-700">{stats.pendingSheep}</p>
+                            <p className="text-sm text-muted-foreground">قيد المراجعة</p>
+                          </div>
+                          <div className="bg-red-500/10 p-4 rounded-lg">
+                            <p className="text-2xl font-bold text-red-700">{stats.rejectedSheep}</p>
+                            <p className="text-sm text-muted-foreground">مرفوضة</p>
+                          </div>
+                        </div>
+                      );
+                    })()}
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => setSelectedUserDetails(null)}
+              >
+                إغلاق
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
 
       {/* VIP Management Dialog */}
       {selectedUserVIP && (

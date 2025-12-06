@@ -453,25 +453,6 @@ export default function AdminDashboard() {
     } finally {
       setAddingForeignSheep(false);
     }
-  }; الأجنبية بنجاح",
-        description: "الأضحية متاحة الآن للمشترين",
-      });
-
-      // Reset form
-      setForeignSheepForm({ price: "", age: "", weight: "", city: "", description: "" });
-      setForeignSheepImages([]);
-      setForeignSheepImagePreviews([]);
-      fetchSheep();
-    } catch (error) {
-      console.error("Error adding foreign sheep:", error);
-      toast({
-        title: "خطأ",
-        description: "حدث خطأ أثناء إضافة الأضحية",
-        variant: "destructive",
-      });
-    } finally {
-      setAddingForeignSheep(false);
-    }
   };
 
   return (

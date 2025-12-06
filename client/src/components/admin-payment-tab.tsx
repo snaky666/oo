@@ -366,7 +366,11 @@ export default function AdminPaymentTab() {
                 <TableBody>
                   {/* عرض التحويلات البنكية أولاً */}
                   {filteredData.receipts.map((receipt) => (
-                    <TableRow key={`receipt-${receipt.id}`}>
+                    <TableRow 
+                      key={`receipt-${receipt.id}`}
+                      className={receipt.status === "pending" ? "cursor-pointer hover:bg-muted/50" : ""}
+                      onClick={() => receipt.status === "pending" && setSelectedReceipt(receipt)}
+                    >
                       <TableCell className="font-medium">{receipt.userEmail}</TableCell>
                       <TableCell>{receipt.amount.toLocaleString()} DA</TableCell>
                       <TableCell>
@@ -388,7 +392,10 @@ export default function AdminPaymentTab() {
                           <Button
                             size="sm"
                             variant="outline"
-                            onClick={() => setSelectedReceipt(receipt)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedReceipt(receipt);
+                            }}
                           >
                             <Eye className="h-4 w-4" />
                             مراجعة

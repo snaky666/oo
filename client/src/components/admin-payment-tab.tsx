@@ -440,7 +440,7 @@ export default function AdminPaymentTab() {
 
       {/* نافذة مراجعة الوصل */}
       <Dialog open={!!selectedReceipt} onOpenChange={(open) => !open && setSelectedReceipt(null)}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>مراجعة وصل التحويل</DialogTitle>
             <DialogDescription>

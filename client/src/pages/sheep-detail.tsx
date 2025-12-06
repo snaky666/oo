@@ -413,7 +413,7 @@ export default function SheepDetail() {
 
       {/* Order Confirmation Dialog */}
       <Dialog open={orderDialogOpen} onOpenChange={setOrderDialogOpen}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>طلب شراء - إدخال البيانات الشخصية</DialogTitle>
             <DialogDescription>

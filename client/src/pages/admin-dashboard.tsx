@@ -1207,22 +1207,27 @@ export default function AdminDashboard() {
                     {(() => {
                       const stats = getUserStats(selectedUserDetails.uid, selectedUserDetails.role);
                       return (
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                          <div className="bg-muted/50 p-4 rounded-lg">
-                            <p className="text-2xl font-bold text-primary">{stats.totalSheep}</p>
-                            <p className="text-sm text-muted-foreground">إجمالي الأضاحي</p>
+                        <div className="space-y-4">
+                          {/* إجمالي الأضاحي */}
+                          <div className="bg-primary/10 p-4 rounded-lg border-2 border-primary/20">
+                            <p className="text-4xl font-bold text-primary mb-1">{stats.totalSheep}</p>
+                            <p className="text-sm font-semibold text-muted-foreground">إجمالي عدد الأضاحي</p>
                           </div>
-                          <div className="bg-green-500/10 p-4 rounded-lg">
-                            <p className="text-2xl font-bold text-green-700">{stats.approvedSheep}</p>
-                            <p className="text-sm text-muted-foreground">مقبولة</p>
-                          </div>
-                          <div className="bg-yellow-500/10 p-4 rounded-lg">
-                            <p className="text-2xl font-bold text-yellow-700">{stats.pendingSheep}</p>
-                            <p className="text-sm text-muted-foreground">قيد المراجعة</p>
-                          </div>
-                          <div className="bg-red-500/10 p-4 rounded-lg">
-                            <p className="text-2xl font-bold text-red-700">{stats.rejectedSheep}</p>
-                            <p className="text-sm text-muted-foreground">مرفوضة</p>
+                          
+                          {/* التفاصيل */}
+                          <div className="grid grid-cols-3 gap-3">
+                            <div className="bg-green-500/10 p-3 rounded-lg text-center">
+                              <p className="text-2xl font-bold text-green-700">{stats.approvedSheep}</p>
+                              <p className="text-xs text-muted-foreground mt-1">مقبولة</p>
+                            </div>
+                            <div className="bg-yellow-500/10 p-3 rounded-lg text-center">
+                              <p className="text-2xl font-bold text-yellow-700">{stats.pendingSheep}</p>
+                              <p className="text-xs text-muted-foreground mt-1">قيد المراجعة</p>
+                            </div>
+                            <div className="bg-red-500/10 p-3 rounded-lg text-center">
+                              <p className="text-2xl font-bold text-red-700">{stats.rejectedSheep}</p>
+                              <p className="text-xs text-muted-foreground mt-1">مرفوضة</p>
+                            </div>
                           </div>
                         </div>
                       );

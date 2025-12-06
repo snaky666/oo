@@ -230,6 +230,7 @@ export default function SheepDetail() {
 
       localStorage.setItem("pendingOrderId", orderRef.id);
       localStorage.setItem("pendingOrderAmount", sheep.price.toString());
+      localStorage.setItem("pendingOrderSheepOrigin", baseOrderData.sheepOrigin || "local");
 
       setPaySlipFile(null);
       setWorkDocFile(null);

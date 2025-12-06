@@ -25,6 +25,7 @@ export default function SheepCheckout() {
 
   const [orderId, setOrderId] = useState<string | null>(null);
   const [amount, setAmount] = useState(0);
+  const [sheepOrigin, setSheepOrigin] = useState<"local" | "foreign">("local");
 
   useEffect(() => {
     const pending = localStorage.getItem("pendingOrderId");
@@ -33,6 +34,8 @@ export default function SheepCheckout() {
       setOrderId(pending);
       const orderAmount = localStorage.getItem("pendingOrderAmount");
       setAmount(parseInt(orderAmount || "0"));
+      const origin = localStorage.getItem("pendingOrderSheepOrigin");
+      setSheepOrigin((origin as "local" | "foreign") || "local");
     } else {
       setLocation("/browse");
     }
@@ -82,6 +85,7 @@ export default function SheepCheckout() {
         status: paymentMethod === "cash" ? "pending" : paymentMethod === "card" ? "pending" : "completed",
         orderId: orderId,
         vipUpgrade: false,
+        sheepOrigin: sheepOrigin,
         createdAt: Date.now(),
         updatedAt: Date.now(),
       };
@@ -97,6 +101,7 @@ export default function SheepCheckout() {
           amount: amount,
           orderId: orderId,
           vipUpgrade: false,
+          sheepOrigin: sheepOrigin,
           status: "pending",
           createdAt: Date.now(),
           updatedAt: Date.now(),
@@ -121,6 +126,7 @@ export default function SheepCheckout() {
 
       localStorage.removeItem("pendingOrderId");
       localStorage.removeItem("pendingOrderAmount");
+      localStorage.removeItem("pendingOrderSheepOrigin");
 
       toast({
         title: paymentMethod === "card" ? "تم استلام الوصل" : "نجح الدفع",

@@ -197,6 +197,8 @@ export interface Payment {
   method: PaymentMethod;
   status: PaymentStatus;
   vipUpgrade?: boolean; // whether this is for VIP upgrade
+  vipPackage?: VIPPackage;
+  sheepOrigin?: SheepOrigin; // origin of the sheep (local or foreign)
   stripePaymentIntentId?: string;
   createdAt: number;
   updatedAt?: number;
@@ -230,6 +232,7 @@ export interface CIBReceipt {
   orderId?: string;
   vipUpgrade?: boolean;
   vipPackage?: VIPPackage;
+  sheepOrigin?: SheepOrigin; // origin of the sheep (local or foreign)
   status: "pending" | "verified" | "rejected";
   rejectionReason?: string;
   verifiedBy?: string;

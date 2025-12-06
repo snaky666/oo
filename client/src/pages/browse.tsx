@@ -1,6 +1,6 @@
 import Header from "@/components/Header";
 import { useState, useEffect } from "react";
-import { Sheep, algeriaCities, User } from "@shared/schema";
+import { Sheep, algeriaCities, User, Ad } from "@shared/schema";
 import SheepCard from "@/components/SheepCard";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -14,6 +14,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useLocation } from "wouter";
 import { getSellerPriority } from "@/lib/vip-benefits";
 import Footer from "@/components/Footer";
+import MiniAdSlider from "@/components/MiniAdSlider";
+import { useQuery } from "@tanstack/react-query";
 
 export default function BrowseSheep() {
   const { user } = useAuth();
@@ -25,6 +27,20 @@ export default function BrowseSheep() {
   const [weightRange, setWeightRange] = useState<[number, number]>([0, 100]);
   const [selectedCities, setSelectedCities] = useState<string[]>([]);
   const [filtersOpen, setFiltersOpen] = useState(false);
+
+  const { data: ads = [] } = useQuery({
+    queryKey: ["/api/ads"],
+    queryFn: async () => {
+      try {
+        const response = await fetch("/api/ads");
+        if (!response.ok) return [];
+        const data = await response.json() as Ad[];
+        return data.filter((ad: Ad) => ad.active);
+      } catch {
+        return [];
+      }
+    },
+  });
 
   useEffect(() => {
     const fetchApprovedSheep = async () => {
@@ -226,6 +242,11 @@ export default function BrowseSheep() {
       <Header />
 
       <main className="flex-grow max-w-7xl mx-auto px-4 md:px-6 lg:px-8 py-8">
+        {/* Ads Banner */}
+        {ads.length > 0 && (
+          <MiniAdSlider ads={ads} />
+        )}
+
         {/* Page Header */}
         <div className="flex items-center justify-between mb-8">
           <div>

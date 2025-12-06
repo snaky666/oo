@@ -255,14 +255,14 @@ export default function AdminDashboard() {
   };
 
   const pendingSheep = sheep.filter(s => s.status === "pending");
-  
+
   // Filter sheep based on origin for "All Sheep" tab
   const filteredAllSheep = sheep.filter(s => {
     if (allSheepOriginFilter === "all") return true;
     const sheepOrigin = s.origin || "local";
     return sheepOrigin === allSheepOriginFilter;
   });
-  
+
   const stats = {
     totalSheep: sheep.length,
     pendingSheep: pendingSheep.length,
@@ -346,7 +346,7 @@ export default function AdminDashboard() {
     }
 
     setForeignSheepImages(prev => [...prev, ...files]);
-    
+
     // Create previews
     files.forEach(file => {
       const reader = new FileReader();
@@ -447,7 +447,7 @@ export default function AdminDashboard() {
     } catch (error: any) {
       console.error("❌ خطأ في إضافة الأضحية:", error);
       let errorMessage = "حدث خطأ أثناء إضافة الأضحية";
-      
+
       if (error?.message?.includes("ImgBB")) {
         errorMessage = "فشل رفع الصور. تأكد من وجود API key صحيح";
       } else if (error?.message?.includes("permission")) {
@@ -742,60 +742,62 @@ export default function AdminDashboard() {
                 {loading ? (
                   <p className="text-center text-muted-foreground">جاري التحميل...</p>
                 ) : (
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>البريد الإلكتروني</TableHead>
-                        <TableHead>الاسم</TableHead>
-                        <TableHead>نوع الحساب</TableHead>
-                        <TableHead>حالة VIP</TableHead>
-                        <TableHead>تاريخ البداية</TableHead>
-                        <TableHead>تاريخ الانتهاء</TableHead>
-                        <TableHead>الإجراءات</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {users.map(user => (
-                        <TableRow key={user.uid}>
-                          <TableCell className="font-medium">{user.email}</TableCell>
-                          <TableCell>{user.fullName || "-"}</TableCell>
-                          <TableCell>{getRoleBadge(user.role)}</TableCell>
-                          <TableCell>
-                            {user.vipStatus === "none" || !user.vipStatus ? (
-                              <Badge variant="outline">عادي</Badge>
-                            ) : (
-                              <Badge className="bg-amber-500/10 text-amber-700">
-                                <Crown className="h-3 w-3 ml-1" />
-                                {user.vipStatus && VIP_PACKAGES[user.vipStatus as keyof typeof VIP_PACKAGES] 
-                                  ? VIP_PACKAGES[user.vipStatus as keyof typeof VIP_PACKAGES].nameAr 
-                                  : "VIP"}
-                              </Badge>
-                            )}
-                          </TableCell>
-                          <TableCell className="text-sm text-muted-foreground">
-                            {user.vipUpgradedAt ? formatGregorianDate(user.vipUpgradedAt) : "-"}
-                          </TableCell>
-                          <TableCell className="text-sm text-muted-foreground">
-                            {user.vipExpiresAt ? formatGregorianDate(user.vipExpiresAt) : "-"}
-                          </TableCell>
-                          <TableCell>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => {
-                                setSelectedUserVIP(user);
-                                setVipStatus(user.vipStatus || "none");
-                                setVipExpiryDate(user.vipExpiresAt ? new Date(user.vipExpiresAt).toISOString().split("T")[0] : "");
-                              }}
-                              data-testid={`button-edit-vip-${user.uid}`}
-                            >
-                              <Edit2 className="h-4 w-4" />
-                            </Button>
-                          </TableCell>
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>البريد الإلكتروني</TableHead>
+                          <TableHead>الاسم</TableHead>
+                          <TableHead>نوع الحساب</TableHead>
+                          <TableHead>حالة VIP</TableHead>
+                          <TableHead>تاريخ البداية</TableHead>
+                          <TableHead>تاريخ الانتهاء</TableHead>
+                          <TableHead>الإجراءات</TableHead>
                         </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
+                      </TableHeader>
+                      <TableBody>
+                        {users.map(user => (
+                          <TableRow key={user.uid}>
+                            <TableCell className="font-medium">{user.email}</TableCell>
+                            <TableCell>{user.fullName || "-"}</TableCell>
+                            <TableCell>{getRoleBadge(user.role)}</TableCell>
+                            <TableCell>
+                              {user.vipStatus === "none" || !user.vipStatus ? (
+                                <Badge variant="outline">عادي</Badge>
+                              ) : (
+                                <Badge className="bg-amber-500/10 text-amber-700">
+                                  <Crown className="h-3 w-3 ml-1" />
+                                  {user.vipStatus && VIP_PACKAGES[user.vipStatus as keyof typeof VIP_PACKAGES]
+                                    ? VIP_PACKAGES[user.vipStatus as keyof typeof VIP_PACKAGES].nameAr
+                                    : "VIP"}
+                                </Badge>
+                              )}
+                            </TableCell>
+                            <TableCell className="text-sm text-muted-foreground">
+                              {user.vipUpgradedAt ? formatGregorianDate(user.vipUpgradedAt) : "-"}
+                            </TableCell>
+                            <TableCell className="text-sm text-muted-foreground">
+                              {user.vipExpiresAt ? formatGregorianDate(user.vipExpiresAt) : "-"}
+                            </TableCell>
+                            <TableCell>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => {
+                                  setSelectedUserVIP(user);
+                                  setVipStatus(user.vipStatus || "none");
+                                  setVipExpiryDate(user.vipExpiresAt ? new Date(user.vipExpiresAt).toISOString().split("T")[0] : "");
+                                }}
+                                data-testid={`button-edit-vip-${user.uid}`}
+                              >
+                                <Edit2 className="h-4 w-4" />
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
                 )}
               </CardContent>
             </Card>
@@ -885,7 +887,7 @@ export default function AdminDashboard() {
                     أضاحي أجنبية ({sheep.filter(s => s.origin === "foreign").length})
                   </Button>
                 </div>
-                
+
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -1149,8 +1151,8 @@ export default function AdminDashboard() {
                       onClick={() => setVipStatus(status)}
                       className="text-xs"
                     >
-                      {status === "none" 
-                        ? "عادي" 
+                      {status === "none"
+                        ? "عادي"
                         : VIP_PACKAGES[status as keyof typeof VIP_PACKAGES]?.nameAr}
                     </Button>
                   ))}

@@ -564,9 +564,6 @@ export default function AdminDashboard() {
             <TabsTrigger value="all" data-testid="tab-all">
               جميع الأغنام
             </TabsTrigger>
-            <TabsTrigger value="sellers" data-testid="tab-sellers">
-              البائعون ({users.filter(u => u.role === "seller").length})
-            </TabsTrigger>
             <TabsTrigger value="users" data-testid="tab-users">
               المستخدمون
             </TabsTrigger>
@@ -997,54 +994,7 @@ export default function AdminDashboard() {
             </Card>
           </TabsContent>
 
-          {/* Sellers Tab */}
-          <TabsContent value="sellers">
-            <Card>
-              <CardHeader>
-                <CardTitle>البائعون - البيانات الشخصية ({users.filter(u => u.role === "seller").length})</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {users.filter(u => u.role === "seller").length === 0 ? (
-                  <div className="text-center py-8 text-muted-foreground">
-                    لا توجد بيانات بائعين
-                  </div>
-                ) : (
-                  <div className="overflow-x-auto">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead className="text-right">البريد الإلكتروني</TableHead>
-                          <TableHead className="text-right">الاسم الكامل</TableHead>
-                          <TableHead className="text-right">رقم الهاتف</TableHead>
-                          <TableHead className="text-right">المدينة</TableHead>
-                          <TableHead className="text-right">البلدية</TableHead>
-                          <TableHead className="text-right">العنوان</TableHead>
-                          <TableHead className="text-right">تاريخ التسجيل</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {users.filter(u => u.role === "seller").map(u => (
-                          <TableRow key={u.uid}>
-                            <TableCell className="font-medium">{u.email}</TableCell>
-                            <TableCell>{u.fullName || "-"}</TableCell>
-                            <TableCell>{u.phone || "-"}</TableCell>
-                            <TableCell>{u.city || "-"}</TableCell>
-                            <TableCell className="text-sm">{u.municipality || "-"}</TableCell>
-                            <TableCell className="text-sm text-muted-foreground max-w-xs truncate">
-                              {u.address || "-"}
-                            </TableCell>
-                            <TableCell className="text-sm text-muted-foreground whitespace-nowrap">
-                              {formatGregorianDate(u.createdAt)}
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
+          
 
           {/* Users Tab */}
           <TabsContent value="users">

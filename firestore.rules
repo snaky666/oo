@@ -101,10 +101,20 @@ service cloud.firestore {
                      (isAuthenticated() && isSeller() && resource.data.sellerId == request.auth.uid);
       
       // Create: Buyer creates order (with optional foreign sheep fields)
-      allow create: if isBuyer() && 
+      allow create: if isAuthenticated() && 
                        isOwner(request.resource.data.buyerId) &&
                        request.resource.data.status == 'pending' &&
-                       isValidPrice(request.resource.data.totalPrice) &&
+                       request.resource.data.totalPrice >= 1000 &&
+                       request.resource.data.totalPrice <= 10000000 &&
+                       request.resource.data.buyerName is string &&
+                       request.resource.data.buyerName.size() >= 2 &&
+                       request.resource.data.buyerPhone is string &&
+                       request.resource.data.buyerPhone.size() >= 7 &&
+                       request.resource.data.buyerCity is string &&
+                       request.resource.data.buyerAddress is string &&
+                       request.resource.data.paymentMethod in ['cash', 'card', 'installment'] &&
+                       request.resource.data.paymentStatus in ['pending', 'completed', 'verified', 'rejected'] &&
+                       request.resource.data.orderStatus in ['new', 'confirmed', 'ready', 'delivered', 'cancelled'] &&
                        // Allow foreign sheep optional fields
                        (!request.resource.data.keys().hasAny(['nationalId', 'paySlipImageUrl', 'workDocImageUrl']) ||
                         (request.resource.data.sheepOrigin == 'foreign' &&
@@ -116,8 +126,8 @@ service cloud.firestore {
                          request.resource.data.workDocImageUrl.matches('^https://.*')));
       
       // Update: Buyer can update own pending orders, Admin can update any
-      allow update: if (isBuyer() && isOwner(resource.data.buyerId) && resource.data.status == 'pending') ||
-                       (isAdmin() && request.resource.data.status in ['pending', 'confirmed', 'rejected']);
+      allow update: if (isAuthenticated() && isOwner(resource.data.buyerId) && resource.data.status == 'pending') ||
+                       (isAdmin());
       
       // Delete: Admin only
       allow delete: if isAdmin();

@@ -16,7 +16,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { MapPin, Calendar, Weight, ArrowRight, ShoppingCart } from "lucide-react";
+import { MapPin, Calendar, Weight, ArrowRight, ShoppingCart, Upload, FileText, CreditCard } from "lucide-react";
+import { uploadToImgBB } from "@/lib/imgbb";
 import { useLocation } from "wouter";
 import {
   Dialog,
@@ -40,6 +41,7 @@ const orderFormSchema = z.object({
   phone: z.string().regex(/^(\+213|0)[1-9]\d{8}$/, "رقم الهاتف غير صحيح"),
   address: z.string().min(5, "العنوان مطلوب"),
   city: z.string().min(1, "المدينة مطلوبة"),
+  nationalId: z.string().optional(),
 });
 
 type OrderFormData = z.infer<typeof orderFormSchema>;
@@ -56,6 +58,9 @@ export default function SheepDetail() {
   const [creatingOrder, setCreatingOrder] = useState(false);
   const [guestLoginDialogOpen, setGuestLoginDialogOpen] = useState(false);
   const [isGuest, setIsGuest] = useState(false);
+  const [paySlipFile, setPaySlipFile] = useState<File | null>(null);
+  const [workDocFile, setWorkDocFile] = useState<File | null>(null);
+  const [uploadingFiles, setUploadingFiles] = useState(false);
 
   useEffect(() => {
     const guestMode = localStorage.getItem("guestMode") === "true";
@@ -76,6 +81,7 @@ export default function SheepDetail() {
       phone: user?.phone || "",
       address: user?.address || "",
       city: user?.city || "",
+      nationalId: "",
     },
   });
 
@@ -125,9 +131,57 @@ export default function SheepDetail() {
   const handleCreateOrder = async (formData: OrderFormData) => {
     if (!sheep || !user) return;
 
+    const isForeignSheep = sheep.origin === "foreign";
+
+    if (isForeignSheep) {
+      if (!formData.nationalId || formData.nationalId.trim().length < 5) {
+        toast({
+          title: "خطأ",
+          description: "يجب إدخال رقم بطاقة التعريف الوطنية",
+          variant: "destructive",
+        });
+        return;
+      }
+      if (!paySlipFile) {
+        toast({
+          title: "خطأ",
+          description: "يجب رفع صورة كشف الراتب (Fiche de paie)",
+          variant: "destructive",
+        });
+        return;
+      }
+      if (!workDocFile) {
+        toast({
+          title: "خطأ",
+          description: "يجب رفع صورة وثيقة العمل",
+          variant: "destructive",
+        });
+        return;
+      }
+    }
+
     setCreatingOrder(true);
+    setUploadingFiles(isForeignSheep);
+
     try {
-      const orderData = {
+      let paySlipImageUrl = "";
+      let workDocImageUrl = "";
+
+      if (isForeignSheep && paySlipFile && workDocFile) {
+        toast({
+          title: "جاري رفع الملفات...",
+          description: "يرجى الانتظار",
+        });
+
+        const [paySlipUrl, workDocUrl] = await Promise.all([
+          uploadToImgBB(paySlipFile),
+          uploadToImgBB(workDocFile),
+        ]);
+        paySlipImageUrl = paySlipUrl;
+        workDocImageUrl = workDocUrl;
+      }
+
+      const orderData: Record<string, unknown> = {
         buyerId: user.uid,
         buyerEmail: user.email,
         buyerName: formData.fullName,
@@ -141,15 +195,25 @@ export default function SheepDetail() {
         sheepAge: sheep.age,
         sheepWeight: sheep.weight,
         sheepCity: sheep.city,
+        sheepOrigin: sheep.origin || "local",
         totalPrice: sheep.price,
         status: "pending",
         createdAt: Date.now(),
       };
 
+      if (isForeignSheep) {
+        orderData.nationalId = formData.nationalId;
+        orderData.paySlipImageUrl = paySlipImageUrl;
+        orderData.workDocImageUrl = workDocImageUrl;
+      }
+
       const orderRef = await addDoc(collection(db, "orders"), orderData);
 
       localStorage.setItem("pendingOrderId", orderRef.id);
       localStorage.setItem("pendingOrderAmount", sheep.price.toString());
+
+      setPaySlipFile(null);
+      setWorkDocFile(null);
 
       toast({
         title: "تم إنشاء الطلب",
@@ -167,6 +231,7 @@ export default function SheepDetail() {
       });
     } finally {
       setCreatingOrder(false);
+      setUploadingFiles(false);
     }
   };
 
@@ -422,6 +487,82 @@ export default function SheepDetail() {
               )}
             </div>
 
+            {/* Foreign Sheep Additional Fields */}
+            {sheep.origin === "foreign" && (
+              <div className="space-y-4 border-t pt-4">
+                <div className="flex items-center gap-2 text-amber-600 dark:text-amber-400">
+                  <FileText className="h-5 w-5" />
+                  <span className="font-semibold">وثائق إضافية مطلوبة للأغنام الأجنبية</span>
+                </div>
+
+                {/* National ID */}
+                <div className="space-y-2">
+                  <Label htmlFor="nationalId">
+                    <div className="flex items-center gap-2">
+                      <CreditCard className="h-4 w-4" />
+                      رقم بطاقة التعريف الوطنية *
+                    </div>
+                  </Label>
+                  <Input
+                    id="nationalId"
+                    placeholder="أدخل رقم بطاقة التعريف الوطنية"
+                    {...register("nationalId")}
+                    data-testid="input-national-id"
+                  />
+                </div>
+
+                {/* Pay Slip Image */}
+                <div className="space-y-2">
+                  <Label htmlFor="paySlip">
+                    <div className="flex items-center gap-2">
+                      <Upload className="h-4 w-4" />
+                      كشف الراتب (Fiche de paie) *
+                    </div>
+                  </Label>
+                  <div className="flex items-center gap-2">
+                    <Input
+                      id="paySlip"
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => setPaySlipFile(e.target.files?.[0] || null)}
+                      className="cursor-pointer"
+                      data-testid="input-pay-slip"
+                    />
+                    {paySlipFile && (
+                      <Badge variant="secondary" className="whitespace-nowrap">
+                        {paySlipFile.name.slice(0, 15)}...
+                      </Badge>
+                    )}
+                  </div>
+                </div>
+
+                {/* Work Document Image */}
+                <div className="space-y-2">
+                  <Label htmlFor="workDoc">
+                    <div className="flex items-center gap-2">
+                      <Upload className="h-4 w-4" />
+                      وثيقة العمل *
+                    </div>
+                  </Label>
+                  <div className="flex items-center gap-2">
+                    <Input
+                      id="workDoc"
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => setWorkDocFile(e.target.files?.[0] || null)}
+                      className="cursor-pointer"
+                      data-testid="input-work-doc"
+                    />
+                    {workDocFile && (
+                      <Badge variant="secondary" className="whitespace-nowrap">
+                        {workDocFile.name.slice(0, 15)}...
+                      </Badge>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Order Summary */}
             <Card className="bg-muted/50">
               <CardContent className="p-4 space-y-2">
@@ -459,9 +600,9 @@ export default function SheepDetail() {
               ) : (
                 <Button
                   type="submit"
-                  disabled={creatingOrder}
+                  disabled={creatingOrder || uploadingFiles}
                 >
-                  {creatingOrder ? "جاري الإنشاء..." : "تأكيد الطلب"}
+                  {uploadingFiles ? "جاري رفع الملفات..." : creatingOrder ? "جاري الإنشاء..." : "تأكيد الطلب"}
                 </Button>
               )}
             </DialogFooter>

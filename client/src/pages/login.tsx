@@ -177,7 +177,7 @@ export default function Login() {
                   type="button"
                   variant="ghost"
                   size="icon"
-                  className="absolute left-1 top-1/2 -translate-y-1/2 h-7 w-7"
+                  className="absolute left-1 top-[calc(50%+2px)] -translate-y-1/2 h-7 w-7"
                   onClick={() => setShowPassword(!showPassword)}
                   data-testid="button-toggle-password"
                 >

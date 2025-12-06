@@ -50,15 +50,37 @@ export default function AdminPaymentTab() {
         getDocs(collection(db, "orders")),
       ]);
 
-      const receiptsData = receiptsSnapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      })) as CIBReceipt[];
+      // إنشاء خريطة لنوع الأضحية من الطلبات
+      const orderOriginMap: Record<string, string> = {};
+      ordersSnapshot.docs.forEach((doc) => {
+        const orderData = doc.data();
+        orderOriginMap[doc.id] = orderData.sheepOrigin || "local";
+      });
 
-      const paymentsData = paymentsSnapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      })) as Payment[];
+      // إثراء وصولات CIB بنوع الأضحية من الطلبات
+      const receiptsData = receiptsSnapshot.docs.map((doc) => {
+        const data = doc.data();
+        const orderId = data.orderId;
+        // إذا لم يكن sheepOrigin موجوداً في الوصل، نحصل عليه من الطلب
+        const sheepOrigin = data.sheepOrigin || (orderId ? orderOriginMap[orderId] : undefined) || "local";
+        return {
+          id: doc.id,
+          ...data,
+          sheepOrigin,
+        };
+      }) as CIBReceipt[];
+
+      // إثراء المدفوعات بنوع الأضحية من الطلبات
+      const paymentsData = paymentsSnapshot.docs.map((doc) => {
+        const data = doc.data();
+        const orderId = data.orderId;
+        const sheepOrigin = data.sheepOrigin || (orderId ? orderOriginMap[orderId] : undefined) || "local";
+        return {
+          id: doc.id,
+          ...data,
+          sheepOrigin,
+        };
+      }) as Payment[];
 
       // تحويل الطلبات إلى صيغة مدفوعات للعرض
       const ordersData = ordersSnapshot.docs.map((doc) => {

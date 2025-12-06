@@ -1,3 +1,4 @@
+
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -24,10 +25,6 @@ service cloud.firestore {
     
     function isOwner(uid) {
       return request.auth.uid == uid;
-    }
-    
-    function getUserRole() {
-      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
     }
     
     // Validation functions
@@ -74,7 +71,7 @@ service cloud.firestore {
       
       // Create: Seller creates listing with their own ID
       allow create: if isSeller() && 
-                       isOwner(resource.data.sellerId) &&
+                       isOwner(request.resource.data.sellerId) &&
                        isValidPrice(request.resource.data.price) &&
                        isValidAge(request.resource.data.age) &&
                        isValidWeight(request.resource.data.weight) &&
@@ -94,18 +91,18 @@ service cloud.firestore {
     match /orders/{orderId} {
       // Read: Buyer reads own, seller reads orders for their sheep, admin reads all
       allow read: if isAdmin() || 
-                     isOwner(resource.data.buyerId) ||
-                     (isSeller() && get(/databases/$(database)/documents/sheep/$(resource.data.sheepId)).data.sellerId == request.auth.uid);
+                     (isAuthenticated() && isOwner(resource.data.buyerId)) ||
+                     (isAuthenticated() && isSeller() && resource.data.sellerId == request.auth.uid);
       
       // Create: Buyer creates order for their purchase
       allow create: if isBuyer() && 
                        isOwner(request.resource.data.buyerId) &&
                        request.resource.data.status == 'pending' &&
-                       request.resource.data.paymentMethod in ['cash', 'cib_transfer', 'installment'] &&
                        isValidPrice(request.resource.data.totalPrice);
       
-      // Update: Admin only (status changes)
-      allow update: if isAdmin() && request.resource.data.status in ['pending', 'confirmed', 'rejected'];
+      // Update: Buyer can update own pending orders, Admin can update any
+      allow update: if (isBuyer() && isOwner(resource.data.buyerId) && resource.data.status == 'pending') ||
+                       (isAdmin() && request.resource.data.status in ['pending', 'confirmed', 'rejected']);
       
       // Delete: Admin only
       allow delete: if isAdmin();
@@ -114,16 +111,16 @@ service cloud.firestore {
     // ================= PAYMENTS COLLECTION =================
     match /payments/{paymentId} {
       // Read: User reads own, admin reads all
-      allow read: if isOwner(resource.data.userId) || isAdmin();
+      allow read: if (isAuthenticated() && isOwner(resource.data.userId)) || isAdmin();
       
       // Create: Authenticated user creates for their order
       allow create: if isAuthenticated() && 
                        isOwner(request.resource.data.userId) &&
                        isValidPrice(request.resource.data.amount) &&
-                       request.resource.data.method in ['cash', 'cib_transfer', 'installment'];
+                       request.resource.data.method in ['card', 'cash', 'installment'];
       
       // Update: Admin only (verification)
-      allow update: if isAdmin() && request.resource.data.status in ['pending', 'verified', 'failed'];
+      allow update: if isAdmin() && request.resource.data.status in ['pending', 'completed', 'failed', 'cancelled'];
       
       // Delete: Admin only
       allow delete: if isAdmin();
@@ -132,7 +129,7 @@ service cloud.firestore {
     // ================= CIB RECEIPTS COLLECTION =================
     match /cibReceipts/{receiptId} {
       // Read: User reads own, admin reads all
-      allow read: if isOwner(resource.data.userId) || isAdmin();
+      allow read: if (isAuthenticated() && isOwner(resource.data.userId)) || isAdmin();
       
       // Create: User uploads own receipt
       allow create: if isAuthenticated() && 
@@ -149,10 +146,10 @@ service cloud.firestore {
     // ================= INSTALLMENTS COLLECTION =================
     match /installments/{installmentId} {
       // Read: User reads own, admin reads all
-      allow read: if isOwner(resource.data.userId) || isAdmin();
+      allow read: if (isAuthenticated() && isOwner(resource.data.userId)) || isAdmin();
       
       // Create: Backend creates (validated by admin)
-      allow create: if isAuthenticated();
+      allow create: if isAuthenticated() && isOwner(request.resource.data.userId);
       
       // Update: Admin only
       allow update: if isAdmin();
@@ -164,7 +161,7 @@ service cloud.firestore {
     // ================= VIP SUBSCRIPTIONS COLLECTION =================
     match /vipSubscriptions/{subscriptionId} {
       // Read: User reads own, admin reads all
-      allow read: if isOwner(resource.data.userId) || isAdmin();
+      allow read: if (isAuthenticated() && isOwner(resource.data.userId)) || isAdmin();
       
       // Create: User creates own subscription
       allow create: if isAuthenticated() && 
@@ -173,7 +170,7 @@ service cloud.firestore {
                        isValidPrice(request.resource.data.price);
       
       // Update: User can toggle auto-renew, admin can update any
-      allow update: if isOwner(resource.data.userId) || isAdmin();
+      allow update: if (isAuthenticated() && isOwner(resource.data.userId)) || isAdmin();
       
       // Delete: Admin only
       allow delete: if isAdmin();
@@ -181,27 +178,112 @@ service cloud.firestore {
 
     // ================= ADVERTISEMENTS COLLECTION =================
     match /ads/{adId} {
-      // Read: Public can read active ads, admin can read all
-      allow read: if resource.data.active == true || 
-                     (isAuthenticated() && isAdmin()) ||
-                     request.auth == null;  // Allow backend to read
+      // Read: Public can read active ads, admin can read all, backend can read
+      allow read: if resource.data.active == true || isAdmin() || request.auth == null;
       
-      // Create: Admin or backend server (no auth required for server operations)
-      allow create: if (isAuthenticated() && isAdmin()) || 
-                       request.auth == null;  // Allow server-side (backend) writes
+      // Create: Admin or backend server
+      allow create: if isAdmin() || request.auth == null;
       
       // Update: Admin or backend server
-      allow update: if (isAuthenticated() && isAdmin()) || 
-                       request.auth == null;  // Allow server-side updates
+      allow update: if isAdmin() || request.auth == null;
       
       // Delete: Admin or backend server
-      allow delete: if (isAuthenticated() && isAdmin()) || 
-                       request.auth == null;  // Allow server-side deletes
+      allow delete: if isAdmin() || request.auth == null;
+    }
+
+    // ================= REVIEWS COLLECTION =================
+    match /reviews/{reviewId} {
+      // Read: Public can read all reviews
+      allow read: if true;
+      
+      // Create: Buyer creates review for purchased sheep
+      allow create: if isBuyer() && 
+                       isOwner(request.resource.data.buyerId) &&
+                       request.resource.data.rating >= 1 && 
+                       request.resource.data.rating <= 5;
+      
+      // Update: Owner updates own review
+      allow update: if isAuthenticated() && isOwner(resource.data.buyerId);
+      
+      // Delete: Owner or admin
+      allow delete: if (isAuthenticated() && isOwner(resource.data.buyerId)) || isAdmin();
+    }
+
+    // ================= FAVORITES COLLECTION =================
+    match /favorites/{favoriteId} {
+      // Read: User reads own favorites
+      allow read: if isAuthenticated() && isOwner(resource.data.userId);
+      
+      // Create: User adds to favorites
+      allow create: if isAuthenticated() && isOwner(request.resource.data.userId);
+      
+      // Delete: User removes from favorites
+      allow delete: if isAuthenticated() && isOwner(resource.data.userId);
+    }
+
+    // ================= NOTIFICATIONS COLLECTION =================
+    match /notifications/{notificationId} {
+      // Read: User reads own notifications
+      allow read: if isAuthenticated() && isOwner(resource.data.userId);
+      
+      // Create: Backend or admin creates notifications
+      allow create: if isAdmin() || request.auth == null;
+      
+      // Update: User marks as read, admin can update
+      allow update: if (isAuthenticated() && isOwner(resource.data.userId)) || isAdmin();
+      
+      // Delete: Owner or admin
+      allow delete: if (isAuthenticated() && isOwner(resource.data.userId)) || isAdmin();
+    }
+
+    // ================= SUPPORT TICKETS COLLECTION =================
+    match /support/{ticketId} {
+      // Read: User reads own tickets, admin reads all
+      allow read: if (isAuthenticated() && isOwner(resource.data.userId)) || isAdmin();
+      
+      // Create: Authenticated user creates ticket
+      allow create: if isAuthenticated() && isOwner(request.resource.data.userId);
+      
+      // Update: Admin responds to tickets
+      allow update: if isAdmin();
+      
+      // Delete: Admin only
+      allow delete: if isAdmin();
+    }
+
+    // ================= PASSWORD RESET TOKENS COLLECTION =================
+    match /passwordResetTokens/{tokenId} {
+      // Read: Backend only (no client access)
+      allow read: if request.auth == null;
+      
+      // Create: Backend creates tokens
+      allow create: if request.auth == null;
+      
+      // Update: Backend updates tokens
+      allow update: if request.auth == null;
+      
+      // Delete: Backend deletes used tokens
+      allow delete: if request.auth == null;
+    }
+
+    // ================= EMAIL VERIFICATION TOKENS COLLECTION =================
+    match /emailVerificationTokens/{tokenId} {
+      // Read: Backend only (no client access)
+      allow read: if request.auth == null;
+      
+      // Create: Backend creates tokens
+      allow create: if request.auth == null;
+      
+      // Update: Backend updates tokens
+      allow update: if request.auth == null;
+      
+      // Delete: Backend deletes used tokens
+      allow delete: if request.auth == null;
     }
 
     // ================= DEFAULT DENY =================
     match /{document=**} {
-      allow read, write, delete: if false;
+      allow read, write: if false;
     }
   }
 }

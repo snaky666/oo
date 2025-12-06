@@ -1,6 +1,6 @@
 import Header from "@/components/Header";
 import { useState, useEffect } from "react";
-import { Sheep, algeriaCities, User, Ad } from "@shared/schema";
+import { Sheep, algeriaCities, User, Ad, SheepOrigin } from "@shared/schema";
 import SheepCard from "@/components/SheepCard";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -27,6 +27,7 @@ export default function BrowseSheep() {
   const [weightRange, setWeightRange] = useState<[number, number]>([0, 100]);
   const [selectedCities, setSelectedCities] = useState<string[]>([]);
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const [selectedOrigin, setSelectedOrigin] = useState<SheepOrigin | "all">("all");
 
   const { data: ads = [] } = useQuery({
     queryKey: ["/api/ads"],
@@ -78,6 +79,10 @@ export default function BrowseSheep() {
     if (s.age < ageRange[0] || s.age > ageRange[1]) return false;
     if (s.weight < weightRange[0] || s.weight > weightRange[1]) return false;
     if (selectedCities.length > 0 && !selectedCities.includes(s.city)) return false;
+    if (selectedOrigin !== "all") {
+      const sheepOrigin = s.origin || "local";
+      if (sheepOrigin !== selectedOrigin) return false;
+    }
     return true;
   }).sort((a, b) => {
     // Sort by seller VIP priority (VIP sellers appear first)
@@ -246,6 +251,26 @@ export default function BrowseSheep() {
         {ads.length > 0 && (
           <MiniAdSlider ads={ads} />
         )}
+
+        {/* Origin Filter Buttons */}
+        <div className="flex gap-3 mb-6">
+          <Button
+            variant={selectedOrigin === "local" ? "default" : "outline"}
+            onClick={() => setSelectedOrigin(selectedOrigin === "local" ? "all" : "local")}
+            className="flex-1 md:flex-none"
+            data-testid="button-filter-local"
+          >
+            أضاحي محلية
+          </Button>
+          <Button
+            variant={selectedOrigin === "foreign" ? "default" : "outline"}
+            onClick={() => setSelectedOrigin(selectedOrigin === "foreign" ? "all" : "foreign")}
+            className="flex-1 md:flex-none"
+            data-testid="button-filter-foreign"
+          >
+            أضاحي أجنبية
+          </Button>
+        </div>
 
         {/* Page Header */}
         <div className="flex items-center justify-between mb-8">

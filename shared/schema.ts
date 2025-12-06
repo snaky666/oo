@@ -118,6 +118,10 @@ export const updateSellerProfileSchema = z.object({
 
 export type UpdateSellerProfile = z.infer<typeof updateSellerProfileSchema>;
 
+// Sheep origin types
+export const sheepOrigins = ["local", "foreign"] as const;
+export type SheepOrigin = typeof sheepOrigins[number];
+
 // Sheep schema (Firestore)
 export interface Sheep {
   id: string;
@@ -134,6 +138,7 @@ export interface Sheep {
   status: SheepStatus;
   rejectionReason?: string; // سبب الرفض (إن وجد)
   isVIP?: boolean; // New field for VIP status
+  origin?: SheepOrigin; // local = محلية, foreign = أجنبية
   createdAt: number;
   updatedAt?: number;
 }

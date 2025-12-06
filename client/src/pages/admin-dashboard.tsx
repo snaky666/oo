@@ -1,8 +1,10 @@
 import Header from "@/components/Header";
 import { useState, useEffect } from "react";
-import { collection, query, getDocs, doc, updateDoc, deleteDoc, where, orderBy } from "firebase/firestore";
+import { collection, query, getDocs, doc, updateDoc, deleteDoc, where, orderBy, addDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import { Sheep, Order, User, VIPStatus, VIP_PACKAGES } from "@shared/schema";
+import { Sheep, Order, User, VIPStatus, VIP_PACKAGES, algeriaCities } from "@shared/schema";
+import { uploadMultipleImagesToImgBB } from "@/lib/imgbb";
+import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -10,6 +12,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import AdminPaymentTab from "@/components/admin-payment-tab";
 import AdminAdsPage from "@/pages/admin-ads";
 import {
@@ -25,6 +29,9 @@ import {
   Edit2,
   CreditCard,
   Megaphone,
+  Upload,
+  Globe,
+  X,
 } from "lucide-react";
 import {
   Dialog,
@@ -46,6 +53,7 @@ import placeholderImage from "@assets/generated_images/sheep_product_placeholder
 
 export default function AdminDashboard() {
   const { toast } = useToast();
+  const { user } = useAuth();
   const [sheep, setSheep] = useState<Sheep[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
   const [users, setUsers] = useState<User[]>([]);
@@ -58,6 +66,18 @@ export default function AdminDashboard() {
   const [vipExpiryDate, setVipExpiryDate] = useState("");
   const [vipStatus, setVipStatus] = useState<VIPStatus>("none");
   const [updatingVIP, setUpdatingVIP] = useState(false);
+
+  // Foreign sheep form state
+  const [foreignSheepForm, setForeignSheepForm] = useState({
+    price: "",
+    age: "",
+    weight: "",
+    city: "",
+    description: "",
+  });
+  const [foreignSheepImages, setForeignSheepImages] = useState<File[]>([]);
+  const [foreignSheepImagePreviews, setForeignSheepImagePreviews] = useState<string[]>([]);
+  const [addingForeignSheep, setAddingForeignSheep] = useState(false);
 
   // Helper function to format date as Gregorian (Miladi)
   const formatGregorianDate = (date: any) => {
@@ -302,6 +322,112 @@ export default function AdminDashboard() {
     }
   };
 
+  // Handle foreign sheep image selection
+  const handleForeignSheepImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length + foreignSheepImages.length > 5) {
+      toast({
+        title: "خطأ",
+        description: "يمكن تحميل 5 صور كحد أقصى",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setForeignSheepImages(prev => [...prev, ...files]);
+    
+    // Create previews
+    files.forEach(file => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setForeignSheepImagePreviews(prev => [...prev, e.target?.result as string]);
+      };
+      reader.readAsDataURL(file);
+    });
+  };
+
+  // Remove foreign sheep image
+  const removeForeignSheepImage = (index: number) => {
+    setForeignSheepImages(prev => prev.filter((_, i) => i !== index));
+    setForeignSheepImagePreviews(prev => prev.filter((_, i) => i !== index));
+  };
+
+  // Add foreign sheep
+  const handleAddForeignSheep = async () => {
+    // Validate form
+    const price = Number(foreignSheepForm.price);
+    const age = Number(foreignSheepForm.age);
+    const weight = Number(foreignSheepForm.weight);
+
+    if (!price || price <= 0) {
+      toast({ title: "خطأ", description: "السعر يجب أن يكون أكبر من صفر", variant: "destructive" });
+      return;
+    }
+    if (!age || age <= 0) {
+      toast({ title: "خطأ", description: "العمر يجب أن يكون أكبر من صفر", variant: "destructive" });
+      return;
+    }
+    if (!weight || weight <= 0) {
+      toast({ title: "خطأ", description: "الوزن يجب أن يكون أكبر من صفر", variant: "destructive" });
+      return;
+    }
+    if (!foreignSheepForm.city) {
+      toast({ title: "خطأ", description: "يجب اختيار الولاية", variant: "destructive" });
+      return;
+    }
+    if (!foreignSheepForm.description || foreignSheepForm.description.length < 10) {
+      toast({ title: "خطأ", description: "الوصف يجب أن يكون 10 أحرف على الأقل", variant: "destructive" });
+      return;
+    }
+    if (foreignSheepImages.length === 0) {
+      toast({ title: "خطأ", description: "يجب تحميل صورة واحدة على الأقل", variant: "destructive" });
+      return;
+    }
+
+    setAddingForeignSheep(true);
+    try {
+      // Upload images to ImgBB
+      const imageUrls = await uploadMultipleImagesToImgBB(foreignSheepImages);
+
+      // Create sheep data with origin="foreign" and status="approved"
+      const sheepData = {
+        sellerId: user?.uid || "admin",
+        sellerEmail: user?.email || "admin@aldhahia.dz",
+        price,
+        age,
+        weight,
+        city: foreignSheepForm.city,
+        description: foreignSheepForm.description,
+        images: imageUrls,
+        status: "approved", // Foreign sheep are approved immediately
+        origin: "foreign", // Mark as foreign sheep
+        createdAt: Date.now(),
+      };
+
+      await addDoc(collection(db, "sheep"), sheepData);
+
+      toast({
+        title: "تم إضافة الأضحية الأجنبية بنجاح",
+        description: "الأضحية متاحة الآن للمشترين",
+      });
+
+      // Reset form
+      setForeignSheepForm({ price: "", age: "", weight: "", city: "", description: "" });
+      setForeignSheepImages([]);
+      setForeignSheepImagePreviews([]);
+      fetchSheep();
+    } catch (error) {
+      console.error("Error adding foreign sheep:", error);
+      toast({
+        title: "خطأ",
+        description: "حدث خطأ أثناء إضافة الأضحية",
+        variant: "destructive",
+      });
+    } finally {
+      setAddingForeignSheep(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <Header />
@@ -391,8 +517,169 @@ export default function AdminDashboard() {
               <Megaphone className="h-4 w-4 ml-1" />
               الإعلانات
             </TabsTrigger>
+            <TabsTrigger value="foreign" data-testid="tab-foreign">
+              <Globe className="h-4 w-4 ml-1" />
+              أضاحي أجنبية
+            </TabsTrigger>
             </TabsList>
           </div>
+
+          {/* Foreign Sheep Management Tab */}
+          <TabsContent value="foreign">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Globe className="h-5 w-5 text-blue-500" />
+                  إضافة أضاحي أجنبية
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground mb-6">
+                  الأضاحي الأجنبية تُضاف مباشرة وتظهر للمشترين بدون مراجعة
+                </p>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Image Upload Section */}
+                  <div className="space-y-4">
+                    <Label>صور الأضحية (حتى 5 صور)</Label>
+                    <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-6 text-center">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        multiple
+                        onChange={handleForeignSheepImageChange}
+                        className="hidden"
+                        id="foreign-sheep-images"
+                        data-testid="input-foreign-sheep-images"
+                      />
+                      <label
+                        htmlFor="foreign-sheep-images"
+                        className="cursor-pointer flex flex-col items-center gap-2"
+                      >
+                        <Upload className="h-10 w-10 text-muted-foreground" />
+                        <span className="text-sm text-muted-foreground">
+                          اضغط لتحميل الصور
+                        </span>
+                      </label>
+                    </div>
+
+                    {/* Image Previews */}
+                    {foreignSheepImagePreviews.length > 0 && (
+                      <div className="grid grid-cols-3 gap-2">
+                        {foreignSheepImagePreviews.map((preview, index) => (
+                          <div key={index} className="relative aspect-square">
+                            <img
+                              src={preview}
+                              alt={`Preview ${index + 1}`}
+                              className="w-full h-full object-cover rounded-md"
+                            />
+                            <Button
+                              variant="destructive"
+                              size="icon"
+                              className="absolute top-1 right-1 h-6 w-6"
+                              onClick={() => removeForeignSheepImage(index)}
+                              data-testid={`button-remove-image-${index}`}
+                            >
+                              <X className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Form Fields */}
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="foreign-price">السعر (دج)</Label>
+                        <Input
+                          id="foreign-price"
+                          type="number"
+                          placeholder="مثال: 45000"
+                          value={foreignSheepForm.price}
+                          onChange={(e) => setForeignSheepForm(prev => ({ ...prev, price: e.target.value }))}
+                          data-testid="input-foreign-price"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="foreign-age">العمر (شهر)</Label>
+                        <Input
+                          id="foreign-age"
+                          type="number"
+                          placeholder="مثال: 12"
+                          value={foreignSheepForm.age}
+                          onChange={(e) => setForeignSheepForm(prev => ({ ...prev, age: e.target.value }))}
+                          data-testid="input-foreign-age"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="foreign-weight">الوزن (كجم)</Label>
+                        <Input
+                          id="foreign-weight"
+                          type="number"
+                          placeholder="مثال: 35"
+                          value={foreignSheepForm.weight}
+                          onChange={(e) => setForeignSheepForm(prev => ({ ...prev, weight: e.target.value }))}
+                          data-testid="input-foreign-weight"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="foreign-city">الولاية</Label>
+                        <Select
+                          value={foreignSheepForm.city}
+                          onValueChange={(value) => setForeignSheepForm(prev => ({ ...prev, city: value }))}
+                        >
+                          <SelectTrigger id="foreign-city" data-testid="select-foreign-city">
+                            <SelectValue placeholder="اختر الولاية" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {algeriaCities.map(city => (
+                              <SelectItem key={city} value={city}>{city}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="foreign-description">الوصف</Label>
+                      <Textarea
+                        id="foreign-description"
+                        placeholder="وصف الأضحية (10 أحرف على الأقل)"
+                        value={foreignSheepForm.description}
+                        onChange={(e) => setForeignSheepForm(prev => ({ ...prev, description: e.target.value }))}
+                        rows={4}
+                        data-testid="input-foreign-description"
+                      />
+                    </div>
+
+                    <Button
+                      onClick={handleAddForeignSheep}
+                      disabled={addingForeignSheep}
+                      className="w-full"
+                      data-testid="button-add-foreign-sheep"
+                    >
+                      {addingForeignSheep ? (
+                        <>
+                          <Loader2 className="ml-2 h-4 w-4 animate-spin" />
+                          جاري الإضافة...
+                        </>
+                      ) : (
+                        <>
+                          <Globe className="ml-2 h-4 w-4" />
+                          إضافة أضحية أجنبية
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
 
           {/* Payments Management Tab */}
           <TabsContent value="payments">

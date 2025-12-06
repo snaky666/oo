@@ -79,6 +79,9 @@ export default function AdminDashboard() {
   const [foreignSheepImagePreviews, setForeignSheepImagePreviews] = useState<string[]>([]);
   const [addingForeignSheep, setAddingForeignSheep] = useState(false);
 
+  // Filter state for all sheep tab
+  const [allSheepOriginFilter, setAllSheepOriginFilter] = useState<"all" | "local" | "foreign">("all");
+
   // Helper function to format date as Gregorian (Miladi)
   const formatGregorianDate = (date: any) => {
     const d = new Date(date);
@@ -252,6 +255,14 @@ export default function AdminDashboard() {
   };
 
   const pendingSheep = sheep.filter(s => s.status === "pending");
+  
+  // Filter sheep based on origin for "All Sheep" tab
+  const filteredAllSheep = sheep.filter(s => {
+    if (allSheepOriginFilter === "all") return true;
+    const sheepOrigin = s.origin || "local";
+    return sheepOrigin === allSheepOriginFilter;
+  });
+  
   const stats = {
     totalSheep: sheep.length,
     pendingSheep: pendingSheep.length,
@@ -846,6 +857,35 @@ export default function AdminDashboard() {
                 <CardTitle>جميع الأغنام ({sheep.length})</CardTitle>
               </CardHeader>
               <CardContent>
+                {/* Origin Filter Buttons */}
+                <div className="flex gap-3 mb-6">
+                  <Button
+                    variant={allSheepOriginFilter === "all" ? "default" : "outline"}
+                    onClick={() => setAllSheepOriginFilter("all")}
+                    size="sm"
+                    data-testid="button-all-sheep-all"
+                  >
+                    الكل ({sheep.length})
+                  </Button>
+                  <Button
+                    variant={allSheepOriginFilter === "local" ? "default" : "outline"}
+                    onClick={() => setAllSheepOriginFilter("local")}
+                    size="sm"
+                    data-testid="button-all-sheep-local"
+                  >
+                    أضاحي محلية ({sheep.filter(s => (s.origin || "local") === "local").length})
+                  </Button>
+                  <Button
+                    variant={allSheepOriginFilter === "foreign" ? "default" : "outline"}
+                    onClick={() => setAllSheepOriginFilter("foreign")}
+                    size="sm"
+                    data-testid="button-all-sheep-foreign"
+                  >
+                    <Globe className="ml-2 h-4 w-4" />
+                    أضاحي أجنبية ({sheep.filter(s => s.origin === "foreign").length})
+                  </Button>
+                </div>
+                
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -859,7 +899,7 @@ export default function AdminDashboard() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {sheep.map(s => (
+                    {filteredAllSheep.map(s => (
                       <TableRow key={s.id}>
                         <TableCell>
                         <img

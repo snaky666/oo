@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { collection, getDocs, updateDoc, doc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import { CIBReceipt, Payment, VIP_PACKAGES, Order } from "@shared/schema";
+import { CIBReceipt, Payment, VIP_PACKAGES, Order, User } from "@shared/schema";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -32,6 +32,7 @@ export default function AdminPaymentTab() {
   const [cibReceipts, setCIBReceipts] = useState<CIBReceipt[]>([]);
   const [payments, setPayments] = useState<Payment[]>([]);
   const [ordersMap, setOrdersMap] = useState<Record<string, Order>>({});
+  const [usersMap, setUsersMap] = useState<Record<string, User>>({});
   const [loading, setLoading] = useState(true);
   const [selectedReceipt, setSelectedReceipt] = useState<CIBReceipt | null>(null);
   const [rejectionReason, setRejectionReason] = useState("");
@@ -45,11 +46,20 @@ export default function AdminPaymentTab() {
   const fetchPaymentData = async () => {
     setLoading(true);
     try {
-      const [receiptsSnapshot, paymentsSnapshot, ordersSnapshot] = await Promise.all([
+      const [receiptsSnapshot, paymentsSnapshot, ordersSnapshot, usersSnapshot] = await Promise.all([
         getDocs(collection(db, "cibReceipts")),
         getDocs(collection(db, "payments")),
         getDocs(collection(db, "orders")),
+        getDocs(collection(db, "users")),
       ]);
+
+      // إنشاء خريطة للمستخدمين (البائعين)
+      const fullUsersMap: Record<string, User> = {};
+      usersSnapshot.docs.forEach((doc) => {
+        const userData = doc.data();
+        fullUsersMap[doc.id] = { uid: doc.id, ...userData } as User;
+      });
+      setUsersMap(fullUsersMap);
 
       // إنشاء خريطة لنوع الأضحية من الطلبات وتخزين بيانات الطلبات كاملة
       const orderOriginMap: Record<string, string> = {};
@@ -570,6 +580,57 @@ export default function AdminPaymentTab() {
                         </div>
                       )}
                     </>
+                  )}
+                </div>
+              )}
+
+              {/* معلومات البائع للأضاحي المحلية */}
+              {selectedReceipt.orderId && ordersMap[selectedReceipt.orderId] && 
+               ordersMap[selectedReceipt.orderId].sellerId && 
+               usersMap[ordersMap[selectedReceipt.orderId].sellerId] && (
+                <div className="border-t pt-4 space-y-3">
+                  <h4 className="font-semibold text-base">معلومات البائع</h4>
+                  
+                  {usersMap[ordersMap[selectedReceipt.orderId].sellerId].fullName && (
+                    <div>
+                      <p className="text-sm text-muted-foreground">اسم البائع</p>
+                      <p className="font-semibold">{usersMap[ordersMap[selectedReceipt.orderId].sellerId].fullName}</p>
+                    </div>
+                  )}
+                  
+                  {usersMap[ordersMap[selectedReceipt.orderId].sellerId].email && (
+                    <div>
+                      <p className="text-sm text-muted-foreground">البريد الإلكتروني</p>
+                      <p className="font-semibold">{usersMap[ordersMap[selectedReceipt.orderId].sellerId].email}</p>
+                    </div>
+                  )}
+                  
+                  {usersMap[ordersMap[selectedReceipt.orderId].sellerId].phone && (
+                    <div>
+                      <p className="text-sm text-muted-foreground">رقم الهاتف</p>
+                      <p className="font-semibold" dir="ltr">{usersMap[ordersMap[selectedReceipt.orderId].sellerId].phone}</p>
+                    </div>
+                  )}
+                  
+                  {usersMap[ordersMap[selectedReceipt.orderId].sellerId].city && (
+                    <div>
+                      <p className="text-sm text-muted-foreground">الولاية</p>
+                      <p className="font-semibold">{usersMap[ordersMap[selectedReceipt.orderId].sellerId].city}</p>
+                    </div>
+                  )}
+                  
+                  {usersMap[ordersMap[selectedReceipt.orderId].sellerId].municipality && (
+                    <div>
+                      <p className="text-sm text-muted-foreground">البلدية</p>
+                      <p className="font-semibold">{usersMap[ordersMap[selectedReceipt.orderId].sellerId].municipality}</p>
+                    </div>
+                  )}
+                  
+                  {usersMap[ordersMap[selectedReceipt.orderId].sellerId].address && (
+                    <div>
+                      <p className="text-sm text-muted-foreground">العنوان</p>
+                      <p className="font-semibold">{usersMap[ordersMap[selectedReceipt.orderId].sellerId].address}</p>
+                    </div>
                   )}
                 </div>
               )}

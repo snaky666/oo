@@ -72,6 +72,7 @@ export default function AdminPaymentTab() {
           method: orderData.paymentMethod || "cash",
           status: orderData.status === "confirmed" ? "verified" : orderData.status === "rejected" ? "rejected" : "pending",
           vipUpgrade: false,
+          sheepOrigin: orderData.sheepOrigin || "local",
           createdAt: orderData.createdAt,
         } as Payment;
       });
@@ -175,6 +176,12 @@ export default function AdminPaymentTab() {
   const sheepPayments = payments.filter((p) => !p.vipUpgrade);
   const vipReceipts = cibReceipts.filter((r) => r.vipUpgrade);
   const sheepReceipts = cibReceipts.filter((r) => !r.vipUpgrade);
+  
+  // فصل الأضاحي المحلية والأجنبية
+  const localSheepPayments = sheepPayments.filter((p) => !p.sheepOrigin || p.sheepOrigin === "local");
+  const foreignSheepPayments = sheepPayments.filter((p) => p.sheepOrigin === "foreign");
+  const localSheepReceipts = sheepReceipts.filter((r) => !r.sheepOrigin || r.sheepOrigin === "local");
+  const foreignSheepReceipts = sheepReceipts.filter((r) => r.sheepOrigin === "foreign");
 
   const pendingReceipts = cibReceipts.filter((r) => r.status === "pending");
   const verifiedReceipts = cibReceipts.filter((r) => r.status === "verified");
@@ -248,15 +255,15 @@ export default function AdminPaymentTab() {
       };
     } else if (paymentFilter === "local") {
       return {
-        receipts: sheepReceipts.filter(r => !r.sheepOrigin || r.sheepOrigin === "local"),
-        payments: sheepPayments.filter(p => !p.sheepOrigin || p.sheepOrigin === "local"),
+        receipts: localSheepReceipts,
+        payments: localSheepPayments,
         title: "مدفوعات الأضاحي المحلية",
         icon: "🐑"
       };
     } else if (paymentFilter === "foreign") {
       return {
-        receipts: sheepReceipts.filter(r => r.sheepOrigin === "foreign"),
-        payments: sheepPayments.filter(p => p.sheepOrigin === "foreign"),
+        receipts: foreignSheepReceipts,
+        payments: foreignSheepPayments,
         title: "مدفوعات الأضاحي الأجنبية",
         icon: "🌍"
       };
@@ -288,14 +295,14 @@ export default function AdminPaymentTab() {
           onClick={() => setPaymentFilter("local")}
           className={paymentFilter === "local" ? "bg-green-500 hover:bg-green-600" : ""}
         >
-          🐑 أضاحي محلية ({sheepReceipts.filter(r => !r.sheepOrigin || r.sheepOrigin === "local").length + sheepPayments.filter(p => !p.sheepOrigin || p.sheepOrigin === "local").length})
+          🐑 أضاحي محلية ({localSheepReceipts.length + localSheepPayments.length})
         </Button>
         <Button
           variant={paymentFilter === "foreign" ? "default" : "outline"}
           onClick={() => setPaymentFilter("foreign")}
           className={paymentFilter === "foreign" ? "bg-blue-500 hover:bg-blue-600" : ""}
         >
-          🌍 أضاحي أجنبية ({sheepReceipts.filter(r => r.sheepOrigin === "foreign").length + sheepPayments.filter(p => p.sheepOrigin === "foreign").length})
+          🌍 أضاحي أجنبية ({foreignSheepReceipts.length + foreignSheepPayments.length})
         </Button>
       </div>
 

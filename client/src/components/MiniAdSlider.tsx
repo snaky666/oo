@@ -45,11 +45,11 @@ export default function MiniAdSlider({ ads }: MiniAdSliderProps) {
   return (
     <div className="relative w-full overflow-hidden rounded-lg mb-6">
       <div className="relative w-full h-[180px] md:h-[220px]">
-        <div className="absolute inset-0 bg-black/20">
+        <div className="absolute inset-0">
           <img
             src={currentAd.image}
             alt={currentAd.companyName || "إعلان"}
-            className="w-full h-full object-contain transition-transform duration-500 ease-in-out"
+            className="w-full h-full object-cover transition-transform duration-500 ease-in-out"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
         </div>

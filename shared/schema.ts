@@ -162,14 +162,23 @@ export interface Order {
   id: string;
   buyerId: string;
   buyerEmail?: string;
+  buyerName?: string;
+  buyerPhone?: string;
+  buyerCity?: string;
+  buyerAddress?: string;
   sellerId: string;
   sellerEmail?: string;
   sheepId: string;
   sheepData?: Partial<Sheep>; // Snapshot of sheep data at order time
+  sheepOrigin?: SheepOrigin; // origin of the sheep (local or foreign)
   totalPrice: number;
   status: OrderStatus;
   createdAt: number;
   updatedAt?: number;
+  // Foreign sheep specific fields
+  nationalId?: string;
+  paySlipImageUrl?: string;
+  workDocImageUrl?: string;
 }
 
 export const insertOrderSchema = z.object({

@@ -31,6 +31,7 @@ export default function AdminPaymentTab() {
   const { toast } = useToast();
   const [cibReceipts, setCIBReceipts] = useState<CIBReceipt[]>([]);
   const [payments, setPayments] = useState<Payment[]>([]);
+  const [ordersMap, setOrdersMap] = useState<Record<string, Order>>({});
   const [loading, setLoading] = useState(true);
   const [selectedReceipt, setSelectedReceipt] = useState<CIBReceipt | null>(null);
   const [rejectionReason, setRejectionReason] = useState("");
@@ -50,12 +51,15 @@ export default function AdminPaymentTab() {
         getDocs(collection(db, "orders")),
       ]);
 
-      // إنشاء خريطة لنوع الأضحية من الطلبات
+      // إنشاء خريطة لنوع الأضحية من الطلبات وتخزين بيانات الطلبات كاملة
       const orderOriginMap: Record<string, string> = {};
+      const fullOrdersMap: Record<string, Order> = {};
       ordersSnapshot.docs.forEach((doc) => {
         const orderData = doc.data();
         orderOriginMap[doc.id] = orderData.sheepOrigin || "local";
+        fullOrdersMap[doc.id] = { id: doc.id, ...orderData } as Order;
       });
+      setOrdersMap(fullOrdersMap);
 
       // إثراء وصولات CIB بنوع الأضحية من الطلبات
       const receiptsData = receiptsSnapshot.docs.map((doc) => {
@@ -500,6 +504,76 @@ export default function AdminPaymentTab() {
                   <p className="font-semibold font-mono text-xs">{selectedReceipt.orderId}</p>
                 </div>
               )}
+
+              {/* معلومات العميل من الطلب */}
+              {selectedReceipt.orderId && ordersMap[selectedReceipt.orderId] && (
+                <div className="border-t pt-4 space-y-3">
+                  <h4 className="font-semibold text-base">معلومات العميل</h4>
+                  
+                  {ordersMap[selectedReceipt.orderId].buyerName && (
+                    <div>
+                      <p className="text-sm text-muted-foreground">اسم المشتري</p>
+                      <p className="font-semibold">{ordersMap[selectedReceipt.orderId].buyerName}</p>
+                    </div>
+                  )}
+                  
+                  {ordersMap[selectedReceipt.orderId].buyerPhone && (
+                    <div>
+                      <p className="text-sm text-muted-foreground">رقم الهاتف</p>
+                      <p className="font-semibold" dir="ltr">{ordersMap[selectedReceipt.orderId].buyerPhone}</p>
+                    </div>
+                  )}
+                  
+                  {ordersMap[selectedReceipt.orderId].buyerCity && (
+                    <div>
+                      <p className="text-sm text-muted-foreground">المدينة</p>
+                      <p className="font-semibold">{ordersMap[selectedReceipt.orderId].buyerCity}</p>
+                    </div>
+                  )}
+                  
+                  {ordersMap[selectedReceipt.orderId].buyerAddress && (
+                    <div>
+                      <p className="text-sm text-muted-foreground">العنوان</p>
+                      <p className="font-semibold">{ordersMap[selectedReceipt.orderId].buyerAddress}</p>
+                    </div>
+                  )}
+
+                  {/* معلومات إضافية للأضاحي الأجنبية */}
+                  {ordersMap[selectedReceipt.orderId].sheepOrigin === "foreign" && (
+                    <>
+                      {ordersMap[selectedReceipt.orderId].nationalId && (
+                        <div>
+                          <p className="text-sm text-muted-foreground">رقم الهوية الوطنية</p>
+                          <p className="font-semibold">{ordersMap[selectedReceipt.orderId].nationalId}</p>
+                        </div>
+                      )}
+                      
+                      {ordersMap[selectedReceipt.orderId].paySlipImageUrl && (
+                        <div>
+                          <p className="text-sm text-muted-foreground mb-2">صورة كشف الراتب</p>
+                          <img
+                            src={ordersMap[selectedReceipt.orderId].paySlipImageUrl}
+                            alt="Pay Slip"
+                            className="w-full h-auto rounded-lg border max-h-48 object-contain"
+                          />
+                        </div>
+                      )}
+                      
+                      {ordersMap[selectedReceipt.orderId].workDocImageUrl && (
+                        <div>
+                          <p className="text-sm text-muted-foreground mb-2">صورة شهادة العمل</p>
+                          <img
+                            src={ordersMap[selectedReceipt.orderId].workDocImageUrl}
+                            alt="Work Document"
+                            className="w-full h-auto rounded-lg border max-h-48 object-contain"
+                          />
+                        </div>
+                      )}
+                    </>
+                  )}
+                </div>
+              )}
+
               <div>
                 <p className="text-sm text-muted-foreground mb-2">صورة الوصل</p>
                 <img

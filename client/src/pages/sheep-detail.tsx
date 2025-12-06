@@ -181,6 +181,16 @@ export default function SheepDetail() {
         workDocImageUrl = workDocUrl;
       }
 
+      // Verify user is authenticated
+      if (!user || !user.uid) {
+        toast({
+          title: "خطأ",
+          description: "يجب تسجيل الدخول أولاً",
+          variant: "destructive",
+        });
+        return;
+      }
+
       // Base order data - only include fields that are common to all orders
       const baseOrderData: Record<string, any> = {
         buyerId: user.uid,

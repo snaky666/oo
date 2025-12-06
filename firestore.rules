@@ -100,9 +100,9 @@ service cloud.firestore {
                      (isAuthenticated() && isOwner(resource.data.buyerId)) ||
                      (isAuthenticated() && isSeller() && resource.data.sellerId == request.auth.uid);
       
-      // Create: Buyer creates order (with optional foreign sheep fields)
+      // Create: Authenticated users can create orders
       allow create: if isAuthenticated() && 
-                       isOwner(request.resource.data.buyerId) &&
+                       request.auth.uid == request.resource.data.buyerId &&
                        request.resource.data.status == 'pending' &&
                        request.resource.data.totalPrice >= 1000 &&
                        request.resource.data.totalPrice <= 10000000 &&

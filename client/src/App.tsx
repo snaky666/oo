@@ -21,6 +21,7 @@ import VIPBenefits from "@/pages/vip-benefits";
 import SheepCheckout from "@/pages/sheep-checkout";
 import VIPCheckout from "@/pages/vip-checkout";
 import OrderDetailPage from "@/pages/order-detail";
+import MyPaymentsPage from "@/pages/my-payments";
 import ContactPage from "@/pages/contact";
 import ForgotPassword from "@/pages/forgot-password";
 import ProtectedRoute from "@/components/ProtectedRoute";
@@ -110,6 +111,11 @@ function Router() {
         </ProtectedRoute>
       </Route>
       <Route path="/order/:id" component={OrderDetailPageWrapper} />
+      <Route path="/my-payments">
+        <ProtectedRoute allowedRoles={["buyer", "seller"]}>
+          <MyPaymentsPage />
+        </ProtectedRoute>
+      </Route>
 
       {/* Admin routes */}
       <Route path="/admin">

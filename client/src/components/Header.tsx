@@ -73,12 +73,12 @@ export default function Header() {
               </Button>
             </Link>
             {user && (user.role === "buyer" || user.role === "seller") && (
-              <Link href="/orders">
+              <Link href="/my-payments">
                 <Button
-                  variant={isActive("/orders") ? "default" : "ghost"}
+                  variant={isActive("/my-payments") ? "default" : "ghost"}
                   size="sm"
                 >
-                  طلباتي
+                  مدفوعاتي
                 </Button>
               </Link>
             )}

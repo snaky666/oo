@@ -55,14 +55,13 @@ export default function BottomNavigation() {
       { icon: <ShoppingCart className="h-5 w-5" />, label: "الأضاحي", href: "/browse" },
     ];
 
-    // Removed: User and seller roles no longer have a direct link to "/orders"
-    // if (user && (user.role === "buyer" || user.role === "seller")) {
-    //   navItems.push({
-    //     icon: <ShoppingBag className="h-5 w-5" />,
-    //     label: "طلباتي",
-    //     href: "/orders",
-    //   });
-    // }
+    if (user && (user.role === "buyer" || user.role === "seller")) {
+      navItems.push({
+        icon: <ShoppingBag className="h-5 w-5" />,
+        label: "مدفوعاتي",
+        href: "/my-payments",
+      });
+    }
 
     if (user?.role === "seller") {
       navItems.push({

@@ -1190,67 +1190,63 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
-      // Create the order in Firestore
+      // Create the order in Firestore using Admin SDK
+      if (!adminDb) {
+        console.error("❌ Firebase Admin DB not initialized");
+        return res.status(500).json({ 
+          success: false, 
+          error: "خطأ في الخادم. يرجى المحاولة لاحقاً." 
+        });
+      }
+
       const orderId = `order_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       
-      // Prepare order fields for Firestore
-      const orderFields: any = {
-        buyerId: { stringValue: orderData.buyerId },
-        buyerEmail: { stringValue: orderData.buyerEmail || "" },
-        buyerName: { stringValue: orderData.buyerName || "" },
-        buyerPhone: { stringValue: orderData.buyerPhone || "" },
-        buyerCity: { stringValue: orderData.buyerCity || "" },
-        buyerAddress: { stringValue: orderData.buyerAddress || "" },
-        sellerId: { stringValue: orderData.sellerId || "" },
-        sellerEmail: { stringValue: orderData.sellerEmail || "" },
-        sheepId: { stringValue: orderData.sheepId || "" },
-        sheepPrice: { integerValue: orderData.sheepPrice?.toString() || "0" },
-        sheepAge: { integerValue: orderData.sheepAge?.toString() || "0" },
-        sheepWeight: { integerValue: orderData.sheepWeight?.toString() || "0" },
-        sheepCity: { stringValue: orderData.sheepCity || "" },
-        sheepOrigin: { stringValue: orderData.sheepOrigin || "local" },
-        totalPrice: { integerValue: orderData.totalPrice?.toString() || "0" },
-        status: { stringValue: "pending" },
-        paymentMethod: { stringValue: "cash" },
-        paymentStatus: { stringValue: "pending" },
-        orderStatus: { stringValue: "new" },
-        createdAt: { integerValue: Date.now().toString() }
+      // Prepare order data
+      const orderDataToSave: any = {
+        buyerId: orderData.buyerId,
+        buyerEmail: orderData.buyerEmail || "",
+        buyerName: orderData.buyerName || "",
+        buyerPhone: orderData.buyerPhone || "",
+        buyerCity: orderData.buyerCity || "",
+        buyerAddress: orderData.buyerAddress || "",
+        sellerId: orderData.sellerId || "",
+        sellerEmail: orderData.sellerEmail || "",
+        sheepId: orderData.sheepId || "",
+        sheepPrice: orderData.sheepPrice || 0,
+        sheepAge: orderData.sheepAge || 0,
+        sheepWeight: orderData.sheepWeight || 0,
+        sheepCity: orderData.sheepCity || "",
+        sheepOrigin: orderData.sheepOrigin || "local",
+        totalPrice: orderData.totalPrice || 0,
+        status: "pending",
+        paymentMethod: "cash",
+        paymentStatus: "pending",
+        orderStatus: "new",
+        createdAt: Date.now()
       };
 
       // Add foreign sheep specific fields
       if (orderData.sheepOrigin === "foreign") {
-        orderFields.nationalId = { stringValue: orderData.nationalId?.trim() || "" };
-        orderFields.paySlipImageUrl = { stringValue: orderData.paySlipImageUrl || "" };
-        orderFields.workDocImageUrl = { stringValue: orderData.workDocImageUrl || "" };
+        orderDataToSave.nationalId = orderData.nationalId?.trim() || "";
+        orderDataToSave.paySlipImageUrl = orderData.paySlipImageUrl || "";
+        orderDataToSave.workDocImageUrl = orderData.workDocImageUrl || "";
       }
 
-      const createResponse = await fetch(
-        `https://firestore.googleapis.com/v1/projects/${FIREBASE_PROJECT_ID}/databases/(default)/documents/orders/${orderId}`,
-        {
-          method: "PATCH",
-          headers: {
-            "Content-Type": "application/json",
-            "X-Goog-Api-Key": FIREBASE_API_KEY || ""
-          },
-          body: JSON.stringify({ fields: orderFields })
-        }
-      );
-
-      if (!createResponse.ok) {
-        const errorText = await createResponse.text();
-        console.error("❌ Firestore error:", createResponse.status, errorText);
+      try {
+        await adminDb.collection('orders').doc(orderId).set(orderDataToSave);
+        console.log('✅ Order created successfully:', orderId);
+        res.json({ 
+          success: true, 
+          orderId: orderId,
+          message: "تم إنشاء الطلب بنجاح"
+        });
+      } catch (createError: any) {
+        console.error("❌ Failed to create order:", createError?.message);
         return res.status(500).json({ 
           success: false, 
           error: "فشل في إنشاء الطلب" 
         });
       }
-
-      console.log('✅ Order created successfully:', orderId);
-      res.json({ 
-        success: true, 
-        orderId: orderId,
-        message: "تم إنشاء الطلب بنجاح"
-      });
     } catch (error: any) {
       console.error("❌ Create order error:", error?.message);
       res.status(500).json({ 

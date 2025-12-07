@@ -27,7 +27,11 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
-export default function AdminPaymentTab() {
+interface AdminPaymentTabProps {
+  statusFilter?: "all" | "pending" | "verified" | "rejected";
+}
+
+export default function AdminPaymentTab({ statusFilter = "all" }: AdminPaymentTabProps) {
   const { toast } = useToast();
   const [cibReceipts, setCIBReceipts] = useState<CIBReceipt[]>([]);
   const [payments, setPayments] = useState<Payment[]>([]);
@@ -282,35 +286,52 @@ export default function AdminPaymentTab() {
 
   // Filter data based on selected filter
   const getFilteredData = () => {
+    let receipts: CIBReceipt[] = [];
+    let paymentsList: Payment[] = [];
+    let title = "";
+    let icon = "";
+
+    // Filter by payment type (vip, local, foreign, all)
     if (paymentFilter === "vip") {
-      return {
-        receipts: vipReceipts,
-        payments: vipPayments,
-        title: "مدفوعات VIP",
-        icon: "💎"
-      };
+      receipts = vipReceipts;
+      paymentsList = vipPayments;
+      title = "مدفوعات VIP";
+      icon = "💎";
     } else if (paymentFilter === "local") {
-      return {
-        receipts: localSheepReceipts,
-        payments: localSheepPayments,
-        title: "مدفوعات الأضاحي المحلية",
-        icon: "🐑"
-      };
+      receipts = localSheepReceipts;
+      paymentsList = localSheepPayments;
+      title = "مدفوعات الأضاحي المحلية";
+      icon = "🐑";
     } else if (paymentFilter === "foreign") {
-      return {
-        receipts: foreignSheepReceipts,
-        payments: foreignSheepPayments,
-        title: "مدفوعات الأضاحي الأجنبية",
-        icon: "🌍"
-      };
+      receipts = foreignSheepReceipts;
+      paymentsList = foreignSheepPayments;
+      title = "مدفوعات الأضاحي الأجنبية";
+      icon = "🌍";
     } else {
-      return {
-        receipts: cibReceipts,
-        payments: payments,
-        title: "جميع المدفوعات",
-        icon: "💰"
-      };
+      receipts = cibReceipts;
+      paymentsList = payments;
+      title = "جميع المدفوعات";
+      icon = "💰";
     }
+
+    // Apply status filter if provided
+    if (statusFilter && statusFilter !== "all") {
+      receipts = receipts.filter(r => {
+        if (statusFilter === "pending") return r.status === "pending";
+        if (statusFilter === "verified") return r.status === "verified" || r.status === "completed";
+        if (statusFilter === "rejected") return r.status === "rejected";
+        return true;
+      });
+      
+      paymentsList = paymentsList.filter(p => {
+        if (statusFilter === "pending") return p.status === "pending";
+        if (statusFilter === "verified") return p.status === "verified" || p.status === "completed";
+        if (statusFilter === "rejected") return p.status === "rejected";
+        return true;
+      });
+    }
+
+    return { receipts, payments: paymentsList, title, icon };
   };
 
   const filteredData = getFilteredData();

@@ -147,7 +147,7 @@ export default function Checkout() {
         description: paymentMethod === "card" ? "سيتم التحقق من الوصل خلال ساعات" : paymentMethod === "cash" ? "تسجيل الطلب للدفع عند الاستلام" : "تسجيل الأقساط",
       });
 
-      setLocation(isVIPUpgrade ? (user?.role === "seller" ? "/seller" : "/browse") : "/orders");
+      setLocation(isVIPUpgrade ? (user?.role === "seller" ? "/seller" : "/browse") : "/my-payments");
     } catch (error) {
       console.error("Payment error:", error);
       toast({

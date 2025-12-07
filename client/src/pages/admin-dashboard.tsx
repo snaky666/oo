@@ -703,17 +703,17 @@ export default function AdminDashboard() {
 
         {/* Stats Charts */}
         {isMobile ? (
-          <div className="mb-8 px-4">
+          <div className="mb-8">
             <Carousel 
               className="w-full"
               opts={{
-                align: "start",
+                align: "center",
                 loop: true,
               }}
             >
-              <CarouselContent className="-ml-2 md:-ml-4">
+              <CarouselContent className="-ml-2">
                 {/* إحصائيات المستخدمين */}
-                <CarouselItem className="pl-2 md:pl-4">
+                <CarouselItem className="pl-2 basis-[85%]">
                   <Card>
                     <CardHeader className="pb-2">
                       <CardTitle className="text-sm flex items-center gap-2">
@@ -759,7 +759,7 @@ export default function AdminDashboard() {
                 </CarouselItem>
 
                 {/* إحصائيات أصل الأغنام */}
-                <CarouselItem className="pl-2 md:pl-4">
+                <CarouselItem className="pl-2 basis-[85%]">
                   <Card>
                     <CardHeader className="pb-2">
                       <CardTitle className="text-sm flex items-center gap-2">
@@ -805,7 +805,7 @@ export default function AdminDashboard() {
                 </CarouselItem>
 
                 {/* إحصائيات نوع الأغنام (عادية/VIP) */}
-                <CarouselItem className="pl-2 md:pl-4">
+                <CarouselItem className="pl-2 basis-[85%]">
                   <Card>
                     <CardHeader className="pb-2">
                       <CardTitle className="text-sm flex items-center gap-2">
@@ -851,7 +851,7 @@ export default function AdminDashboard() {
                 </CarouselItem>
 
                 {/* إحصائيات المدفوعات */}
-                <CarouselItem className="pl-2 md:pl-4">
+                <CarouselItem className="pl-2 basis-[85%]">
                   <Card 
                     className="cursor-pointer hover:shadow-lg transition-shadow"
                     onClick={() => handleChartSegmentClick("payments", "all")}
@@ -900,14 +900,18 @@ export default function AdminDashboard() {
                 </CarouselItem>
               </CarouselContent>
               
-              {/* Navigation Dots */}
-              <div className="flex justify-center gap-2 mt-4">
-                {[0, 1, 2, 3].map((index) => (
-                  <div
-                    key={index}
-                    className="h-2 w-2 rounded-full bg-muted-foreground/30"
-                  />
-                ))}
+              {/* Navigation Arrows */}
+              <div className="flex justify-center items-center gap-4 mt-4">
+                <CarouselPrevious className="relative left-0 translate-x-0 translate-y-0" />
+                <div className="flex gap-2">
+                  {[0, 1, 2, 3].map((index) => (
+                    <div
+                      key={index}
+                      className="h-2.5 w-2.5 rounded-full bg-primary/30"
+                    />
+                  ))}
+                </div>
+                <CarouselNext className="relative right-0 translate-x-0 translate-y-0" />
               </div>
             </Carousel>
           </div>
@@ -1665,7 +1669,7 @@ export default function AdminDashboard() {
                           <TableCell className="font-mono text-sm">{order.id.slice(0, 8)}...</TableCell>
                           <TableCell>{order.buyerEmail || order.buyerId}</TableCell>
                           <TableCell>{order.sellerEmail || order.sellerId}</TableCell>
-                          <TableCell>{order.price?.toLocaleString()} DA</TableCell>
+                          <TableCell>{order.totalPrice?.toLocaleString()} DA</TableCell>
                           <TableCell>
                             {getSheepOrigin(order.sheepId) === "foreign" ? (
                               <Badge className="bg-purple-500/10 text-purple-700">

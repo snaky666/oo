@@ -360,6 +360,11 @@ export default function AdminDashboard() {
     { name: "أجنبية", value: sheep.filter(s => s.origin === "foreign").length, color: "#8b5cf6" },
   ].filter(item => item.value > 0);
 
+  const sheepTypeData = [
+    { name: "أغنام عادية", value: sheep.filter(s => !s.isVIP).length, color: "#6b7280" },
+    { name: "أغنام VIP", value: sheep.filter(s => s.isVIP).length, color: "#f59e0b" },
+  ].filter(item => item.value > 0);
+
   const getRoleLabel = (role: string) => {
     switch (role) {
       case "admin": return "مدير";
@@ -602,7 +607,7 @@ export default function AdminDashboard() {
         </div>
 
         {/* Stats Charts */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6 mb-8">
           {/* إحصائيات الأغنام */}
           <Card>
             <CardHeader className="pb-2">
@@ -749,6 +754,47 @@ export default function AdminDashboard() {
                         dataKey="value"
                       >
                         {sheepOriginData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.color} />
+                        ))}
+                      </Pie>
+                      <Tooltip />
+                      <Legend 
+                        verticalAlign="bottom" 
+                        height={36}
+                        formatter={(value, entry: any) => `${value}: ${entry.payload.value}`}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground text-center py-8">لا توجد بيانات</p>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* إحصائيات نوع الأغنام (عادية/VIP) */}
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-lg flex items-center gap-2">
+                <Crown className="h-5 w-5 text-amber-500" />
+                نوع الأغنام
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {sheepTypeData.length > 0 ? (
+                <div className="h-[200px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={sheepTypeData}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={40}
+                        outerRadius={70}
+                        paddingAngle={5}
+                        dataKey="value"
+                      >
+                        {sheepTypeData.map((entry, index) => (
                           <Cell key={`cell-${index}`} fill={entry.color} />
                         ))}
                       </Pie>

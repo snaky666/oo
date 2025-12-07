@@ -1154,73 +1154,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const currentYear = new Date().getFullYear();
         const startOfYear = new Date(currentYear, 0, 1).getTime();
 
-        // Query for existing foreign sheep orders with this nationalId this year
-        const checkBody = {
-          structuredQuery: {
-            from: [{ collectionId: "orders" }],
-            where: {
-              compositeFilter: {
-                op: "AND",
-                filters: [
-                  {
-                    fieldFilter: {
-                      field: { fieldPath: "nationalId" },
-                      op: "EQUAL",
-                      value: { stringValue: nationalId }
-                    }
-                  },
-                  {
-                    fieldFilter: {
-                      field: { fieldPath: "sheepOrigin" },
-                      op: "EQUAL",
-                      value: { stringValue: "foreign" }
-                    }
-                  },
-                  {
-                    fieldFilter: {
-                      field: { fieldPath: "createdAt" },
-                      op: "GREATER_THAN_OR_EQUAL",
-                      value: { integerValue: startOfYear.toString() }
-                    }
-                  }
-                ]
-              }
-            }
+        try {
+          // Ensure adminDb is available
+          if (!adminDb) {
+            console.error("❌ Firebase Admin DB not initialized");
+            return res.status(500).json({ 
+              success: false, 
+              error: "خطأ في الخادم. يرجى المحاولة لاحقاً." 
+            });
           }
-        };
 
-        const checkResponse = await fetch(
-          `https://firestore.googleapis.com/v1/projects/${FIREBASE_PROJECT_ID}/databases/(default)/documents:runQuery`,
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "X-Goog-Api-Key": FIREBASE_API_KEY || ""
-            },
-            body: JSON.stringify(checkBody)
+          // Query using Firebase Admin SDK for authenticated access
+          const ordersSnapshot = await adminDb.collection('orders')
+            .where('nationalId', '==', nationalId)
+            .where('sheepOrigin', '==', 'foreign')
+            .where('createdAt', '>=', startOfYear)
+            .get();
+
+          const existingOrders = ordersSnapshot.size;
+          console.log(`📋 Found ${existingOrders} existing foreign sheep orders with this nationalId`);
+
+          if (existingOrders > 0) {
+            return res.status(400).json({ 
+              success: false, 
+              alreadyUsed: true,
+              error: `رقم بطاقة التعريف الوطنية "${nationalId}" تم استخدامه بالفعل لطلب أضحية مستوردة هذا العام. يمكنك طلب أضحية مستوردة واحدة فقط في السنة.`
+            });
           }
-        );
-
-        if (!checkResponse.ok) {
-          console.error("❌ Failed to check nationalId");
+        } catch (queryError: any) {
+          console.error("❌ Failed to check nationalId:", queryError?.message || queryError);
           return res.status(500).json({ 
             success: false, 
-            error: "فشل في التحقق من رقم بطاقة التعريف" 
-          });
-        }
-
-        const checkData = await checkResponse.json();
-        const existingOrders = Array.isArray(checkData) 
-          ? checkData.filter((item: any) => item.document).length 
-          : 0;
-
-        console.log(`📋 Found ${existingOrders} existing foreign sheep orders with this nationalId`);
-
-        if (existingOrders > 0) {
-          return res.status(400).json({ 
-            success: false, 
-            alreadyUsed: true,
-            error: `رقم بطاقة التعريف الوطنية "${nationalId}" تم استخدامه بالفعل لطلب أضحية مستوردة هذا العام. يمكنك طلب أضحية مستوردة واحدة فقط في السنة.`
+            error: "فشل في التحقق من رقم بطاقة التعريف. يرجى المحاولة مرة أخرى." 
           });
         }
       }

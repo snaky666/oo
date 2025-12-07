@@ -20,6 +20,13 @@ The frontend is built with React, TypeScript, Tailwind CSS, Shadcn UI for a resp
 
 Key features include distinct user roles (Buyer, Seller, Admin) with corresponding dashboards, listings management with image uploads and advanced filtering, a comprehensive order system, an admin dashboard for product and user management, a three-tier VIP system (Silver, Gold, Platinum), and multiple payment options (CIB Bank Transfer, Cash on Delivery, Installments). An advertising system allows admins to upload promotional content that auto-rotates on the landing page.
 
+### Imported Sheep Restrictions
+Foreign/imported sheep orders require additional verification:
+- **National ID Verification**: Customers must provide their national ID card number (رقم بطاقة التعريف الوطنية)
+- **Required Documents**: Pay slip image (صورة كشف الراتب) and work document image (صورة وثيقة العمل)
+- **One-Per-Year Limit**: Each national ID can only be used to purchase one imported sheep per year
+- **Server-Side Enforcement**: All order creation is routed through `/api/orders/create` endpoint which validates these requirements before creating orders
+
 The project utilizes a monorepo structure with `client/` (React), `server/` (Express), and `shared/` (common schemas). Development uses Vite with Express, while production leverages Vercel's serverless functions for API endpoints. Firestore security rules enforce role-based access control and data ownership.
 
 ## External Dependencies

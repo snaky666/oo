@@ -164,13 +164,13 @@ export default function AdminDashboard() {
       id: doc.id,
       ...doc.data()
     })) as Sheep[];
-    
+
     console.log("🐑 عدد الأضاحي المجلوبة:", sheepData.length);
-    
+
     // عرض ملخص الأضاحي حسب البائع
     const sheepBySeller: Record<string, number> = {};
     const sheepByStatus: Record<string, number> = {};
-    
+
     sheepData.forEach(s => {
       if (s.sellerId) {
         sheepBySeller[s.sellerId] = (sheepBySeller[s.sellerId] || 0) + 1;
@@ -179,10 +179,10 @@ export default function AdminDashboard() {
         sheepByStatus[s.status] = (sheepByStatus[s.status] || 0) + 1;
       }
     });
-    
+
     console.log("🏪 ملخص الأضاحي حسب البائع:", sheepBySeller);
     console.log("📊 ملخص الأضاحي حسب الحالة:", sheepByStatus);
-    
+
     setSheep(sheepData);
   };
 
@@ -194,11 +194,11 @@ export default function AdminDashboard() {
         ...doc.data()
       })) as Order[];
       console.log("🔍 عدد الطلبات المجلوبة:", ordersData.length);
-      
+
       // عرض ملخص الطلبات حسب المشتري والبائع
       const ordersByBuyer: Record<string, number> = {};
       const ordersBySeller: Record<string, number> = {};
-      
+
       ordersData.forEach(order => {
         if (order.buyerId) {
           ordersByBuyer[order.buyerId] = (ordersByBuyer[order.buyerId] || 0) + 1;
@@ -207,10 +207,10 @@ export default function AdminDashboard() {
           ordersBySeller[order.sellerId] = (ordersBySeller[order.sellerId] || 0) + 1;
         }
       });
-      
+
       console.log("👥 ملخص طلبات المشترين:", ordersByBuyer);
       console.log("🏪 ملخص طلبات البائعين:", ordersBySeller);
-      
+
       setOrders(ordersData);
     } catch (error) {
       console.error("❌ خطأ في جلب الطلبات:", error);
@@ -414,6 +414,33 @@ export default function AdminDashboard() {
     { name: "أغنام VIP", value: sheep.filter(s => s.isVIP).length, color: "#f59e0b" },
   ].filter(item => item.value > 0);
 
+  // بيانات حالة المدفوعات
+  const [allPayments, setAllPayments] = useState<any[]>([]);
+
+  useEffect(() => {
+    const fetchAllPayments = async () => {
+      try {
+        const paymentsSnapshot = await getDocs(collection(db, "payments"));
+        const paymentsData = paymentsSnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        }));
+        setAllPayments(paymentsData);
+      } catch (error) {
+        console.error("Error fetching payments:", error);
+      }
+    };
+
+    fetchAllPayments();
+  }, []);
+
+  const paymentsStatusData = [
+    { name: "معلق", value: allPayments.filter(p => p.status === "pending").length, color: "#eab308" },
+    { name: "مؤكد", value: allPayments.filter(p => p.status === "verified" || p.status === "completed").length, color: "#22c55e" },
+    { name: "مرفوض", value: allPayments.filter(p => p.status === "rejected").length, color: "#ef4444" },
+  ].filter(item => item.value > 0);
+
+
   const getRoleLabel = (role: string) => {
     switch (role) {
       case "admin": return "مدير";
@@ -428,7 +455,7 @@ export default function AdminDashboard() {
     console.log("📊 حساب إحصائيات المستخدم:", userId, "الدور:", userRole);
     console.log("📦 إجمالي الطلبات المتاحة:", orders.length);
     console.log("🐑 إجمالي الأضاحي المتاحة:", sheep.length);
-    
+
     const userOrders = orders.filter(o => {
       if (userRole === "buyer") {
         return o.buyerId === userId;
@@ -437,12 +464,12 @@ export default function AdminDashboard() {
       }
       return false;
     });
-    
+
     const userSheep = sheep.filter(s => s.sellerId === userId);
-    
+
     console.log("👤 طلبات المستخدم:", userOrders.length);
     console.log("🐏 أضاحي المستخدم:", userSheep.length);
-    
+
     const stats = {
       totalOrders: userOrders.length,
       pendingOrders: userOrders.filter(o => o.status === "pending").length,
@@ -452,7 +479,7 @@ export default function AdminDashboard() {
       pendingSheep: userSheep.filter(s => s.status === "pending").length,
       rejectedSheep: userSheep.filter(s => s.status === "rejected").length,
     };
-    
+
     console.log("📈 الإحصائيات النهائية:", stats);
     return stats;
   };
@@ -686,8 +713,8 @@ export default function AdminDashboard() {
                         ))}
                       </Pie>
                       <Tooltip />
-                      <Legend 
-                        verticalAlign="bottom" 
+                      <Legend
+                        verticalAlign="bottom"
                         height={36}
                         formatter={(value, entry: any) => `${value}: ${entry.payload.value}`}
                       />
@@ -729,8 +756,8 @@ export default function AdminDashboard() {
                         ))}
                       </Pie>
                       <Tooltip />
-                      <Legend 
-                        verticalAlign="bottom" 
+                      <Legend
+                        verticalAlign="bottom"
                         height={36}
                         formatter={(value, entry: any) => `${value}: ${entry.payload.value}`}
                       />
@@ -772,8 +799,8 @@ export default function AdminDashboard() {
                         ))}
                       </Pie>
                       <Tooltip />
-                      <Legend 
-                        verticalAlign="bottom" 
+                      <Legend
+                        verticalAlign="bottom"
                         height={36}
                         formatter={(value, entry: any) => `${value}: ${entry.payload.value}`}
                       />
@@ -791,34 +818,34 @@ export default function AdminDashboard() {
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
           <div className="overflow-x-auto">
             <TabsList className="inline-flex w-max gap-2 p-1">
-            <TabsTrigger value="pending" data-testid="tab-pending">
-              قيد المراجعة ({pendingSheep.length})
-            </TabsTrigger>
-            <TabsTrigger value="all" data-testid="tab-all">
-              جميع الأغنام
-            </TabsTrigger>
-            <TabsTrigger value="orders" data-testid="tab-orders">
-              <ShoppingBag className="h-4 w-4 ml-1" />
-              الطلبات ({orders.length})
-            </TabsTrigger>
-            <TabsTrigger value="users" data-testid="tab-users">
-              المستخدمون
-            </TabsTrigger>
-            <TabsTrigger value="vip" data-testid="tab-vip">
-              إدارة VIP ({users.filter(u => u.vipStatus && u.vipStatus !== "none").length})
-            </TabsTrigger>
-            <TabsTrigger value="payments" data-testid="tab-payments">
-              <CreditCard className="h-4 w-4 ml-1" />
-              الدفع
-            </TabsTrigger>
-            <TabsTrigger value="ads" data-testid="tab-ads">
-              <Megaphone className="h-4 w-4 ml-1" />
-              الإعلانات
-            </TabsTrigger>
-            <TabsTrigger value="foreign" data-testid="tab-foreign">
-              <Globe className="h-4 w-4 ml-1" />
-              أضاحي أجنبية
-            </TabsTrigger>
+              <TabsTrigger value="pending" data-testid="tab-pending">
+                قيد المراجعة ({pendingSheep.length})
+              </TabsTrigger>
+              <TabsTrigger value="all" data-testid="tab-all">
+                جميع الأغنام
+              </TabsTrigger>
+              <TabsTrigger value="orders" data-testid="tab-orders">
+                <ShoppingBag className="h-4 w-4 ml-1" />
+                الطلبات ({orders.length})
+              </TabsTrigger>
+              <TabsTrigger value="users" data-testid="tab-users">
+                المستخدمون
+              </TabsTrigger>
+              <TabsTrigger value="vip" data-testid="tab-vip">
+                إدارة VIP ({users.filter(u => u.vipStatus && u.vipStatus !== "none").length})
+              </TabsTrigger>
+              <TabsTrigger value="payments" data-testid="tab-payments">
+                <CreditCard className="h-4 w-4 ml-1" />
+                الدفع
+              </TabsTrigger>
+              <TabsTrigger value="ads" data-testid="tab-ads">
+                <Megaphone className="h-4 w-4 ml-1" />
+                الإعلانات
+              </TabsTrigger>
+              <TabsTrigger value="foreign" data-testid="tab-foreign">
+                <Globe className="h-4 w-4 ml-1" />
+                أضاحي أجنبية
+              </TabsTrigger>
             </TabsList>
           </div>
 
@@ -1193,7 +1220,7 @@ export default function AdminDashboard() {
                     {filteredAllSheep.map(s => (
                       <TableRow key={s.id}>
                         <TableCell>
-                        <img
+                          <img
                             src={s.images?.[0] || placeholderImage}
                             alt="خروف"
                             className="h-12 w-12 rounded object-cover"
@@ -1504,7 +1531,7 @@ export default function AdminDashboard() {
             </Card>
           </TabsContent>
 
-          </Tabs>
+        </Tabs>
       </div>
 
       {/* User Details Dialog */}
@@ -1627,7 +1654,7 @@ export default function AdminDashboard() {
                             <p className="text-4xl font-bold text-primary mb-1">{stats.totalSheep}</p>
                             <p className="text-sm font-semibold text-muted-foreground">إجمالي عدد الأضاحي</p>
                           </div>
-                          
+
                           {/* التفاصيل */}
                           <div className="grid grid-cols-3 gap-3">
                             <div className="bg-green-500/10 p-3 rounded-lg text-center">

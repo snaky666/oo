@@ -11,6 +11,7 @@ import { addDoc, collection, updateDoc, doc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
 import { uploadToImgBB } from "@/lib/imgbb";
+import { Input } from "@/components/ui/input";
 
 export default function SheepCheckout() {
   const { user, refreshUser } = useAuth();
@@ -27,9 +28,15 @@ export default function SheepCheckout() {
   const [amount, setAmount] = useState(0);
   const [sheepOrigin, setSheepOrigin] = useState<"local" | "foreign">("local");
 
+  const [buyerInfo, setBuyerInfo] = useState({
+    nationalId: "",
+  });
+  const [paySlipImage, setPaySlipImage] = useState<File | null>(null);
+  const [workDocImage, setWorkDocImage] = useState<File | null>(null);
+
   useEffect(() => {
     const pending = localStorage.getItem("pendingOrderId");
-    
+
     if (pending) {
       setOrderId(pending);
       const orderAmount = localStorage.getItem("pendingOrderAmount");
@@ -48,6 +55,20 @@ export default function SheepCheckout() {
       const reader = new FileReader();
       reader.onload = (e) => setReceiptPreview(e.target?.result as string);
       reader.readAsDataURL(file);
+    }
+  };
+
+  const handlePaySlipUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setPaySlipImage(file);
+    }
+  };
+
+  const handleWorkDocUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setWorkDocImage(file);
     }
   };
 
@@ -72,7 +93,7 @@ export default function SheepCheckout() {
     setProcessing(true);
     try {
       let receiptUrl = "";
-      
+
       if (paymentMethod === "card" && receiptFile) {
         receiptUrl = await uploadToImgBB(receiptFile);
       }
@@ -145,6 +166,39 @@ export default function SheepCheckout() {
       setProcessing(false);
     }
   };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!user) {
+      toast({
+        title: "خطأ",
+        description: "يجب تسجيل الدخول أولاً",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // التحقق من رقم بطاقة التعريف الوطنية (18 رقم)
+    if (!buyerInfo.nationalId || buyerInfo.nationalId.length !== 18 || !/^\d{18}$/.test(buyerInfo.nationalId)) {
+      toast({
+        title: "خطأ في بطاقة التعريف",
+        description: "رقم بطاقة التعريف الوطنية يجب أن يتكون من 18 رقمًا فقط",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!paySlipImage || !workDocImage) {
+      toast({
+        title: "خطأ",
+        description: "يرجى إكمال جميع الحقول المطلوبة",
+        variant: "destructive",
+      });
+      return;
+    }
+  };
+
 
   return (
     <div className="min-h-screen bg-background">

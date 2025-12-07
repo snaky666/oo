@@ -338,6 +338,16 @@ export const algeriaCities = [
 ] as const;
 
 // Ad schema
+export interface Ad {
+  id: string;
+  image: string; // URL from ImgBB
+  companyName: string; // Company name
+  link?: string; // Optional company website link
+  description: string; // Ad text/description
+  active: boolean; // Whether the ad is active
+  createdAt: number;
+}
+
 export const insertAdSchema = z.object({
   image: z.string().url("يجب إدخال رابط صورة صحيح"),
   companyName: z.string().min(2, "اسم الشركة يجب أن يكون على الأقل 2 أحرف").max(50, "اسم الشركة يجب أن لا يزيد عن 50 حرف"),
@@ -345,38 +355,4 @@ export const insertAdSchema = z.object({
   description: z.string().min(10, "الوصف يجب أن يكون 10 أحرف على الأقل"),
 });
 
-export const adSchema = insertAdSchema.extend({
-  id: z.string(),
-  active: z.boolean().default(true),
-  createdAt: z.number(),
-  expiresAt: z.number().optional(), // تاريخ انتهاء الإعلان
-  durationDays: z.number().optional(), // مدة الإعلان بالأيام
-});
-
 export type InsertAd = z.infer<typeof insertAdSchema>;
-export type Ad = z.infer<typeof adSchema>;
-
-// Ad Request schema - طلبات الإعلانات من المستخدمين
-export const insertAdRequestSchema = z.object({
-  image: z.string().min(1, "الصورة مطلوبة"),
-  companyName: z.string().min(1, "اسم الشركة مطلوب"),
-  link: z.string().optional(),
-  description: z.string().min(1, "الوصف مطلوب"),
-  contactPhone: z.string().min(1, "رقم الهاتف مطلوب"),
-  contactEmail: z.string().email("البريد الإلكتروني غير صالح").optional(),
-});
-
-export const adRequestSchema = insertAdRequestSchema.extend({
-  id: z.string(),
-  userId: z.string(),
-  userEmail: z.string(),
-  status: z.enum(["pending", "approved", "rejected"]).default("pending"),
-  createdAt: z.number(),
-  reviewedAt: z.number().optional(),
-  reviewedBy: z.string().optional(), // admin id
-  durationDays: z.number().optional(), // المدة المحددة من الأدمن
-  rejectionReason: z.string().optional(),
-});
-
-export type InsertAdRequest = z.infer<typeof insertAdRequestSchema>;
-export type AdRequest = z.infer<typeof adRequestSchema>;

@@ -60,31 +60,22 @@ export default async (req: any, res: any) => {
       }
 
       const data = await response.json();
-      const now = Date.now();
       const ads = data.documents?.map((doc: any) => ({
         id: doc.name.split('/').pop(),
         ...extractDocumentData(doc.fields)
-      }))
-      .filter((ad: any) => {
-        // إخفاء الإعلانات المنتهية الصلاحية
-        if (ad.expiresAt && ad.expiresAt < now) {
-          return false;
-        }
-        return true;
-      }) || [];
+      })) || [];
 
       return res.status(200).json(ads);
     }
 
     if (req.method === 'POST') {
-      const { image, companyName, link, description, durationDays } = req.body;
+      const { image, companyName, link, description } = req.body;
 
       if (!image || !description || !companyName) {
         return res.status(400).json({ error: 'Image, company name and description are required' });
       }
 
       const adId = `ad_${Date.now()}`;
-      const createdAt = Date.now();
       const adData = {
         fields: {
           image: { stringValue: image },
@@ -92,16 +83,9 @@ export default async (req: any, res: any) => {
           link: link ? { stringValue: link } : { stringValue: '' },
           description: { stringValue: description },
           active: { booleanValue: true },
-          createdAt: { integerValue: createdAt.toString() }
+          createdAt: { integerValue: Date.now().toString() }
         }
       };
-
-      // إضافة المدة وتاريخ الانتهاء إذا تم تحديدها
-      if (durationDays) {
-        adData.fields.durationDays = { integerValue: durationDays.toString() };
-        const expiresAt = createdAt + (durationDays * 24 * 60 * 60 * 1000);
-        adData.fields.expiresAt = { integerValue: expiresAt.toString() };
-      }
 
       const response = await fetch(
         `https://firestore.googleapis.com/v1/projects/${FIREBASE_PROJECT_ID}/databases/(default)/documents/ads/${adId}`,

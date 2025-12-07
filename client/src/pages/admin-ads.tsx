@@ -137,25 +137,6 @@ export default function AdminAdsPage() {
     },
   });
 
-  const updateAdDurationMutation = useMutation({
-    mutationFn: async ({ id, durationDays }: { id: string; durationDays: number }) => {
-      const response = await fetch(`/api/ads/update/${id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ durationDays }),
-      });
-      if (!response.ok) throw new Error("Failed to update ad duration");
-      return response.json();
-    },
-    onSuccess: () => {
-      toast({ title: "تم تحديث مدة الإعلان بنجاح" });
-      queryClient.invalidateQueries({ queryKey: ["/api/ads"] });
-    },
-    onError: () => {
-      toast({ title: "خطأ", description: "فشل تحديث مدة الإعلان", variant: "destructive" });
-    },
-  });
-
   const onSubmit = (data: any) => {
     if (!data.image) {
       toast({
@@ -338,40 +319,17 @@ export default function AdminAdsPage() {
                     {ad.link}
                   </a>
                 )}
-                {ad.durationDays && ad.expiresAt && (
-                  <div className="text-xs space-y-1">
-                    <p><strong>المدة:</strong> {ad.durationDays} يوم</p>
-                    <p className={ad.expiresAt < Date.now() ? "text-red-600" : ""}>
-                      <strong>ينتهي:</strong> {new Date(ad.expiresAt).toLocaleDateString("ar-DZ")}
-                    </p>
-                  </div>
-                )}
-                <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      const newDuration = prompt("أدخل المدة الجديدة بالأيام:", ad.durationDays?.toString() || "30");
-                      if (newDuration) {
-                        updateAdDurationMutation.mutate({ id: ad.id, durationDays: parseInt(newDuration) });
-                      }
-                    }}
-                    className="flex-1"
-                  >
-                    تعديل المدة
-                  </Button>
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    onClick={() => deleteAdMutation.mutate(ad.id)}
-                    disabled={deleteAdMutation.isPending}
-                    className="flex-1"
-                    data-testid={`button-delete-ad-${ad.id}`}
-                  >
-                    <Trash2 className="ml-2 h-4 w-4" />
-                    حذف
-                  </Button>
-                </div>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={() => deleteAdMutation.mutate(ad.id)}
+                  disabled={deleteAdMutation.isPending}
+                  className="w-full"
+                  data-testid={`button-delete-ad-${ad.id}`}
+                >
+                  <Trash2 className="ml-2 h-4 w-4" />
+                  حذف
+                </Button>
               </CardContent>
             </Card>
           ))}

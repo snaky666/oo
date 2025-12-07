@@ -703,217 +703,188 @@ export default function AdminDashboard() {
 
         {/* Stats Charts */}
         {isMobile ? (
-          <div className="mb-8">
-            <Carousel 
-              className="w-full"
-              opts={{
-                align: "center",
-                loop: true,
-              }}
-            >
-              <CarouselContent className="-ml-2">
-                {/* إحصائيات المستخدمين */}
-                <CarouselItem className="pl-2 basis-[85%]">
-                  <Card>
-                    <CardHeader className="pb-2">
-                      <CardTitle className="text-sm flex items-center gap-2">
-                        <Users className="h-4 w-4 text-green-500" />
-                        المستخدمون ({stats.totalUsers})
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      {usersRoleData.length > 0 ? (
-                        <div className="h-[180px]">
-                          <ResponsiveContainer width="100%" height="100%">
-                            <PieChart>
-                              <Pie
-                                data={usersRoleData}
-                                cx="50%"
-                                cy="50%"
-                                innerRadius={30}
-                                outerRadius={55}
-                                paddingAngle={5}
-                                dataKey="value"
-                                onClick={(data) => handleChartSegmentClick("users", data.name)}
-                                style={{ cursor: "pointer" }}
-                              >
-                                {usersRoleData.map((entry, index) => (
-                                  <Cell key={`cell-${index}`} fill={entry.color} style={{ cursor: "pointer" }} />
-                                ))}
-                              </Pie>
-                              <Tooltip />
-                              <Legend
-                                verticalAlign="bottom"
-                                height={30}
-                                wrapperStyle={{ fontSize: '10px' }}
-                                formatter={(value, entry: any) => `${value}: ${entry.payload.value}`}
-                              />
-                            </PieChart>
-                          </ResponsiveContainer>
-                        </div>
-                      ) : (
-                        <p className="text-xs text-muted-foreground text-center py-8">لا توجد بيانات</p>
-                      )}
-                    </CardContent>
-                  </Card>
-                </CarouselItem>
+          <div className="mb-8 -mx-4 px-4">
+            <div className="flex gap-3 overflow-x-auto pb-4 snap-x snap-mandatory scrollbar-hide" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+              {/* إحصائيات المستخدمين */}
+              <Card className="flex-shrink-0 w-[75vw] snap-center">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm flex items-center gap-2">
+                    <Users className="h-4 w-4 text-green-500" />
+                    المستخدمون ({stats.totalUsers})
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {usersRoleData.length > 0 ? (
+                    <div className="h-[180px]">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <PieChart>
+                          <Pie
+                            data={usersRoleData}
+                            cx="50%"
+                            cy="50%"
+                            innerRadius={30}
+                            outerRadius={55}
+                            paddingAngle={5}
+                            dataKey="value"
+                            onClick={(data) => handleChartSegmentClick("users", data.name)}
+                            style={{ cursor: "pointer" }}
+                          >
+                            {usersRoleData.map((entry, index) => (
+                              <Cell key={`cell-${index}`} fill={entry.color} style={{ cursor: "pointer" }} />
+                            ))}
+                          </Pie>
+                          <Tooltip />
+                          <Legend
+                            verticalAlign="bottom"
+                            height={30}
+                            wrapperStyle={{ fontSize: '10px' }}
+                            formatter={(value, entry: any) => `${value}: ${entry.payload.value}`}
+                          />
+                        </PieChart>
+                      </ResponsiveContainer>
+                    </div>
+                  ) : (
+                    <p className="text-xs text-muted-foreground text-center py-8">لا توجد بيانات</p>
+                  )}
+                </CardContent>
+              </Card>
 
-                {/* إحصائيات أصل الأغنام */}
-                <CarouselItem className="pl-2 basis-[85%]">
-                  <Card>
-                    <CardHeader className="pb-2">
-                      <CardTitle className="text-sm flex items-center gap-2">
-                        <Globe className="h-4 w-4 text-purple-500" />
-                        أصل الأغنام
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      {sheepOriginData.length > 0 ? (
-                        <div className="h-[180px]">
-                          <ResponsiveContainer width="100%" height="100%">
-                            <PieChart>
-                              <Pie
-                                data={sheepOriginData}
-                                cx="50%"
-                                cy="50%"
-                                innerRadius={30}
-                                outerRadius={55}
-                                paddingAngle={5}
-                                dataKey="value"
-                                onClick={(data) => handleChartSegmentClick("origin", data.name)}
-                                style={{ cursor: "pointer" }}
-                              >
-                                {sheepOriginData.map((entry, index) => (
-                                  <Cell key={`cell-${index}`} fill={entry.color} style={{ cursor: "pointer" }} />
-                                ))}
-                              </Pie>
-                              <Tooltip />
-                              <Legend
-                                verticalAlign="bottom"
-                                height={30}
-                                wrapperStyle={{ fontSize: '10px' }}
-                                formatter={(value, entry: any) => `${value}: ${entry.payload.value}`}
-                              />
-                            </PieChart>
-                          </ResponsiveContainer>
-                        </div>
-                      ) : (
-                        <p className="text-xs text-muted-foreground text-center py-8">لا توجد بيانات</p>
-                      )}
-                    </CardContent>
-                  </Card>
-                </CarouselItem>
+              {/* إحصائيات أصل الأغنام */}
+              <Card className="flex-shrink-0 w-[75vw] snap-center">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm flex items-center gap-2">
+                    <Globe className="h-4 w-4 text-purple-500" />
+                    أصل الأغنام
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {sheepOriginData.length > 0 ? (
+                    <div className="h-[180px]">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <PieChart>
+                          <Pie
+                            data={sheepOriginData}
+                            cx="50%"
+                            cy="50%"
+                            innerRadius={30}
+                            outerRadius={55}
+                            paddingAngle={5}
+                            dataKey="value"
+                            onClick={(data) => handleChartSegmentClick("origin", data.name)}
+                            style={{ cursor: "pointer" }}
+                          >
+                            {sheepOriginData.map((entry, index) => (
+                              <Cell key={`cell-${index}`} fill={entry.color} style={{ cursor: "pointer" }} />
+                            ))}
+                          </Pie>
+                          <Tooltip />
+                          <Legend
+                            verticalAlign="bottom"
+                            height={30}
+                            wrapperStyle={{ fontSize: '10px' }}
+                            formatter={(value, entry: any) => `${value}: ${entry.payload.value}`}
+                          />
+                        </PieChart>
+                      </ResponsiveContainer>
+                    </div>
+                  ) : (
+                    <p className="text-xs text-muted-foreground text-center py-8">لا توجد بيانات</p>
+                  )}
+                </CardContent>
+              </Card>
 
-                {/* إحصائيات نوع الأغنام (عادية/VIP) */}
-                <CarouselItem className="pl-2 basis-[85%]">
-                  <Card>
-                    <CardHeader className="pb-2">
-                      <CardTitle className="text-sm flex items-center gap-2">
-                        <Crown className="h-4 w-4 text-amber-500" />
-                        نوع الأغنام
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      {sheepTypeData.length > 0 ? (
-                        <div className="h-[180px]">
-                          <ResponsiveContainer width="100%" height="100%">
-                            <PieChart>
-                              <Pie
-                                data={sheepTypeData}
-                                cx="50%"
-                                cy="50%"
-                                innerRadius={30}
-                                outerRadius={55}
-                                paddingAngle={5}
-                                dataKey="value"
-                                onClick={(data) => handleChartSegmentClick("type", data.name)}
-                                style={{ cursor: "pointer" }}
-                              >
-                                {sheepTypeData.map((entry, index) => (
-                                  <Cell key={`cell-${index}`} fill={entry.color} style={{ cursor: "pointer" }} />
-                                ))}
-                              </Pie>
-                              <Tooltip />
-                              <Legend
-                                verticalAlign="bottom"
-                                height={30}
-                                wrapperStyle={{ fontSize: '10px' }}
-                                formatter={(value, entry: any) => `${value}: ${entry.payload.value}`}
-                              />
-                            </PieChart>
-                          </ResponsiveContainer>
-                        </div>
-                      ) : (
-                        <p className="text-xs text-muted-foreground text-center py-8">لا توجد بيانات</p>
-                      )}
-                    </CardContent>
-                  </Card>
-                </CarouselItem>
+              {/* إحصائيات نوع الأغنام (عادية/VIP) */}
+              <Card className="flex-shrink-0 w-[75vw] snap-center">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm flex items-center gap-2">
+                    <Crown className="h-4 w-4 text-amber-500" />
+                    نوع الأغنام
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {sheepTypeData.length > 0 ? (
+                    <div className="h-[180px]">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <PieChart>
+                          <Pie
+                            data={sheepTypeData}
+                            cx="50%"
+                            cy="50%"
+                            innerRadius={30}
+                            outerRadius={55}
+                            paddingAngle={5}
+                            dataKey="value"
+                            onClick={(data) => handleChartSegmentClick("type", data.name)}
+                            style={{ cursor: "pointer" }}
+                          >
+                            {sheepTypeData.map((entry, index) => (
+                              <Cell key={`cell-${index}`} fill={entry.color} style={{ cursor: "pointer" }} />
+                            ))}
+                          </Pie>
+                          <Tooltip />
+                          <Legend
+                            verticalAlign="bottom"
+                            height={30}
+                            wrapperStyle={{ fontSize: '10px' }}
+                            formatter={(value, entry: any) => `${value}: ${entry.payload.value}`}
+                          />
+                        </PieChart>
+                      </ResponsiveContainer>
+                    </div>
+                  ) : (
+                    <p className="text-xs text-muted-foreground text-center py-8">لا توجد بيانات</p>
+                  )}
+                </CardContent>
+              </Card>
 
-                {/* إحصائيات المدفوعات */}
-                <CarouselItem className="pl-2 basis-[85%]">
-                  <Card 
-                    className="cursor-pointer hover:shadow-lg transition-shadow"
-                    onClick={() => handleChartSegmentClick("payments", "all")}
-                  >
-                    <CardHeader className="pb-2">
-                      <CardTitle className="text-sm flex items-center gap-2">
-                        <CreditCard className="h-4 w-4 text-blue-500" />
-                        المدفوعات ({allPayments.length})
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      {paymentsStatusData.length > 0 ? (
-                        <div className="h-[180px]">
-                          <ResponsiveContainer width="100%" height="100%">
-                            <PieChart>
-                              <Pie
-                                data={paymentsStatusData}
-                                cx="50%"
-                                cy="50%"
-                                innerRadius={30}
-                                outerRadius={55}
-                                paddingAngle={5}
-                                dataKey="value"
-                                onClick={(data) => handleChartSegmentClick("payments", data.name)}
-                                style={{ cursor: "pointer" }}
-                              >
-                                {paymentsStatusData.map((entry, index) => (
-                                  <Cell key={`cell-${index}`} fill={entry.color} style={{ cursor: "pointer" }} />
-                                ))}
-                              </Pie>
-                              <Tooltip />
-                              <Legend
-                                verticalAlign="bottom"
-                                height={30}
-                                wrapperStyle={{ fontSize: '10px' }}
-                                formatter={(value, entry: any) => `${value}: ${entry.payload.value}`}
-                              />
-                            </PieChart>
-                          </ResponsiveContainer>
-                        </div>
-                      ) : (
-                        <p className="text-xs text-muted-foreground text-center py-8">لا توجد بيانات</p>
-                      )}
-                    </CardContent>
-                  </Card>
-                </CarouselItem>
-              </CarouselContent>
-              
-              {/* Navigation Arrows */}
-              <div className="flex justify-center items-center gap-4 mt-4">
-                <CarouselPrevious className="relative left-0 translate-x-0 translate-y-0" />
-                <div className="flex gap-2">
-                  {[0, 1, 2, 3].map((index) => (
-                    <div
-                      key={index}
-                      className="h-2.5 w-2.5 rounded-full bg-primary/30"
-                    />
-                  ))}
-                </div>
-                <CarouselNext className="relative right-0 translate-x-0 translate-y-0" />
-              </div>
-            </Carousel>
+              {/* إحصائيات المدفوعات */}
+              <Card 
+                className="flex-shrink-0 w-[75vw] snap-center cursor-pointer"
+                onClick={() => handleChartSegmentClick("payments", "all")}
+              >
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm flex items-center gap-2">
+                    <CreditCard className="h-4 w-4 text-blue-500" />
+                    المدفوعات ({allPayments.length})
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {paymentsStatusData.length > 0 ? (
+                    <div className="h-[180px]">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <PieChart>
+                          <Pie
+                            data={paymentsStatusData}
+                            cx="50%"
+                            cy="50%"
+                            innerRadius={30}
+                            outerRadius={55}
+                            paddingAngle={5}
+                            dataKey="value"
+                            onClick={(data) => handleChartSegmentClick("payments", data.name)}
+                            style={{ cursor: "pointer" }}
+                          >
+                            {paymentsStatusData.map((entry, index) => (
+                              <Cell key={`cell-${index}`} fill={entry.color} style={{ cursor: "pointer" }} />
+                            ))}
+                          </Pie>
+                          <Tooltip />
+                          <Legend
+                            verticalAlign="bottom"
+                            height={30}
+                            wrapperStyle={{ fontSize: '10px' }}
+                            formatter={(value, entry: any) => `${value}: ${entry.payload.value}`}
+                          />
+                        </PieChart>
+                      </ResponsiveContainer>
+                    </div>
+                  ) : (
+                    <p className="text-xs text-muted-foreground text-center py-8">لا توجد بيانات</p>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+            <p className="text-xs text-muted-foreground text-center">اسحب للتنقل بين الإحصائيات</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">

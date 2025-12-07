@@ -337,12 +337,6 @@ export default function AdminDashboard() {
   };
 
   // بيانات الدوائر الإحصائية
-  const sheepStatusData = [
-    { name: "مقبول", value: sheep.filter(s => s.status === "approved").length, color: "#22c55e" },
-    { name: "قيد المراجعة", value: sheep.filter(s => s.status === "pending").length, color: "#eab308" },
-    { name: "مرفوض", value: sheep.filter(s => s.status === "rejected").length, color: "#ef4444" },
-  ].filter(item => item.value > 0);
-
   const ordersStatusData = [
     { name: "معلق", value: orders.filter(o => o.status === "pending").length, color: "#eab308" },
     { name: "مؤكد", value: orders.filter(o => o.status === "confirmed").length, color: "#22c55e" },
@@ -607,48 +601,7 @@ export default function AdminDashboard() {
         </div>
 
         {/* Stats Charts */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6 mb-8">
-          {/* إحصائيات الأغنام */}
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-lg flex items-center gap-2">
-                <Package className="h-5 w-5 text-primary" />
-                الأغنام ({stats.totalSheep})
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {sheepStatusData.length > 0 ? (
-                <div className="h-[200px]">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Pie
-                        data={sheepStatusData}
-                        cx="50%"
-                        cy="50%"
-                        innerRadius={40}
-                        outerRadius={70}
-                        paddingAngle={5}
-                        dataKey="value"
-                      >
-                        {sheepStatusData.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={entry.color} />
-                        ))}
-                      </Pie>
-                      <Tooltip />
-                      <Legend 
-                        verticalAlign="bottom" 
-                        height={36}
-                        formatter={(value, entry: any) => `${value}: ${entry.payload.value}`}
-                      />
-                    </PieChart>
-                  </ResponsiveContainer>
-                </div>
-              ) : (
-                <p className="text-sm text-muted-foreground text-center py-8">لا توجد بيانات</p>
-              )}
-            </CardContent>
-          </Card>
-
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           {/* إحصائيات الطلبات */}
           <Card>
             <CardHeader className="pb-2">

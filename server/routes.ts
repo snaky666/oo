@@ -1274,73 +1274,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       console.log('🔍 Checking nationalId for foreign sheep orders:', nationalId);
 
+      if (!adminDb) {
+        console.error('❌ Firebase Admin DB not initialized');
+        return res.status(500).json({ 
+          success: false, 
+          error: "خطأ في الخادم. يرجى المحاولة لاحقاً." 
+        });
+      }
+
       // Get the start of the current year (Gregorian calendar)
       const currentYear = new Date().getFullYear();
       const startOfYear = new Date(currentYear, 0, 1).getTime(); // January 1st of current year
 
-      // Query Firestore for orders with this nationalId that are foreign sheep orders from this year
-      const body = {
-        structuredQuery: {
-          from: [{ collectionId: "orders" }],
-          where: {
-            compositeFilter: {
-              op: "AND",
-              filters: [
-                {
-                  fieldFilter: {
-                    field: { fieldPath: "nationalId" },
-                    op: "EQUAL",
-                    value: { stringValue: nationalId.trim() }
-                  }
-                },
-                {
-                  fieldFilter: {
-                    field: { fieldPath: "sheepOrigin" },
-                    op: "EQUAL",
-                    value: { stringValue: "foreign" }
-                  }
-                },
-                {
-                  fieldFilter: {
-                    field: { fieldPath: "createdAt" },
-                    op: "GREATER_THAN_OR_EQUAL",
-                    value: { integerValue: startOfYear.toString() }
-                  }
-                }
-              ]
-            }
-          }
-        }
-      };
+      // Query using Firebase Admin SDK for authenticated access
+      const ordersSnapshot = await adminDb.collection('orders')
+        .where('nationalId', '==', nationalId.trim())
+        .where('sheepOrigin', '==', 'foreign')
+        .where('createdAt', '>=', startOfYear)
+        .get();
 
-      const response = await fetch(
-        `https://firestore.googleapis.com/v1/projects/${FIREBASE_PROJECT_ID}/databases/(default)/documents:runQuery`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "X-Goog-Api-Key": FIREBASE_API_KEY || ""
-          },
-          body: JSON.stringify(body)
-        }
-      );
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error("❌ Firestore API error:", response.status, errorText);
-        return res.status(500).json({ 
-          success: false, 
-          error: "فشل في التحقق من رقم بطاقة التعريف" 
-        });
-      }
-
-      const data = await response.json();
-      
-      // Check if any orders were found
-      const existingOrders = Array.isArray(data) 
-        ? data.filter((item: any) => item.document).length 
-        : 0;
-
+      const existingOrders = ordersSnapshot.size;
       console.log(`📋 Found ${existingOrders} existing foreign sheep orders with nationalId ${nationalId} this year`);
 
       if (existingOrders > 0) {

@@ -81,15 +81,54 @@ export default function AdminDashboard() {
   const [foreignSheepImagePreviews, setForeignSheepImagePreviews] = useState<string[]>([]);
   const [addingForeignSheep, setAddingForeignSheep] = useState(false);
 
+  // Active tab state for controlled Tabs
+  const [activeTab, setActiveTab] = useState("pending");
+
   // Filter state for all sheep tab
   const [allSheepOriginFilter, setAllSheepOriginFilter] = useState<"all" | "local" | "foreign">("all");
   const [allSheepVIPFilter, setAllSheepVIPFilter] = useState<"all" | "vip" | "normal">("all");
 
   // Filter state for orders tab
   const [ordersOriginFilter, setOrdersOriginFilter] = useState<"all" | "local" | "foreign">("all");
+  const [ordersStatusFilter, setOrdersStatusFilter] = useState<"all" | "pending" | "confirmed" | "rejected">("all");
 
   // Filter state for users tab
-  const [usersRoleFilter, setUsersRoleFilter] = useState<"all" | "seller" | "buyer">("all");
+  const [usersRoleFilter, setUsersRoleFilter] = useState<"all" | "seller" | "buyer" | "admin">("all");
+
+  // Handle pie chart segment click
+  const handleChartSegmentClick = (chartType: string, segmentName: string) => {
+    switch (chartType) {
+      case "orders":
+        setActiveTab("orders");
+        setOrdersOriginFilter("all"); // Reset origin filter
+        if (segmentName === "معلق") setOrdersStatusFilter("pending");
+        else if (segmentName === "مؤكد") setOrdersStatusFilter("confirmed");
+        else if (segmentName === "مرفوض") setOrdersStatusFilter("rejected");
+        else setOrdersStatusFilter("all");
+        break;
+      case "users":
+        setActiveTab("users");
+        if (segmentName === "مشترين") setUsersRoleFilter("buyer");
+        else if (segmentName === "بائعين") setUsersRoleFilter("seller");
+        else if (segmentName === "مدراء") setUsersRoleFilter("admin");
+        else setUsersRoleFilter("all");
+        break;
+      case "origin":
+        setActiveTab("all");
+        setAllSheepVIPFilter("all"); // Reset VIP filter
+        if (segmentName === "محلية") setAllSheepOriginFilter("local");
+        else if (segmentName === "أجنبية") setAllSheepOriginFilter("foreign");
+        else setAllSheepOriginFilter("all");
+        break;
+      case "type":
+        setActiveTab("all");
+        setAllSheepOriginFilter("all"); // Reset origin filter
+        if (segmentName === "أغنام VIP") setAllSheepVIPFilter("vip");
+        else if (segmentName === "أغنام عادية") setAllSheepVIPFilter("normal");
+        else setAllSheepVIPFilter("all");
+        break;
+    }
+  };
 
   // Helper function to format date as Gregorian (Miladi)
   const formatGregorianDate = (date: any) => {
@@ -321,18 +360,25 @@ export default function AdminDashboard() {
     return (foundSheep?.origin || "local") as "local" | "foreign";
   };
 
-  // Filter orders based on origin for "Orders" tab
+  // Filter orders based on origin and status for "Orders" tab
   const filteredOrders = orders.filter(o => {
-    if (ordersOriginFilter === "all") return true;
-    const orderOrigin = getSheepOrigin(o.sheepId);
-    return orderOrigin === ordersOriginFilter;
+    // Filter by origin
+    if (ordersOriginFilter !== "all") {
+      const orderOrigin = getSheepOrigin(o.sheepId);
+      if (orderOrigin !== ordersOriginFilter) return false;
+    }
+    // Filter by status
+    if (ordersStatusFilter !== "all") {
+      if (o.status !== ordersStatusFilter) return false;
+    }
+    return true;
   });
 
   // Count orders by origin
   const localOrdersCount = orders.filter(o => getSheepOrigin(o.sheepId) === "local").length;
   const foreignOrdersCount = orders.filter(o => getSheepOrigin(o.sheepId) === "foreign").length;
 
-  // Filter users based on role
+  // Filter users based on role (includes admin)
   const filteredUsers = users.filter(u => {
     if (usersRoleFilter === "all") return true;
     return u.role === usersRoleFilter;
@@ -632,9 +678,11 @@ export default function AdminDashboard() {
                         outerRadius={70}
                         paddingAngle={5}
                         dataKey="value"
+                        onClick={(data) => handleChartSegmentClick("orders", data.name)}
+                        style={{ cursor: "pointer" }}
                       >
                         {ordersStatusData.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={entry.color} />
+                          <Cell key={`cell-${index}`} fill={entry.color} style={{ cursor: "pointer" }} />
                         ))}
                       </Pie>
                       <Tooltip />
@@ -673,9 +721,11 @@ export default function AdminDashboard() {
                         outerRadius={70}
                         paddingAngle={5}
                         dataKey="value"
+                        onClick={(data) => handleChartSegmentClick("users", data.name)}
+                        style={{ cursor: "pointer" }}
                       >
                         {usersRoleData.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={entry.color} />
+                          <Cell key={`cell-${index}`} fill={entry.color} style={{ cursor: "pointer" }} />
                         ))}
                       </Pie>
                       <Tooltip />
@@ -714,9 +764,11 @@ export default function AdminDashboard() {
                         outerRadius={70}
                         paddingAngle={5}
                         dataKey="value"
+                        onClick={(data) => handleChartSegmentClick("origin", data.name)}
+                        style={{ cursor: "pointer" }}
                       >
                         {sheepOriginData.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={entry.color} />
+                          <Cell key={`cell-${index}`} fill={entry.color} style={{ cursor: "pointer" }} />
                         ))}
                       </Pie>
                       <Tooltip />
@@ -755,9 +807,11 @@ export default function AdminDashboard() {
                         outerRadius={70}
                         paddingAngle={5}
                         dataKey="value"
+                        onClick={(data) => handleChartSegmentClick("type", data.name)}
+                        style={{ cursor: "pointer" }}
                       >
                         {sheepTypeData.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={entry.color} />
+                          <Cell key={`cell-${index}`} fill={entry.color} style={{ cursor: "pointer" }} />
                         ))}
                       </Pie>
                       <Tooltip />
@@ -777,7 +831,7 @@ export default function AdminDashboard() {
         </div>
 
         {/* Tabs */}
-        <Tabs defaultValue="pending" className="space-y-6">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
           <div className="overflow-x-auto">
             <TabsList className="inline-flex w-max gap-2 p-1">
             <TabsTrigger value="pending" data-testid="tab-pending">
@@ -785,6 +839,10 @@ export default function AdminDashboard() {
             </TabsTrigger>
             <TabsTrigger value="all" data-testid="tab-all">
               جميع الأغنام
+            </TabsTrigger>
+            <TabsTrigger value="orders" data-testid="tab-orders">
+              <ShoppingBag className="h-4 w-4 ml-1" />
+              الطلبات ({orders.length})
             </TabsTrigger>
             <TabsTrigger value="users" data-testid="tab-users">
               المستخدمون
@@ -1245,7 +1303,174 @@ export default function AdminDashboard() {
             </Card>
           </TabsContent>
 
-          
+          {/* Orders Tab */}
+          <TabsContent value="orders">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <ShoppingBag className="h-5 w-5 text-blue-500" />
+                  الطلبات ({orders.length})
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {/* Origin Filter Buttons */}
+                <div className="flex flex-wrap gap-3 mb-4">
+                  <Button
+                    variant={ordersOriginFilter === "all" ? "default" : "outline"}
+                    onClick={() => setOrdersOriginFilter("all")}
+                    size="sm"
+                    data-testid="button-orders-origin-all"
+                  >
+                    الكل ({orders.length})
+                  </Button>
+                  <Button
+                    variant={ordersOriginFilter === "local" ? "default" : "outline"}
+                    onClick={() => setOrdersOriginFilter("local")}
+                    size="sm"
+                    data-testid="button-orders-origin-local"
+                  >
+                    أضاحي محلية ({localOrdersCount})
+                  </Button>
+                  <Button
+                    variant={ordersOriginFilter === "foreign" ? "default" : "outline"}
+                    onClick={() => setOrdersOriginFilter("foreign")}
+                    size="sm"
+                    data-testid="button-orders-origin-foreign"
+                  >
+                    <Globe className="ml-2 h-4 w-4" />
+                    أضاحي أجنبية ({foreignOrdersCount})
+                  </Button>
+                </div>
+
+                {/* Status Filter Buttons */}
+                <div className="flex flex-wrap gap-3 mb-6">
+                  <Button
+                    variant={ordersStatusFilter === "all" ? "default" : "outline"}
+                    onClick={() => setOrdersStatusFilter("all")}
+                    size="sm"
+                    data-testid="button-orders-status-all"
+                  >
+                    جميع الحالات ({orders.length})
+                  </Button>
+                  <Button
+                    variant={ordersStatusFilter === "pending" ? "default" : "outline"}
+                    onClick={() => setOrdersStatusFilter("pending")}
+                    size="sm"
+                    data-testid="button-orders-status-pending"
+                  >
+                    <Clock className="ml-2 h-4 w-4 text-yellow-500" />
+                    معلق ({orders.filter(o => o.status === "pending").length})
+                  </Button>
+                  <Button
+                    variant={ordersStatusFilter === "confirmed" ? "default" : "outline"}
+                    onClick={() => setOrdersStatusFilter("confirmed")}
+                    size="sm"
+                    data-testid="button-orders-status-confirmed"
+                  >
+                    <CheckCircle className="ml-2 h-4 w-4 text-green-500" />
+                    مؤكد ({orders.filter(o => o.status === "confirmed").length})
+                  </Button>
+                  <Button
+                    variant={ordersStatusFilter === "rejected" ? "default" : "outline"}
+                    onClick={() => setOrdersStatusFilter("rejected")}
+                    size="sm"
+                    data-testid="button-orders-status-rejected"
+                  >
+                    <XCircle className="ml-2 h-4 w-4 text-red-500" />
+                    مرفوض ({orders.filter(o => o.status === "rejected").length})
+                  </Button>
+                </div>
+
+                {loading ? (
+                  <p className="text-center text-muted-foreground">جاري التحميل...</p>
+                ) : filteredOrders.length === 0 ? (
+                  <p className="text-center text-muted-foreground py-8">لا توجد طلبات</p>
+                ) : (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>رقم الطلب</TableHead>
+                        <TableHead>المشتري</TableHead>
+                        <TableHead>البائع</TableHead>
+                        <TableHead>السعر</TableHead>
+                        <TableHead>الأصل</TableHead>
+                        <TableHead>الحالة</TableHead>
+                        <TableHead>التاريخ</TableHead>
+                        <TableHead>الإجراءات</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredOrders.map(order => (
+                        <TableRow key={order.id}>
+                          <TableCell className="font-mono text-sm">{order.id.slice(0, 8)}...</TableCell>
+                          <TableCell>{order.buyerEmail || order.buyerId}</TableCell>
+                          <TableCell>{order.sellerEmail || order.sellerId}</TableCell>
+                          <TableCell>{order.price?.toLocaleString()} DA</TableCell>
+                          <TableCell>
+                            {getSheepOrigin(order.sheepId) === "foreign" ? (
+                              <Badge className="bg-purple-500/10 text-purple-700">
+                                <Globe className="h-3 w-3 ml-1" />
+                                أجنبية
+                              </Badge>
+                            ) : (
+                              <Badge className="bg-blue-500/10 text-blue-700">محلية</Badge>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            {order.status === "pending" && (
+                              <Badge className="bg-yellow-500/10 text-yellow-700">
+                                <Clock className="h-3 w-3 ml-1" />
+                                معلق
+                              </Badge>
+                            )}
+                            {order.status === "confirmed" && (
+                              <Badge className="bg-green-500/10 text-green-700">
+                                <CheckCircle className="h-3 w-3 ml-1" />
+                                مؤكد
+                              </Badge>
+                            )}
+                            {order.status === "rejected" && (
+                              <Badge className="bg-red-500/10 text-red-700">
+                                <XCircle className="h-3 w-3 ml-1" />
+                                مرفوض
+                              </Badge>
+                            )}
+                          </TableCell>
+                          <TableCell className="text-sm text-muted-foreground">
+                            {order.createdAt ? formatGregorianDate(order.createdAt) : "-"}
+                          </TableCell>
+                          <TableCell>
+                            {order.status === "pending" && (
+                              <div className="flex gap-2">
+                                <Button
+                                  variant="default"
+                                  size="sm"
+                                  onClick={() => handleOrderReview(order.id, true)}
+                                  disabled={reviewing}
+                                  data-testid={`button-confirm-order-${order.id}`}
+                                >
+                                  <CheckCircle className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  variant="destructive"
+                                  size="sm"
+                                  onClick={() => handleOrderReview(order.id, false)}
+                                  disabled={reviewing}
+                                  data-testid={`button-reject-order-${order.id}`}
+                                >
+                                  <XCircle className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
 
           {/* Users Tab */}
           <TabsContent value="users">

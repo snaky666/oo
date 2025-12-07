@@ -43,8 +43,8 @@ export default function MiniAdSlider({ ads }: MiniAdSliderProps) {
   };
 
   return (
-    <div className="relative w-full overflow-hidden mb-0">
-      <div className="relative w-full h-[140px] md:h-[180px]">
+    <div className="relative w-full mb-0">
+      <div className="relative w-full h-[140px] md:h-[180px] overflow-hidden">
         <div className="absolute inset-0">
           <img
             src={currentAd.image}

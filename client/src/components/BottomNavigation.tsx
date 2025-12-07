@@ -17,20 +17,20 @@ export default function BottomNavigation() {
   const { user, signOut } = useAuth();
   const [location, setLocation] = useLocation();
   const [isGuest, setIsGuest] = useState(false);
-  
+
   // Track guest mode changes reactively
   useEffect(() => {
     const checkGuestMode = () => {
       const guestMode = typeof window !== 'undefined' && localStorage.getItem("guestMode") === "true";
       setIsGuest(guestMode);
     };
-    
+
     // Check on mount and location/user change
     checkGuestMode();
-    
+
     // Listen for storage changes
     window.addEventListener('storage', checkGuestMode);
-    
+
     return () => {
       window.removeEventListener('storage', checkGuestMode);
     };
@@ -56,11 +56,8 @@ export default function BottomNavigation() {
     ];
 
     if (user && (user.role === "buyer" || user.role === "seller")) {
-      navItems.push({
-        icon: <ShoppingBag className="h-5 w-5" />,
-        label: "طلباتي",
-        href: "/orders",
-      });
+      // The "Orders" navigation item is intentionally removed as per user request.
+      // { icon: <ShoppingBag className="h-5 w-5" />, label: "طلباتي", href: "/orders" },
     }
 
     if (user?.role === "seller") {

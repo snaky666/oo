@@ -12,20 +12,20 @@ export default function Header() {
   const [location, setLocation] = useLocation();
   const [profileOpen, setProfileOpen] = useState(false);
   const [isGuest, setIsGuest] = useState(false);
-  
+
   // Track guest mode changes reactively
   useEffect(() => {
     const checkGuestMode = () => {
       const guestMode = typeof window !== 'undefined' && localStorage.getItem("guestMode") === "true";
       setIsGuest(guestMode);
     };
-    
+
     // Check on mount and location change
     checkGuestMode();
-    
+
     // Listen for storage changes (from other tabs or components)
     window.addEventListener('storage', checkGuestMode);
-    
+
     return () => {
       window.removeEventListener('storage', checkGuestMode);
     };
@@ -72,16 +72,6 @@ export default function Header() {
                 الأضاحي
               </Button>
             </Link>
-            {user && (user.role === "buyer" || user.role === "seller") && (
-              <Link href="/orders">
-                <Button
-                  variant={isActive("/orders") ? "default" : "ghost"}
-                  size="sm"
-                >
-                  طلباتي
-                </Button>
-              </Link>
-            )}
             {user?.role === "seller" && (
               <Link href="/seller">
                 <Button
@@ -115,7 +105,7 @@ export default function Header() {
           {/* Right Actions */}
           <div className="flex items-center gap-2 ml-auto">
             <ThemeToggle />
-            
+
             {/* VIP Button */}
             {user && (user.role === "buyer" || user.role === "seller") && (
               <Link href="/vip-packages">
@@ -159,7 +149,7 @@ export default function Header() {
                   <User className="h-5 w-5" />
                   <span className="hidden lg:inline text-sm">الحساب</span>
                 </Button>
-                
+
                 {/* Dropdown Menu */}
                 <div className={cn(
                   "absolute top-full right-0 mt-2 w-40 bg-background border rounded-lg shadow-lg transition-all duration-200 origin-top",
@@ -187,7 +177,7 @@ export default function Header() {
           </div>
         </div>
       </div>
-      
+
       {/* Algeria Flag - Far Left */}
       <img 
         src={algeriaFlag} 

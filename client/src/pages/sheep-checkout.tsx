@@ -133,7 +133,7 @@ export default function SheepCheckout() {
         description: paymentMethod === "card" ? "سيتم التحقق من الوصل خلال ساعات" : paymentMethod === "cash" ? "تسجيل الطلب للدفع عند الاستلام" : "تسجيل الأقساط",
       });
 
-      setLocation("/orders");
+      setLocation("/browse");
     } catch (error) {
       console.error("Payment error:", error);
       toast({

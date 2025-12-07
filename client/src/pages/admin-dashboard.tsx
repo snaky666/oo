@@ -656,50 +656,7 @@ export default function AdminDashboard() {
         </div>
 
         {/* Stats Charts */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          {/* إحصائيات الطلبات */}
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-lg flex items-center gap-2">
-                <ShoppingBag className="h-5 w-5 text-blue-500" />
-                الطلبات ({stats.totalOrders})
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {ordersStatusData.length > 0 ? (
-                <div className="h-[200px]">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Pie
-                        data={ordersStatusData}
-                        cx="50%"
-                        cy="50%"
-                        innerRadius={40}
-                        outerRadius={70}
-                        paddingAngle={5}
-                        dataKey="value"
-                        onClick={(data) => handleChartSegmentClick("orders", data.name)}
-                        style={{ cursor: "pointer" }}
-                      >
-                        {ordersStatusData.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={entry.color} style={{ cursor: "pointer" }} />
-                        ))}
-                      </Pie>
-                      <Tooltip />
-                      <Legend 
-                        verticalAlign="bottom" 
-                        height={36}
-                        formatter={(value, entry: any) => `${value}: ${entry.payload.value}`}
-                      />
-                    </PieChart>
-                  </ResponsiveContainer>
-                </div>
-              ) : (
-                <p className="text-sm text-muted-foreground text-center py-8">لا توجد بيانات</p>
-              )}
-            </CardContent>
-          </Card>
-
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
           {/* إحصائيات المستخدمين */}
           <Card>
             <CardHeader className="pb-2">

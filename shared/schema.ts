@@ -138,7 +138,7 @@ export interface Sheep {
   status: SheepStatus;
   rejectionReason?: string; // سبب الرفض (إن وجد)
   isVIP?: boolean; // New field for VIP status
-  origin?: SheepOrigin; // local = محلية, foreign = أجنبية
+  origin?: SheepOrigin; // local = محلية, foreign = مستوردة
   createdAt: number;
   updatedAt?: number;
 }

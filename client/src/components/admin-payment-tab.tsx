@@ -217,7 +217,7 @@ export default function AdminPaymentTab({ statusFilter = "all" }: AdminPaymentTa
   const vipReceipts = cibReceipts.filter((r) => r.vipUpgrade);
   const sheepReceipts = cibReceipts.filter((r) => !r.vipUpgrade);
   
-  // فصل الأضاحي المحلية والأجنبية
+  // فصل الأضاحي المحلية والمستوردة
   const localSheepPayments = sheepPayments.filter((p) => !p.sheepOrigin || p.sheepOrigin === "local");
   const foreignSheepPayments = sheepPayments.filter((p) => p.sheepOrigin === "foreign");
   const localSheepReceipts = sheepReceipts.filter((r) => !r.sheepOrigin || r.sheepOrigin === "local");
@@ -305,7 +305,7 @@ export default function AdminPaymentTab({ statusFilter = "all" }: AdminPaymentTa
     } else if (paymentFilter === "foreign") {
       receipts = foreignSheepReceipts;
       paymentsList = foreignSheepPayments;
-      title = "مدفوعات الأضاحي الأجنبية";
+      title = "مدفوعات الأضاحي المستوردة";
       icon = "🌍";
     } else {
       receipts = cibReceipts;
@@ -359,7 +359,7 @@ export default function AdminPaymentTab({ statusFilter = "all" }: AdminPaymentTa
           onClick={() => setPaymentFilter("foreign")}
           className={paymentFilter === "foreign" ? "bg-blue-500 hover:bg-blue-600" : ""}
         >
-          🌍 أضاحي أجنبية ({foreignSheepReceipts.length + foreignSheepPayments.length})
+          🌍 أضاحي مستوردة ({foreignSheepReceipts.length + foreignSheepPayments.length})
         </Button>
       </div>
 
@@ -569,7 +569,7 @@ export default function AdminPaymentTab({ statusFilter = "all" }: AdminPaymentTa
                     </div>
                   )}
 
-                  {/* معلومات إضافية للأضاحي الأجنبية */}
+                  {/* معلومات إضافية للأضاحي المستوردة */}
                   {ordersMap[selectedReceipt.orderId].sheepOrigin === "foreign" && (
                     <>
                       {ordersMap[selectedReceipt.orderId].nationalId && (

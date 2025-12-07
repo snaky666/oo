@@ -129,7 +129,7 @@ export default function AdminDashboard() {
         setActiveTab("all");
         setAllSheepVIPFilter("all"); // Reset VIP filter
         if (segmentName === "محلية") setAllSheepOriginFilter("local");
-        else if (segmentName === "أجنبية") setAllSheepOriginFilter("foreign");
+        else if (segmentName === "مستوردة") setAllSheepOriginFilter("foreign");
         else setAllSheepOriginFilter("all");
         break;
       case "type":
@@ -425,7 +425,7 @@ export default function AdminDashboard() {
 
   const sheepOriginData = [
     { name: "محلية", value: sheep.filter(s => (s.origin || "local") === "local").length, color: "#3b82f6" },
-    { name: "أجنبية", value: sheep.filter(s => s.origin === "foreign").length, color: "#8b5cf6" },
+    { name: "مستوردة", value: sheep.filter(s => s.origin === "foreign").length, color: "#8b5cf6" },
   ].filter(item => item.value > 0);
 
   const sheepTypeData = [
@@ -651,7 +651,7 @@ export default function AdminDashboard() {
       console.log("✅ تمت إضافة الأضحية بنجاح");
 
       toast({
-        title: "تم إضافة الأضحية الأجنبية بنجاح",
+        title: "تم إضافة الأضحية المستوردة بنجاح",
         description: "الأضحية متاحة الآن للمشترين",
       });
 
@@ -1095,7 +1095,7 @@ export default function AdminDashboard() {
               </TabsTrigger>
               <TabsTrigger value="foreign" data-testid="tab-foreign">
                 <Globe className="h-4 w-4 ml-1" />
-                أضاحي أجنبية
+                أضاحي مستوردة
               </TabsTrigger>
             </TabsList>
           </div>
@@ -1106,12 +1106,12 @@ export default function AdminDashboard() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Globe className="h-5 w-5 text-blue-500" />
-                  إضافة أضاحي أجنبية
+                  إضافة أضاحي مستوردة
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <p className="text-sm text-muted-foreground mb-6">
-                  الأضاحي الأجنبية تُضاف مباشرة وتظهر للمشترين بدون مراجعة
+                  الأضاحي المستوردة تُضاف مباشرة وتظهر للمشترين بدون مراجعة
                 </p>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -1247,7 +1247,7 @@ export default function AdminDashboard() {
                       ) : (
                         <>
                           <Globe className="ml-2 h-4 w-4" />
-                          إضافة أضحية أجنبية
+                          إضافة أضحية مستوردة
                         </>
                       )}
                     </Button>
@@ -1422,7 +1422,7 @@ export default function AdminDashboard() {
                     data-testid="button-all-sheep-foreign"
                   >
                     <Globe className="ml-2 h-4 w-4" />
-                    أضاحي أجنبية ({sheep.filter(s => s.origin === "foreign").length})
+                    أضاحي مستوردة ({sheep.filter(s => s.origin === "foreign").length})
                   </Button>
                 </div>
 
@@ -1573,7 +1573,7 @@ export default function AdminDashboard() {
                     data-testid="button-orders-origin-foreign"
                   >
                     <Globe className="ml-2 h-4 w-4" />
-                    أضاحي أجنبية ({foreignOrdersCount})
+                    أضاحي مستوردة ({foreignOrdersCount})
                   </Button>
                 </div>
 
@@ -1645,7 +1645,7 @@ export default function AdminDashboard() {
                             {getSheepOrigin(order.sheepId) === "foreign" ? (
                               <Badge className="bg-purple-500/10 text-purple-700">
                                 <Globe className="h-3 w-3 ml-1" />
-                                أجنبية
+                                مستوردة
                               </Badge>
                             ) : (
                               <Badge className="bg-blue-500/10 text-blue-700">محلية</Badge>

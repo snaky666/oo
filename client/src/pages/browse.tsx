@@ -273,7 +273,7 @@ export default function BrowseSheep() {
             className="flex-1 md:flex-none"
             data-testid="button-filter-foreign"
           >
-            أضاحي أجنبية
+            أضاحي مستوردة
           </Button>
         </div>
 

@@ -24,6 +24,7 @@ import OrderDetailPage from "@/pages/order-detail";
 import MyPaymentsPage from "@/pages/my-payments";
 import ContactPage from "@/pages/contact";
 import ForgotPassword from "@/pages/forgot-password";
+import RequestAdPage from "@/pages/request-ad";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import PublicRoute from "@/components/PublicRoute";
 import BottomNavigation from "@/components/BottomNavigation";
@@ -50,6 +51,7 @@ function Router() {
       </Route>
       <Route path="/landing" component={LandingPage} />
       <Route path="/contact" component={ContactPage} />
+      <Route path="/request-ad" component={RequestAdPage} />
       <Route path="/forgot-password">
         <PublicRoute>
           <ForgotPassword />

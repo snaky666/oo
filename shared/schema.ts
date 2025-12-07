@@ -345,6 +345,9 @@ export interface Ad {
   link?: string; // Optional company website link
   description: string; // Ad text/description
   active: boolean; // Whether the ad is active
+  durationDays?: number; // Duration in days
+  expiresAt?: number; // Expiration timestamp
+  adRequestId?: string; // Reference to the original ad request
   createdAt: number;
 }
 
@@ -356,3 +359,38 @@ export const insertAdSchema = z.object({
 });
 
 export type InsertAd = z.infer<typeof insertAdSchema>;
+
+// Ad request status
+export const adRequestStatuses = ["pending", "approved", "rejected"] as const;
+export type AdRequestStatus = typeof adRequestStatuses[number];
+
+// Ad Request schema (Firestore)
+export interface AdRequest {
+  id: string;
+  image: string; // URL from ImgBB
+  companyName: string; // Company name
+  link?: string; // Optional company website link
+  description: string; // Ad text/description
+  contactEmail?: string; // Contact email for the requester
+  contactPhone?: string; // Contact phone for the requester
+  status: AdRequestStatus; // pending, approved, rejected
+  rejectionReason?: string; // Reason for rejection if rejected
+  durationDays?: number; // Duration in days (set by admin when approving)
+  expiresAt?: number; // Expiration timestamp (set when approved)
+  createdAt: number;
+  updatedAt?: number;
+}
+
+export const insertAdRequestSchema = z.object({
+  image: z.string().url("يجب إدخال رابط صورة صحيح"),
+  companyName: z.string().min(2, "اسم الشركة يجب أن يكون على الأقل 2 أحرف").max(50, "اسم الشركة يجب أن لا يزيد عن 50 حرف"),
+  link: z.string().url().optional().or(z.literal("")),
+  description: z.string().min(10, "الوصف يجب أن يكون 10 أحرف على الأقل"),
+  contactEmail: z.string().email("البريد الإلكتروني غير صالح").optional().or(z.literal("")),
+  contactPhone: z.string().min(7, "رقم الهاتف يجب أن يكون 7 أرقام على الأقل").optional().or(z.literal("")),
+}).refine(data => data.contactEmail || data.contactPhone, {
+  message: "يجب إدخال البريد الإلكتروني أو رقم الهاتف على الأقل",
+  path: ["contactEmail"],
+});
+
+export type InsertAdRequest = z.infer<typeof insertAdRequestSchema>;

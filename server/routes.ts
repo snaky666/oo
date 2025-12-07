@@ -1428,6 +1428,337 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Ad Requests endpoints
+  // Submit a new ad request (public)
+  app.post("/api/ad-requests", async (req, res) => {
+    try {
+      const { image, companyName, link, description, contactEmail, contactPhone } = req.body;
+
+      if (!image || !description || !companyName) {
+        return res.status(400).json({ error: "الصورة واسم الشركة والوصف مطلوبين" });
+      }
+
+      if (!contactEmail && !contactPhone) {
+        return res.status(400).json({ error: "يجب إدخال البريد الإلكتروني أو رقم الهاتف" });
+      }
+
+      const requestId = `adreq_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      const requestData = {
+        fields: {
+          image: { stringValue: image },
+          companyName: { stringValue: companyName },
+          link: link ? { stringValue: link } : { stringValue: "" },
+          description: { stringValue: description },
+          contactEmail: contactEmail ? { stringValue: contactEmail } : { stringValue: "" },
+          contactPhone: contactPhone ? { stringValue: contactPhone } : { stringValue: "" },
+          status: { stringValue: "pending" },
+          createdAt: { integerValue: Date.now() }
+        }
+      };
+
+      const response = await fetch(
+        `https://firestore.googleapis.com/v1/projects/${FIREBASE_PROJECT_ID}/databases/(default)/documents/ad_requests/${requestId}`,
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            "X-Goog-Api-Key": FIREBASE_API_KEY || ""
+          },
+          body: JSON.stringify(requestData)
+        }
+      );
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("❌ Firestore error:", response.status, errorText);
+        return res.status(500).json({ error: "فشل في إرسال طلب الإعلان" });
+      }
+
+      console.log("✅ Ad request created:", requestId);
+      res.json({ success: true, id: requestId });
+    } catch (error: any) {
+      console.error("❌ Error creating ad request:", error?.message);
+      res.status(500).json({ error: "فشل في إرسال طلب الإعلان" });
+    }
+  });
+
+  // Get all ad requests (admin only)
+  app.get("/api/ad-requests", async (req, res) => {
+    try {
+      const response = await fetch(
+        `https://firestore.googleapis.com/v1/projects/${FIREBASE_PROJECT_ID}/databases/(default)/documents/ad_requests`,
+        {
+          method: "GET",
+          headers: {
+            "X-Goog-Api-Key": FIREBASE_API_KEY || ""
+          }
+        }
+      );
+
+      if (!response.ok) {
+        return res.json([]);
+      }
+
+      const data = await response.json();
+      const requests = data.documents?.map((doc: any) => ({
+        id: doc.name.split('/').pop(),
+        ...extractDocumentData(doc.fields)
+      })) || [];
+
+      res.json(requests);
+    } catch (error: any) {
+      console.error("❌ Error fetching ad requests:", error?.message);
+      res.json([]);
+    }
+  });
+
+  // Approve ad request (admin only)
+  app.post("/api/ad-requests/:id/approve", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { durationDays } = req.body;
+
+      if (!durationDays || durationDays < 1) {
+        return res.status(400).json({ error: "يجب تحديد مدة الإعلان" });
+      }
+
+      // Get the ad request first
+      const requestResponse = await fetch(
+        `https://firestore.googleapis.com/v1/projects/${FIREBASE_PROJECT_ID}/databases/(default)/documents/ad_requests/${id}`,
+        {
+          method: "GET",
+          headers: {
+            "X-Goog-Api-Key": FIREBASE_API_KEY || ""
+          }
+        }
+      );
+
+      if (!requestResponse.ok) {
+        return res.status(404).json({ error: "طلب الإعلان غير موجود" });
+      }
+
+      const requestDoc = await requestResponse.json();
+      const requestData = extractDocumentData(requestDoc.fields);
+
+      // Calculate expiration date
+      const expiresAt = Date.now() + (durationDays * 24 * 60 * 60 * 1000);
+
+      // Create the ad
+      const adId = `ad_${Date.now()}`;
+      const adData = {
+        fields: {
+          image: { stringValue: requestData.image || "" },
+          companyName: { stringValue: requestData.companyName || "" },
+          link: { stringValue: requestData.link || "" },
+          description: { stringValue: requestData.description || "" },
+          active: { booleanValue: true },
+          durationDays: { integerValue: durationDays },
+          expiresAt: { integerValue: expiresAt },
+          adRequestId: { stringValue: id },
+          createdAt: { integerValue: Date.now() }
+        }
+      };
+
+      const adResponse = await fetch(
+        `https://firestore.googleapis.com/v1/projects/${FIREBASE_PROJECT_ID}/databases/(default)/documents/ads/${adId}`,
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            "X-Goog-Api-Key": FIREBASE_API_KEY || ""
+          },
+          body: JSON.stringify(adData)
+        }
+      );
+
+      if (!adResponse.ok) {
+        return res.status(500).json({ error: "فشل في إنشاء الإعلان" });
+      }
+
+      // Update the ad request status
+      const updateData = {
+        fields: {
+          ...requestDoc.fields,
+          status: { stringValue: "approved" },
+          durationDays: { integerValue: durationDays },
+          expiresAt: { integerValue: expiresAt },
+          updatedAt: { integerValue: Date.now() }
+        }
+      };
+
+      await fetch(
+        `https://firestore.googleapis.com/v1/projects/${FIREBASE_PROJECT_ID}/databases/(default)/documents/ad_requests/${id}`,
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            "X-Goog-Api-Key": FIREBASE_API_KEY || ""
+          },
+          body: JSON.stringify(updateData)
+        }
+      );
+
+      console.log("✅ Ad request approved:", id);
+      res.json({ success: true, adId });
+    } catch (error: any) {
+      console.error("❌ Error approving ad request:", error?.message);
+      res.status(500).json({ error: "فشل في قبول طلب الإعلان" });
+    }
+  });
+
+  // Reject ad request (admin only)
+  app.post("/api/ad-requests/:id/reject", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { rejectionReason } = req.body;
+
+      // Get the ad request first
+      const requestResponse = await fetch(
+        `https://firestore.googleapis.com/v1/projects/${FIREBASE_PROJECT_ID}/databases/(default)/documents/ad_requests/${id}`,
+        {
+          method: "GET",
+          headers: {
+            "X-Goog-Api-Key": FIREBASE_API_KEY || ""
+          }
+        }
+      );
+
+      if (!requestResponse.ok) {
+        return res.status(404).json({ error: "طلب الإعلان غير موجود" });
+      }
+
+      const requestDoc = await requestResponse.json();
+
+      // Update the ad request status
+      const updateData = {
+        fields: {
+          ...requestDoc.fields,
+          status: { stringValue: "rejected" },
+          rejectionReason: { stringValue: rejectionReason || "" },
+          updatedAt: { integerValue: Date.now() }
+        }
+      };
+
+      const updateResponse = await fetch(
+        `https://firestore.googleapis.com/v1/projects/${FIREBASE_PROJECT_ID}/databases/(default)/documents/ad_requests/${id}`,
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            "X-Goog-Api-Key": FIREBASE_API_KEY || ""
+          },
+          body: JSON.stringify(updateData)
+        }
+      );
+
+      if (!updateResponse.ok) {
+        return res.status(500).json({ error: "فشل في رفض طلب الإعلان" });
+      }
+
+      console.log("✅ Ad request rejected:", id);
+      res.json({ success: true });
+    } catch (error: any) {
+      console.error("❌ Error rejecting ad request:", error?.message);
+      res.status(500).json({ error: "فشل في رفض طلب الإعلان" });
+    }
+  });
+
+  // Update ad (admin only)
+  app.patch("/api/ads/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { image, companyName, link, description, durationDays, active } = req.body;
+
+      // Get the existing ad first
+      const adResponse = await fetch(
+        `https://firestore.googleapis.com/v1/projects/${FIREBASE_PROJECT_ID}/databases/(default)/documents/ads/${id}`,
+        {
+          method: "GET",
+          headers: {
+            "X-Goog-Api-Key": FIREBASE_API_KEY || ""
+          }
+        }
+      );
+
+      if (!adResponse.ok) {
+        return res.status(404).json({ error: "الإعلان غير موجود" });
+      }
+
+      const existingAd = await adResponse.json();
+      const existingData = extractDocumentData(existingAd.fields);
+
+      // Calculate new expiration if duration changed
+      let expiresAt = existingData.expiresAt;
+      if (durationDays && durationDays !== existingData.durationDays) {
+        expiresAt = Date.now() + (durationDays * 24 * 60 * 60 * 1000);
+      }
+
+      const updateData = {
+        fields: {
+          image: { stringValue: image || existingData.image },
+          companyName: { stringValue: companyName || existingData.companyName },
+          link: { stringValue: link !== undefined ? link : (existingData.link || "") },
+          description: { stringValue: description || existingData.description },
+          active: { booleanValue: active !== undefined ? active : existingData.active },
+          durationDays: { integerValue: durationDays || existingData.durationDays || 30 },
+          expiresAt: { integerValue: expiresAt || Date.now() + (30 * 24 * 60 * 60 * 1000) },
+          adRequestId: existingData.adRequestId ? { stringValue: existingData.adRequestId } : { stringValue: "" },
+          createdAt: { integerValue: existingData.createdAt || Date.now() },
+          updatedAt: { integerValue: Date.now() }
+        }
+      };
+
+      const updateResponse = await fetch(
+        `https://firestore.googleapis.com/v1/projects/${FIREBASE_PROJECT_ID}/databases/(default)/documents/ads/${id}`,
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            "X-Goog-Api-Key": FIREBASE_API_KEY || ""
+          },
+          body: JSON.stringify(updateData)
+        }
+      );
+
+      if (!updateResponse.ok) {
+        return res.status(500).json({ error: "فشل في تحديث الإعلان" });
+      }
+
+      console.log("✅ Ad updated:", id);
+      res.json({ success: true });
+    } catch (error: any) {
+      console.error("❌ Error updating ad:", error?.message);
+      res.status(500).json({ error: "فشل في تحديث الإعلان" });
+    }
+  });
+
+  // Delete ad request (admin only)
+  app.delete("/api/ad-requests/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+
+      const response = await fetch(
+        `https://firestore.googleapis.com/v1/projects/${FIREBASE_PROJECT_ID}/databases/(default)/documents/ad_requests/${id}`,
+        {
+          method: "DELETE",
+          headers: {
+            "X-Goog-Api-Key": FIREBASE_API_KEY || ""
+          }
+        }
+      );
+
+      if (!response.ok) {
+        return res.status(500).json({ error: "فشل في حذف طلب الإعلان" });
+      }
+
+      console.log("✅ Ad request deleted:", id);
+      res.json({ success: true });
+    } catch (error: any) {
+      console.error("❌ Error deleting ad request:", error?.message);
+      res.status(500).json({ error: "فشل في حذف طلب الإعلان" });
+    }
+  });
+
   const httpServer = createServer(app);
 
   return httpServer;

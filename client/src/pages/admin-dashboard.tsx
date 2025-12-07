@@ -49,6 +49,12 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+} from "@/components/ui/chart";
+import { PieChart, Pie, Cell, ResponsiveContainer, Legend } from "recharts";
 import placeholderImage from "@assets/generated_images/sheep_product_placeholder.png";
 
 export default function AdminDashboard() {
@@ -335,6 +341,30 @@ export default function AdminDashboard() {
     totalUsers: users.length,
   };
 
+  // بيانات الدوائر الإحصائية
+  const sheepStatusData = [
+    { name: "مقبول", value: sheep.filter(s => s.status === "approved").length, color: "#22c55e" },
+    { name: "قيد المراجعة", value: sheep.filter(s => s.status === "pending").length, color: "#eab308" },
+    { name: "مرفوض", value: sheep.filter(s => s.status === "rejected").length, color: "#ef4444" },
+  ].filter(item => item.value > 0);
+
+  const ordersStatusData = [
+    { name: "معلق", value: orders.filter(o => o.status === "pending").length, color: "#eab308" },
+    { name: "مؤكد", value: orders.filter(o => o.status === "confirmed").length, color: "#22c55e" },
+    { name: "مرفوض", value: orders.filter(o => o.status === "rejected").length, color: "#ef4444" },
+  ].filter(item => item.value > 0);
+
+  const usersRoleData = [
+    { name: "مشترين", value: users.filter(u => u.role === "buyer").length, color: "#22c55e" },
+    { name: "بائعين", value: users.filter(u => u.role === "seller").length, color: "#3b82f6" },
+    { name: "مدراء", value: users.filter(u => u.role === "admin").length, color: "#a855f7" },
+  ].filter(item => item.value > 0);
+
+  const sheepOriginData = [
+    { name: "محلية", value: sheep.filter(s => (s.origin || "local") === "local").length, color: "#3b82f6" },
+    { name: "أجنبية", value: sheep.filter(s => s.origin === "foreign").length, color: "#8b5cf6" },
+  ].filter(item => item.value > 0);
+
   const getRoleLabel = (role: string) => {
     switch (role) {
       case "admin": return "مدير";
@@ -576,50 +606,169 @@ export default function AdminDashboard() {
           <p className="text-muted-foreground">إدارة شاملة للمنصة</p>
         </div>
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+        {/* Stats Charts */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          {/* إحصائيات الأغنام */}
           <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center gap-4">
-                <Package className="h-8 w-8 text-primary" />
-                <div>
-                  <p className="text-2xl font-bold">{stats.totalSheep}</p>
-                  <p className="text-sm text-muted-foreground">إجمالي الأغنام</p>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-lg flex items-center gap-2">
+                <Package className="h-5 w-5 text-primary" />
+                الأغنام ({stats.totalSheep})
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {sheepStatusData.length > 0 ? (
+                <div className="h-[200px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={sheepStatusData}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={40}
+                        outerRadius={70}
+                        paddingAngle={5}
+                        dataKey="value"
+                      >
+                        {sheepStatusData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.color} />
+                        ))}
+                      </Pie>
+                      <ChartTooltip content={<ChartTooltipContent />} />
+                      <Legend 
+                        verticalAlign="bottom" 
+                        height={36}
+                        formatter={(value, entry: any) => `${value}: ${entry.payload.value}`}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
                 </div>
-              </div>
+              ) : (
+                <p className="text-sm text-muted-foreground text-center py-8">لا توجد بيانات</p>
+              )}
             </CardContent>
           </Card>
+
+          {/* إحصائيات الطلبات */}
           <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center gap-4">
-                <Clock className="h-8 w-8 text-yellow-500" />
-                <div>
-                  <p className="text-2xl font-bold">{stats.pendingSheep}</p>
-                  <p className="text-sm text-muted-foreground">قيد المراجعة</p>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-lg flex items-center gap-2">
+                <ShoppingBag className="h-5 w-5 text-blue-500" />
+                الطلبات ({stats.totalOrders})
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {ordersStatusData.length > 0 ? (
+                <div className="h-[200px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={ordersStatusData}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={40}
+                        outerRadius={70}
+                        paddingAngle={5}
+                        dataKey="value"
+                      >
+                        {ordersStatusData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.color} />
+                        ))}
+                      </Pie>
+                      <ChartTooltip content={<ChartTooltipContent />} />
+                      <Legend 
+                        verticalAlign="bottom" 
+                        height={36}
+                        formatter={(value, entry: any) => `${value}: ${entry.payload.value}`}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
                 </div>
-              </div>
+              ) : (
+                <p className="text-sm text-muted-foreground text-center py-8">لا توجد بيانات</p>
+              )}
             </CardContent>
           </Card>
+
+          {/* إحصائيات المستخدمين */}
           <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center gap-4">
-                <ShoppingBag className="h-8 w-8 text-blue-500" />
-                <div>
-                  <p className="text-2xl font-bold">{stats.totalOrders}</p>
-                  <p className="text-sm text-muted-foreground">الطلبات</p>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-lg flex items-center gap-2">
+                <Users className="h-5 w-5 text-green-500" />
+                المستخدمون ({stats.totalUsers})
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {usersRoleData.length > 0 ? (
+                <div className="h-[200px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={usersRoleData}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={40}
+                        outerRadius={70}
+                        paddingAngle={5}
+                        dataKey="value"
+                      >
+                        {usersRoleData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.color} />
+                        ))}
+                      </Pie>
+                      <ChartTooltip content={<ChartTooltipContent />} />
+                      <Legend 
+                        verticalAlign="bottom" 
+                        height={36}
+                        formatter={(value, entry: any) => `${value}: ${entry.payload.value}`}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
                 </div>
-              </div>
+              ) : (
+                <p className="text-sm text-muted-foreground text-center py-8">لا توجد بيانات</p>
+              )}
             </CardContent>
           </Card>
+
+          {/* إحصائيات أصل الأغنام */}
           <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center gap-4">
-                <Users className="h-8 w-8 text-green-500" />
-                <div>
-                  <p className="text-2xl font-bold">{stats.totalUsers}</p>
-                  <p className="text-sm text-muted-foreground">المستخدمون</p>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-lg flex items-center gap-2">
+                <Globe className="h-5 w-5 text-purple-500" />
+                أصل الأغنام
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {sheepOriginData.length > 0 ? (
+                <div className="h-[200px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={sheepOriginData}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={40}
+                        outerRadius={70}
+                        paddingAngle={5}
+                        dataKey="value"
+                      >
+                        {sheepOriginData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.color} />
+                        ))}
+                      </Pie>
+                      <ChartTooltip content={<ChartTooltipContent />} />
+                      <Legend 
+                        verticalAlign="bottom" 
+                        height={36}
+                        formatter={(value, entry: any) => `${value}: ${entry.payload.value}`}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
                 </div>
-              </div>
+              ) : (
+                <p className="text-sm text-muted-foreground text-center py-8">لا توجد بيانات</p>
+              )}
             </CardContent>
           </Card>
         </div>

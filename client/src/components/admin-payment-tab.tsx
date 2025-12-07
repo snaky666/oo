@@ -338,7 +338,7 @@ export default function AdminPaymentTab({ statusFilter = "all" }: AdminPaymentTa
 
   return (
     <div className="space-y-6">
-      {/* أزرار الفلترة */}
+      {/* أزرار الفلترة حسب النوع */}
       <div className="flex flex-wrap gap-3">
         <Button
           variant={paymentFilter === "vip" ? "default" : "outline"}
@@ -360,6 +360,44 @@ export default function AdminPaymentTab({ statusFilter = "all" }: AdminPaymentTa
           className={paymentFilter === "foreign" ? "bg-blue-500 hover:bg-blue-600" : ""}
         >
           🌍 أضاحي مستوردة ({foreignSheepReceipts.length + foreignSheepPayments.length})
+        </Button>
+      </div>
+
+      {/* أزرار الفلترة حسب الحالة */}
+      <div className="flex flex-wrap gap-3">
+        <Button
+          variant={statusFilter === "all" ? "default" : "outline"}
+          onClick={() => {}}
+          disabled
+        >
+          الكل ({cibReceipts.length + payments.length})
+        </Button>
+        <Button
+          variant={statusFilter === "pending" ? "default" : "outline"}
+          onClick={() => {}}
+          disabled
+          className={statusFilter === "pending" ? "bg-yellow-500 hover:bg-yellow-600" : ""}
+        >
+          <Clock className="h-4 w-4 ml-2" />
+          في الانتظار ({pendingReceipts.length})
+        </Button>
+        <Button
+          variant={statusFilter === "verified" ? "default" : "outline"}
+          onClick={() => {}}
+          disabled
+          className={statusFilter === "verified" ? "bg-green-500 hover:bg-green-600" : ""}
+        >
+          <CheckCircle className="h-4 w-4 ml-2" />
+          مؤكدة ({verifiedReceipts.length})
+        </Button>
+        <Button
+          variant={statusFilter === "rejected" ? "default" : "outline"}
+          onClick={() => {}}
+          disabled
+          className={statusFilter === "rejected" ? "bg-red-500 hover:bg-red-600" : ""}
+        >
+          <XCircle className="h-4 w-4 ml-2" />
+          ملغاة ({rejectedReceipts.length})
         </Button>
       </div>
 

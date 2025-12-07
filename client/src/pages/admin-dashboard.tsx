@@ -107,6 +107,11 @@ export default function AdminDashboard() {
   // Filter state for payments tab
   const [paymentsStatusFilter, setPaymentsStatusFilter] = useState<"all" | "pending" | "verified" | "rejected">("all");
 
+  // Handle payment status filter changes
+  const handlePaymentStatusFilterChange = (status: "all" | "pending" | "verified" | "rejected") => {
+    setPaymentsStatusFilter(status);
+  };
+
   // Handle pie chart segment click
   const handleChartSegmentClick = (chartType: string, segmentName: string) => {
     switch (chartType) {
@@ -1259,7 +1264,54 @@ export default function AdminDashboard() {
 
           {/* Payments Management Tab */}
           <TabsContent value="payments">
-            <AdminPaymentTab statusFilter={paymentsStatusFilter} />
+            <div className="space-y-4">
+              {/* أزرار فلترة حالة المدفوعات */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">تصفية حسب الحالة</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex flex-wrap gap-3">
+                    <Button
+                      variant={paymentsStatusFilter === "all" ? "default" : "outline"}
+                      onClick={() => handlePaymentStatusFilterChange("all")}
+                      size="sm"
+                    >
+                      الكل
+                    </Button>
+                    <Button
+                      variant={paymentsStatusFilter === "pending" ? "default" : "outline"}
+                      onClick={() => handlePaymentStatusFilterChange("pending")}
+                      size="sm"
+                      className={paymentsStatusFilter === "pending" ? "bg-yellow-500 hover:bg-yellow-600" : ""}
+                    >
+                      <Clock className="h-4 w-4 ml-2" />
+                      في الانتظار
+                    </Button>
+                    <Button
+                      variant={paymentsStatusFilter === "verified" ? "default" : "outline"}
+                      onClick={() => handlePaymentStatusFilterChange("verified")}
+                      size="sm"
+                      className={paymentsStatusFilter === "verified" ? "bg-green-500 hover:bg-green-600" : ""}
+                    >
+                      <CheckCircle className="h-4 w-4 ml-2" />
+                      مؤكدة
+                    </Button>
+                    <Button
+                      variant={paymentsStatusFilter === "rejected" ? "default" : "outline"}
+                      onClick={() => handlePaymentStatusFilterChange("rejected")}
+                      size="sm"
+                      className={paymentsStatusFilter === "rejected" ? "bg-red-500 hover:bg-red-600" : ""}
+                    >
+                      <XCircle className="h-4 w-4 ml-2" />
+                      ملغاة
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <AdminPaymentTab statusFilter={paymentsStatusFilter} />
+            </div>
           </TabsContent>
 
           {/* Ads Management Tab */}

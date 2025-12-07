@@ -15,7 +15,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import AdminPaymentTab from "@/components/admin-payment-tab";
-import AdminAdsPage from "@/pages/admin-ads";
+import AdminAdsPage from "./admin-ads";
+import AdminAdRequestsPage from "./admin-ad-requests";
 import {
   CheckCircle,
   XCircle,
@@ -843,7 +844,7 @@ export default function AdminDashboard() {
               </Card>
 
               {/* إحصائيات المدفوعات */}
-              <Card 
+              <Card
                 className="flex-shrink-0 w-[75vw] snap-center cursor-pointer"
                 onClick={() => handleChartSegmentClick("payments", "all")}
               >
@@ -1023,7 +1024,7 @@ export default function AdminDashboard() {
             </Card>
 
             {/* إحصائيات المدفوعات */}
-            <Card 
+            <Card
               className="cursor-pointer hover:shadow-lg transition-shadow"
               onClick={() => handleChartSegmentClick("payments", "all")}
             >
@@ -1073,37 +1074,19 @@ export default function AdminDashboard() {
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
           <div className="overflow-x-auto">
-            <TabsList className="inline-flex w-max gap-2 p-1">
-              <TabsTrigger value="pending" data-testid="tab-pending">
-                قيد المراجعة ({pendingSheep.length})
-              </TabsTrigger>
-              <TabsTrigger value="all" data-testid="tab-all">
-                جميع الأغنام
-              </TabsTrigger>
-              <TabsTrigger value="orders" data-testid="tab-orders">
-                <ShoppingBag className="h-4 w-4 ml-1" />
-                الطلبات ({orders.length})
-              </TabsTrigger>
-              <TabsTrigger value="users" data-testid="tab-users">
-                المستخدمون
-              </TabsTrigger>
-              <TabsTrigger value="vip" data-testid="tab-vip">
-                إدارة VIP ({users.filter(u => u.vipStatus && u.vipStatus !== "none").length})
-              </TabsTrigger>
-              <TabsTrigger value="payments" data-testid="tab-payments">
-                <CreditCard className="h-4 w-4 ml-1" />
-                الدفع
-              </TabsTrigger>
-              <TabsTrigger value="ads" data-testid="tab-ads">
-                <Megaphone className="h-4 w-4 ml-1" />
-                الإعلانات
-              </TabsTrigger>
-              <TabsTrigger value="foreign" data-testid="tab-foreign">
-                <Globe className="h-4 w-4 ml-1" />
-                أضاحي مستوردة
-              </TabsTrigger>
+            <TabsList className="grid w-full grid-cols-5">
+              <TabsTrigger value="overview">نظرة عامة</TabsTrigger>
+              <TabsTrigger value="sheep">الأضاحي</TabsTrigger>
+              <TabsTrigger value="payments">المدفوعات</TabsTrigger>
+              <TabsTrigger value="ads">الإعلانات</TabsTrigger>
+              <TabsTrigger value="ad-requests">طلبات الإعلانات</TabsTrigger>
             </TabsList>
           </div>
+
+          {/* Ad Requests Tab */}
+          <TabsContent value="ad-requests">
+            <AdminAdRequestsPage />
+          </TabsContent>
 
           {/* Foreign Sheep Management Tab */}
           <TabsContent value="foreign">

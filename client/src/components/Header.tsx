@@ -47,9 +47,9 @@ export default function Header() {
         <div className="flex h-16 md:h-20 items-center justify-between">
           {/* Logo */}
           <Link href="/landing" className="flex items-center gap-2 px-2 py-1 rounded-md">
-            <img 
-              src="/logo.png" 
-              alt="أضحيتي" 
+            <img
+              src="/logo.png"
+              alt="أضحيتي"
               className="h-14 md:h-16 w-auto object-contain animate-sheep-hop hover:animate-spin transition-all duration-300 cursor-pointer drop-shadow-lg hover:drop-shadow-2xl"
             />
           </Link>
@@ -102,14 +102,12 @@ export default function Header() {
                 </Button>
               </Link>
             )}
-            <Link href="/contact">
-              <Button
-                variant={isActive("/contact") ? "default" : "ghost"}
-                size="sm"
-              >
-                تواصل
-              </Button>
-            </Link>
+            <Link href="/contact" className="hover:text-primary transition-colors">
+                اتصل بنا
+              </Link>
+              <Link href="/request-ad" className="hover:text-primary transition-colors">
+                اطلب إعلان
+              </Link>
           </nav>
 
           {/* Right Actions */}
@@ -166,7 +164,7 @@ export default function Header() {
                   profileOpen ? "opacity-100 visible scale-y-100" : "opacity-0 invisible scale-y-95"
                 )}>
                   <Link href="/seller/profile">
-                    <button 
+                    <button
                       onClick={() => setProfileOpen(false)}
                       className="w-full text-right px-4 py-2 hover:bg-accent/10 rounded-t-lg text-sm transition-colors flex items-center justify-end gap-2 border-b"
                     >
@@ -189,9 +187,9 @@ export default function Header() {
       </div>
 
       {/* Algeria Flag - Far Left */}
-      <img 
-        src={algeriaFlag} 
-        alt="علم الجزائر" 
+      <img
+        src={algeriaFlag}
+        alt="علم الجزائر"
         className="absolute left-4 top-1/2 -translate-y-1/2 h-6 md:h-7 w-auto rounded-sm"
       />
     </header>

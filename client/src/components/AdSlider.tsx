@@ -63,9 +63,9 @@ export default function AdSlider({ ads, heroImage }: AdSliderProps) {
   const currentSlide = slides[currentIndex];
 
   return (
-    <div className="relative w-full">
+    <div className="relative w-full overflow-hidden">
       {/* Main Slider Container */}
-      <div className="relative w-full h-[500px] md:h-[600px] lg:h-[700px] overflow-hidden">
+      <div className="relative w-full h-[500px] md:h-[600px] lg:h-[700px]">
         {/* Background Image with Overlay */}
         <div className="absolute inset-0">
           <img

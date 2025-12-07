@@ -703,18 +703,17 @@ export default function AdminDashboard() {
 
         {/* Stats Charts */}
         {isMobile ? (
-          <div className="mb-8">
+          <div className="mb-8 px-4">
             <Carousel 
               className="w-full"
               opts={{
                 align: "start",
                 loop: true,
-                dragFree: false,
               }}
             >
-              <CarouselContent>
+              <CarouselContent className="-ml-2 md:-ml-4">
                 {/* إحصائيات المستخدمين */}
-                <CarouselItem>
+                <CarouselItem className="pl-2 md:pl-4">
                   <Card>
                     <CardHeader className="pb-2">
                       <CardTitle className="text-sm flex items-center gap-2">
@@ -760,7 +759,7 @@ export default function AdminDashboard() {
                 </CarouselItem>
 
                 {/* إحصائيات أصل الأغنام */}
-                <CarouselItem>
+                <CarouselItem className="pl-2 md:pl-4">
                   <Card>
                     <CardHeader className="pb-2">
                       <CardTitle className="text-sm flex items-center gap-2">
@@ -806,7 +805,7 @@ export default function AdminDashboard() {
                 </CarouselItem>
 
                 {/* إحصائيات نوع الأغنام (عادية/VIP) */}
-                <CarouselItem>
+                <CarouselItem className="pl-2 md:pl-4">
                   <Card>
                     <CardHeader className="pb-2">
                       <CardTitle className="text-sm flex items-center gap-2">
@@ -852,7 +851,7 @@ export default function AdminDashboard() {
                 </CarouselItem>
 
                 {/* إحصائيات المدفوعات */}
-                <CarouselItem>
+                <CarouselItem className="pl-2 md:pl-4">
                   <Card 
                     className="cursor-pointer hover:shadow-lg transition-shadow"
                     onClick={() => handleChartSegmentClick("payments", "all")}

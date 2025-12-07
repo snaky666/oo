@@ -83,6 +83,7 @@ export default function AdminDashboard() {
 
   // Filter state for all sheep tab
   const [allSheepOriginFilter, setAllSheepOriginFilter] = useState<"all" | "local" | "foreign">("all");
+  const [allSheepVIPFilter, setAllSheepVIPFilter] = useState<"all" | "vip" | "normal">("all");
 
   // Filter state for orders tab
   const [ordersOriginFilter, setOrdersOriginFilter] = useState<"all" | "local" | "foreign">("all");
@@ -299,11 +300,19 @@ export default function AdminDashboard() {
 
   const pendingSheep = sheep.filter(s => s.status === "pending");
 
-  // Filter sheep based on origin for "All Sheep" tab
+  // Filter sheep based on origin and VIP status for "All Sheep" tab
   const filteredAllSheep = sheep.filter(s => {
-    if (allSheepOriginFilter === "all") return true;
-    const sheepOrigin = s.origin || "local";
-    return sheepOrigin === allSheepOriginFilter;
+    // Filter by origin
+    if (allSheepOriginFilter !== "all") {
+      const sheepOrigin = s.origin || "local";
+      if (sheepOrigin !== allSheepOriginFilter) return false;
+    }
+    // Filter by VIP status
+    if (allSheepVIPFilter !== "all") {
+      if (allSheepVIPFilter === "vip" && !s.isVIP) return false;
+      if (allSheepVIPFilter === "normal" && s.isVIP) return false;
+    }
+    return true;
   });
 
   // Helper function to get sheep origin from sheepId
@@ -1121,6 +1130,35 @@ export default function AdminDashboard() {
                   >
                     <Globe className="ml-2 h-4 w-4" />
                     أضاحي أجنبية ({sheep.filter(s => s.origin === "foreign").length})
+                  </Button>
+                </div>
+
+                {/* VIP Filter Buttons */}
+                <div className="flex gap-3 mb-6">
+                  <Button
+                    variant={allSheepVIPFilter === "all" ? "default" : "outline"}
+                    onClick={() => setAllSheepVIPFilter("all")}
+                    size="sm"
+                    data-testid="button-all-sheep-vip-all"
+                  >
+                    جميع الأنواع ({sheep.length})
+                  </Button>
+                  <Button
+                    variant={allSheepVIPFilter === "vip" ? "default" : "outline"}
+                    onClick={() => setAllSheepVIPFilter("vip")}
+                    size="sm"
+                    data-testid="button-all-sheep-vip-only"
+                  >
+                    <Crown className="ml-2 h-4 w-4 text-amber-500" />
+                    أغنام VIP ({sheep.filter(s => s.isVIP).length})
+                  </Button>
+                  <Button
+                    variant={allSheepVIPFilter === "normal" ? "default" : "outline"}
+                    onClick={() => setAllSheepVIPFilter("normal")}
+                    size="sm"
+                    data-testid="button-all-sheep-normal-only"
+                  >
+                    أغنام عادية ({sheep.filter(s => !s.isVIP).length})
                   </Button>
                 </div>
 

@@ -95,9 +95,6 @@ export default function AdminDashboard() {
   // Filter state for users tab
   const [usersRoleFilter, setUsersRoleFilter] = useState<"all" | "seller" | "buyer" | "admin">("all");
 
-  // Filter state for payments tab
-  const [paymentsStatusFilter, setPaymentsStatusFilter] = useState<"all" | "pending" | "verified" | "rejected">("all");
-
   // Handle pie chart segment click
   const handleChartSegmentClick = (chartType: string, segmentName: string) => {
     switch (chartType) {
@@ -132,10 +129,6 @@ export default function AdminDashboard() {
         break;
       case "payments":
         setActiveTab("payments");
-        if (segmentName === "معلق") setPaymentsStatusFilter("pending");
-        else if (segmentName === "مؤكد") setPaymentsStatusFilter("verified");
-        else if (segmentName === "مرفوض") setPaymentsStatusFilter("rejected");
-        else setPaymentsStatusFilter("all");
         break;
     }
   };
@@ -1064,7 +1057,7 @@ export default function AdminDashboard() {
 
           {/* Payments Management Tab */}
           <TabsContent value="payments">
-            <AdminPaymentTab statusFilter={paymentsStatusFilter} />
+            <AdminPaymentTab />
           </TabsContent>
 
           {/* Ads Management Tab */}

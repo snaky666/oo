@@ -49,12 +49,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  ChartContainer,
-  ChartTooltip,
-  ChartTooltipContent,
-} from "@/components/ui/chart";
-import { PieChart, Pie, Cell, ResponsiveContainer, Legend } from "recharts";
+import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from "recharts";
 import placeholderImage from "@assets/generated_images/sheep_product_placeholder.png";
 
 export default function AdminDashboard() {
@@ -634,7 +629,7 @@ export default function AdminDashboard() {
                           <Cell key={`cell-${index}`} fill={entry.color} />
                         ))}
                       </Pie>
-                      <ChartTooltip content={<ChartTooltipContent />} />
+                      <Tooltip />
                       <Legend 
                         verticalAlign="bottom" 
                         height={36}
@@ -675,7 +670,7 @@ export default function AdminDashboard() {
                           <Cell key={`cell-${index}`} fill={entry.color} />
                         ))}
                       </Pie>
-                      <ChartTooltip content={<ChartTooltipContent />} />
+                      <Tooltip />
                       <Legend 
                         verticalAlign="bottom" 
                         height={36}
@@ -716,7 +711,7 @@ export default function AdminDashboard() {
                           <Cell key={`cell-${index}`} fill={entry.color} />
                         ))}
                       </Pie>
-                      <ChartTooltip content={<ChartTooltipContent />} />
+                      <Tooltip />
                       <Legend 
                         verticalAlign="bottom" 
                         height={36}
@@ -757,7 +752,7 @@ export default function AdminDashboard() {
                           <Cell key={`cell-${index}`} fill={entry.color} />
                         ))}
                       </Pie>
-                      <ChartTooltip content={<ChartTooltipContent />} />
+                      <Tooltip />
                       <Legend 
                         verticalAlign="bottom" 
                         height={36}

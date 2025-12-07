@@ -123,6 +123,25 @@ export default function AdminDashboard() {
       id: doc.id,
       ...doc.data()
     })) as Sheep[];
+    
+    console.log("🐑 عدد الأضاحي المجلوبة:", sheepData.length);
+    
+    // عرض ملخص الأضاحي حسب البائع
+    const sheepBySeller: Record<string, number> = {};
+    const sheepByStatus: Record<string, number> = {};
+    
+    sheepData.forEach(s => {
+      if (s.sellerId) {
+        sheepBySeller[s.sellerId] = (sheepBySeller[s.sellerId] || 0) + 1;
+      }
+      if (s.status) {
+        sheepByStatus[s.status] = (sheepByStatus[s.status] || 0) + 1;
+      }
+    });
+    
+    console.log("🏪 ملخص الأضاحي حسب البائع:", sheepBySeller);
+    console.log("📊 ملخص الأضاحي حسب الحالة:", sheepByStatus);
+    
     setSheep(sheepData);
   };
 
@@ -134,7 +153,23 @@ export default function AdminDashboard() {
         ...doc.data()
       })) as Order[];
       console.log("🔍 عدد الطلبات المجلوبة:", ordersData.length);
-      console.log("📋 الطلبات:", ordersData);
+      
+      // عرض ملخص الطلبات حسب المشتري والبائع
+      const ordersByBuyer: Record<string, number> = {};
+      const ordersBySeller: Record<string, number> = {};
+      
+      ordersData.forEach(order => {
+        if (order.buyerId) {
+          ordersByBuyer[order.buyerId] = (ordersByBuyer[order.buyerId] || 0) + 1;
+        }
+        if (order.sellerId) {
+          ordersBySeller[order.sellerId] = (ordersBySeller[order.sellerId] || 0) + 1;
+        }
+      });
+      
+      console.log("👥 ملخص طلبات المشترين:", ordersByBuyer);
+      console.log("🏪 ملخص طلبات البائعين:", ordersBySeller);
+      
       setOrders(ordersData);
     } catch (error) {
       console.error("❌ خطأ في جلب الطلبات:", error);
@@ -311,12 +346,25 @@ export default function AdminDashboard() {
 
   // حساب إحصائيات المستخدم
   const getUserStats = (userId: string, userRole: string) => {
-    const userOrders = orders.filter(o => 
-      userRole === "buyer" ? o.buyerId === userId : o.sellerId === userId
-    );
+    console.log("📊 حساب إحصائيات المستخدم:", userId, "الدور:", userRole);
+    console.log("📦 إجمالي الطلبات المتاحة:", orders.length);
+    console.log("🐑 إجمالي الأضاحي المتاحة:", sheep.length);
+    
+    const userOrders = orders.filter(o => {
+      if (userRole === "buyer") {
+        return o.buyerId === userId;
+      } else if (userRole === "seller") {
+        return o.sellerId === userId;
+      }
+      return false;
+    });
+    
     const userSheep = sheep.filter(s => s.sellerId === userId);
     
-    return {
+    console.log("👤 طلبات المستخدم:", userOrders.length);
+    console.log("🐏 أضاحي المستخدم:", userSheep.length);
+    
+    const stats = {
       totalOrders: userOrders.length,
       pendingOrders: userOrders.filter(o => o.status === "pending").length,
       completedOrders: userOrders.filter(o => o.status === "confirmed").length,
@@ -325,6 +373,9 @@ export default function AdminDashboard() {
       pendingSheep: userSheep.filter(s => s.status === "pending").length,
       rejectedSheep: userSheep.filter(s => s.status === "rejected").length,
     };
+    
+    console.log("📈 الإحصائيات النهائية:", stats);
+    return stats;
   };
 
   const getRoleBadge = (role: string) => {

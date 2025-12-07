@@ -246,11 +246,16 @@ export default function BrowseSheep() {
     <div className="min-h-screen bg-background flex flex-col">
       <Header />
 
+      {/* Ads Banner - Sticky below header */}
+      {ads.length > 0 && (
+        <div className="sticky top-16 md:top-20 z-30 bg-background border-b">
+          <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8">
+            <MiniAdSlider ads={ads} />
+          </div>
+        </div>
+      )}
+
       <main className="flex-grow max-w-7xl mx-auto px-4 md:px-6 lg:px-8 py-8">
-        {/* Ads Banner */}
-        {ads.length > 0 && (
-          <MiniAdSlider ads={ads} />
-        )}
 
         {/* Origin Filter Buttons */}
         <div className="flex gap-3 mb-6">

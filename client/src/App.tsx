@@ -20,6 +20,7 @@ import VIPPackages from "@/pages/vip-packages";
 import VIPBenefits from "@/pages/vip-benefits";
 import SheepCheckout from "@/pages/sheep-checkout";
 import VIPCheckout from "@/pages/vip-checkout";
+import OrdersPage from "@/pages/orders";
 import OrderDetailPage from "@/pages/order-detail";
 import ContactPage from "@/pages/contact";
 import ForgotPassword from "@/pages/forgot-password";
@@ -107,6 +108,11 @@ function Router() {
       <Route path="/checkout/vip">
         <ProtectedRoute allowedRoles={["buyer", "seller"]}>
           <VIPCheckout />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/orders">
+        <ProtectedRoute allowedRoles={["buyer", "seller"]}>
+          <OrdersPage />
         </ProtectedRoute>
       </Route>
       <Route path="/order/:id" component={OrderDetailPageWrapper} />

@@ -231,10 +231,10 @@ export default function OrderDetailPage({ params }: { params: { id: string } }) 
         <Button
           variant="ghost"
           className="mb-6"
-          onClick={() => setLocation("/browse")}
+          onClick={() => setLocation("/orders")}
         >
           <ArrowLeft className="mr-2 h-4 w-4" />
-          العودة للتصفح
+          العودة للطلبات
         </Button>
 
         {/* عنوان الطلب */}

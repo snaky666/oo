@@ -1444,35 +1444,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const requestId = `adreq_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       const requestData = {
-        fields: {
-          image: { stringValue: image },
-          companyName: { stringValue: companyName },
-          link: link ? { stringValue: link } : { stringValue: "" },
-          description: { stringValue: description },
-          contactEmail: contactEmail ? { stringValue: contactEmail } : { stringValue: "" },
-          contactPhone: contactPhone ? { stringValue: contactPhone } : { stringValue: "" },
-          status: { stringValue: "pending" },
-          createdAt: { integerValue: Date.now() }
-        }
+        image,
+        companyName,
+        link: link || "",
+        description,
+        contactEmail: contactEmail || "",
+        contactPhone: contactPhone || "",
+        status: "pending",
+        createdAt: Date.now()
       };
 
-      const response = await fetch(
-        `https://firestore.googleapis.com/v1/projects/${FIREBASE_PROJECT_ID}/databases/(default)/documents/ad_requests/${requestId}`,
-        {
-          method: "PATCH",
-          headers: {
-            "Content-Type": "application/json",
-            "X-Goog-Api-Key": FIREBASE_API_KEY || ""
-          },
-          body: JSON.stringify(requestData)
-        }
-      );
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error("❌ Firestore error:", response.status, errorText);
-        return res.status(500).json({ error: "فشل في إرسال طلب الإعلان" });
-      }
+      await adminDb.collection('ad_requests').doc(requestId).set(requestData);
 
       console.log("✅ Ad request created:", requestId);
       res.json({ success: true, id: requestId });
@@ -1485,26 +1467,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get all ad requests (admin only)
   app.get("/api/ad-requests", async (req, res) => {
     try {
-      const response = await fetch(
-        `https://firestore.googleapis.com/v1/projects/${FIREBASE_PROJECT_ID}/databases/(default)/documents/ad_requests`,
-        {
-          method: "GET",
-          headers: {
-            "X-Goog-Api-Key": FIREBASE_API_KEY || ""
-          }
-        }
-      );
-
-      if (!response.ok) {
-        return res.json([]);
-      }
-
-      const data = await response.json();
-      const requests = data.documents?.map((doc: any) => ({
-        id: doc.name.split('/').pop(),
-        ...extractDocumentData(doc.fields)
-      })) || [];
-
+      const snapshot = await adminDb.collection('ad_requests').orderBy('createdAt', 'desc').get();
+      const requests = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
       res.json(requests);
     } catch (error: any) {
       console.error("❌ Error fetching ad requests:", error?.message);
@@ -1523,22 +1490,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Get the ad request first
-      const requestResponse = await fetch(
-        `https://firestore.googleapis.com/v1/projects/${FIREBASE_PROJECT_ID}/databases/(default)/documents/ad_requests/${id}`,
-        {
-          method: "GET",
-          headers: {
-            "X-Goog-Api-Key": FIREBASE_API_KEY || ""
-          }
-        }
-      );
-
-      if (!requestResponse.ok) {
+      const requestDoc = await adminDb.collection('ad_requests').doc(id).get();
+      if (!requestDoc.exists) {
         return res.status(404).json({ error: "طلب الإعلان غير موجود" });
       }
 
-      const requestDoc = await requestResponse.json();
-      const requestData = extractDocumentData(requestDoc.fields);
+      const requestData = requestDoc.data() as any;
 
       // Calculate expiration date
       const expiresAt = Date.now() + (durationDays * 24 * 60 * 60 * 1000);
@@ -1546,57 +1503,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Create the ad
       const adId = `ad_${Date.now()}`;
       const adData = {
-        fields: {
-          image: { stringValue: requestData.image || "" },
-          companyName: { stringValue: requestData.companyName || "" },
-          link: { stringValue: requestData.link || "" },
-          description: { stringValue: requestData.description || "" },
-          active: { booleanValue: true },
-          durationDays: { integerValue: durationDays },
-          expiresAt: { integerValue: expiresAt },
-          adRequestId: { stringValue: id },
-          createdAt: { integerValue: Date.now() }
-        }
+        image: requestData.image || "",
+        companyName: requestData.companyName || "",
+        link: requestData.link || "",
+        description: requestData.description || "",
+        active: true,
+        durationDays,
+        expiresAt,
+        adRequestId: id,
+        createdAt: Date.now()
       };
 
-      const adResponse = await fetch(
-        `https://firestore.googleapis.com/v1/projects/${FIREBASE_PROJECT_ID}/databases/(default)/documents/ads/${adId}`,
-        {
-          method: "PATCH",
-          headers: {
-            "Content-Type": "application/json",
-            "X-Goog-Api-Key": FIREBASE_API_KEY || ""
-          },
-          body: JSON.stringify(adData)
-        }
-      );
-
-      if (!adResponse.ok) {
-        return res.status(500).json({ error: "فشل في إنشاء الإعلان" });
-      }
+      await adminDb.collection('ads').doc(adId).set(adData);
 
       // Update the ad request status
-      const updateData = {
-        fields: {
-          ...requestDoc.fields,
-          status: { stringValue: "approved" },
-          durationDays: { integerValue: durationDays },
-          expiresAt: { integerValue: expiresAt },
-          updatedAt: { integerValue: Date.now() }
-        }
-      };
-
-      await fetch(
-        `https://firestore.googleapis.com/v1/projects/${FIREBASE_PROJECT_ID}/databases/(default)/documents/ad_requests/${id}`,
-        {
-          method: "PATCH",
-          headers: {
-            "Content-Type": "application/json",
-            "X-Goog-Api-Key": FIREBASE_API_KEY || ""
-          },
-          body: JSON.stringify(updateData)
-        }
-      );
+      await adminDb.collection('ad_requests').doc(id).update({
+        status: "approved",
+        durationDays,
+        expiresAt,
+        updatedAt: Date.now()
+      });
 
       console.log("✅ Ad request approved:", id);
       res.json({ success: true, adId });
@@ -1613,47 +1539,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { rejectionReason } = req.body;
 
       // Get the ad request first
-      const requestResponse = await fetch(
-        `https://firestore.googleapis.com/v1/projects/${FIREBASE_PROJECT_ID}/databases/(default)/documents/ad_requests/${id}`,
-        {
-          method: "GET",
-          headers: {
-            "X-Goog-Api-Key": FIREBASE_API_KEY || ""
-          }
-        }
-      );
-
-      if (!requestResponse.ok) {
+      const requestDoc = await adminDb.collection('ad_requests').doc(id).get();
+      if (!requestDoc.exists) {
         return res.status(404).json({ error: "طلب الإعلان غير موجود" });
       }
 
-      const requestDoc = await requestResponse.json();
-
       // Update the ad request status
-      const updateData = {
-        fields: {
-          ...requestDoc.fields,
-          status: { stringValue: "rejected" },
-          rejectionReason: { stringValue: rejectionReason || "" },
-          updatedAt: { integerValue: Date.now() }
-        }
-      };
-
-      const updateResponse = await fetch(
-        `https://firestore.googleapis.com/v1/projects/${FIREBASE_PROJECT_ID}/databases/(default)/documents/ad_requests/${id}`,
-        {
-          method: "PATCH",
-          headers: {
-            "Content-Type": "application/json",
-            "X-Goog-Api-Key": FIREBASE_API_KEY || ""
-          },
-          body: JSON.stringify(updateData)
-        }
-      );
-
-      if (!updateResponse.ok) {
-        return res.status(500).json({ error: "فشل في رفض طلب الإعلان" });
-      }
+      await adminDb.collection('ad_requests').doc(id).update({
+        status: "rejected",
+        rejectionReason: rejectionReason || "",
+        updatedAt: Date.now()
+      });
 
       console.log("✅ Ad request rejected:", id);
       res.json({ success: true });
@@ -1736,21 +1632,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.delete("/api/ad-requests/:id", async (req, res) => {
     try {
       const { id } = req.params;
-
-      const response = await fetch(
-        `https://firestore.googleapis.com/v1/projects/${FIREBASE_PROJECT_ID}/databases/(default)/documents/ad_requests/${id}`,
-        {
-          method: "DELETE",
-          headers: {
-            "X-Goog-Api-Key": FIREBASE_API_KEY || ""
-          }
-        }
-      );
-
-      if (!response.ok) {
-        return res.status(500).json({ error: "فشل في حذف طلب الإعلان" });
-      }
-
+      await adminDb.collection('ad_requests').doc(id).delete();
       console.log("✅ Ad request deleted:", id);
       res.json({ success: true });
     } catch (error: any) {

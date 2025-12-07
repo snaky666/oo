@@ -1103,6 +1103,303 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Create order with server-side validation for foreign sheep national ID
+  app.post("/api/orders/create", async (req, res) => {
+    try {
+      const orderData = req.body;
+      
+      if (!orderData || !orderData.buyerId || !orderData.sheepId) {
+        return res.status(400).json({ 
+          success: false, 
+          error: "بيانات الطلب غير صالحة" 
+        });
+      }
+
+      console.log('📝 Creating order...', { 
+        buyerId: orderData.buyerId, 
+        sheepId: orderData.sheepId,
+        sheepOrigin: orderData.sheepOrigin 
+      });
+
+      // If it's a foreign sheep order, validate required documents and nationalId
+      if (orderData.sheepOrigin === "foreign") {
+        // Validate nationalId is present
+        if (!orderData.nationalId || orderData.nationalId.trim().length < 5) {
+          return res.status(400).json({ 
+            success: false, 
+            error: "رقم بطاقة التعريف الوطنية مطلوب للأضاحي المستوردة (5 أحرف على الأقل)" 
+          });
+        }
+
+        // Validate required documents for foreign sheep
+        if (!orderData.paySlipImageUrl) {
+          return res.status(400).json({ 
+            success: false, 
+            error: "صورة كشف الراتب مطلوبة للأضاحي المستوردة" 
+          });
+        }
+
+        if (!orderData.workDocImageUrl) {
+          return res.status(400).json({ 
+            success: false, 
+            error: "صورة وثيقة العمل مطلوبة للأضاحي المستوردة" 
+          });
+        }
+
+        const nationalId = orderData.nationalId.trim();
+
+        console.log('🔍 Checking nationalId for existing foreign sheep orders:', nationalId);
+
+        // Get the start of the current year
+        const currentYear = new Date().getFullYear();
+        const startOfYear = new Date(currentYear, 0, 1).getTime();
+
+        // Query for existing foreign sheep orders with this nationalId this year
+        const checkBody = {
+          structuredQuery: {
+            from: [{ collectionId: "orders" }],
+            where: {
+              compositeFilter: {
+                op: "AND",
+                filters: [
+                  {
+                    fieldFilter: {
+                      field: { fieldPath: "nationalId" },
+                      op: "EQUAL",
+                      value: { stringValue: nationalId }
+                    }
+                  },
+                  {
+                    fieldFilter: {
+                      field: { fieldPath: "sheepOrigin" },
+                      op: "EQUAL",
+                      value: { stringValue: "foreign" }
+                    }
+                  },
+                  {
+                    fieldFilter: {
+                      field: { fieldPath: "createdAt" },
+                      op: "GREATER_THAN_OR_EQUAL",
+                      value: { integerValue: startOfYear.toString() }
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        };
+
+        const checkResponse = await fetch(
+          `https://firestore.googleapis.com/v1/projects/${FIREBASE_PROJECT_ID}/databases/(default)/documents:runQuery`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "X-Goog-Api-Key": FIREBASE_API_KEY || ""
+            },
+            body: JSON.stringify(checkBody)
+          }
+        );
+
+        if (!checkResponse.ok) {
+          console.error("❌ Failed to check nationalId");
+          return res.status(500).json({ 
+            success: false, 
+            error: "فشل في التحقق من رقم بطاقة التعريف" 
+          });
+        }
+
+        const checkData = await checkResponse.json();
+        const existingOrders = Array.isArray(checkData) 
+          ? checkData.filter((item: any) => item.document).length 
+          : 0;
+
+        console.log(`📋 Found ${existingOrders} existing foreign sheep orders with this nationalId`);
+
+        if (existingOrders > 0) {
+          return res.status(400).json({ 
+            success: false, 
+            alreadyUsed: true,
+            error: `رقم بطاقة التعريف الوطنية "${nationalId}" تم استخدامه بالفعل لطلب أضحية مستوردة هذا العام. يمكنك طلب أضحية مستوردة واحدة فقط في السنة.`
+          });
+        }
+      }
+
+      // Create the order in Firestore
+      const orderId = `order_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      
+      // Prepare order fields for Firestore
+      const orderFields: any = {
+        buyerId: { stringValue: orderData.buyerId },
+        buyerEmail: { stringValue: orderData.buyerEmail || "" },
+        buyerName: { stringValue: orderData.buyerName || "" },
+        buyerPhone: { stringValue: orderData.buyerPhone || "" },
+        buyerCity: { stringValue: orderData.buyerCity || "" },
+        buyerAddress: { stringValue: orderData.buyerAddress || "" },
+        sellerId: { stringValue: orderData.sellerId || "" },
+        sellerEmail: { stringValue: orderData.sellerEmail || "" },
+        sheepId: { stringValue: orderData.sheepId || "" },
+        sheepPrice: { integerValue: orderData.sheepPrice?.toString() || "0" },
+        sheepAge: { integerValue: orderData.sheepAge?.toString() || "0" },
+        sheepWeight: { integerValue: orderData.sheepWeight?.toString() || "0" },
+        sheepCity: { stringValue: orderData.sheepCity || "" },
+        sheepOrigin: { stringValue: orderData.sheepOrigin || "local" },
+        totalPrice: { integerValue: orderData.totalPrice?.toString() || "0" },
+        status: { stringValue: "pending" },
+        paymentMethod: { stringValue: "cash" },
+        paymentStatus: { stringValue: "pending" },
+        orderStatus: { stringValue: "new" },
+        createdAt: { integerValue: Date.now().toString() }
+      };
+
+      // Add foreign sheep specific fields
+      if (orderData.sheepOrigin === "foreign") {
+        orderFields.nationalId = { stringValue: orderData.nationalId?.trim() || "" };
+        orderFields.paySlipImageUrl = { stringValue: orderData.paySlipImageUrl || "" };
+        orderFields.workDocImageUrl = { stringValue: orderData.workDocImageUrl || "" };
+      }
+
+      const createResponse = await fetch(
+        `https://firestore.googleapis.com/v1/projects/${FIREBASE_PROJECT_ID}/databases/(default)/documents/orders/${orderId}`,
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            "X-Goog-Api-Key": FIREBASE_API_KEY || ""
+          },
+          body: JSON.stringify({ fields: orderFields })
+        }
+      );
+
+      if (!createResponse.ok) {
+        const errorText = await createResponse.text();
+        console.error("❌ Firestore error:", createResponse.status, errorText);
+        return res.status(500).json({ 
+          success: false, 
+          error: "فشل في إنشاء الطلب" 
+        });
+      }
+
+      console.log('✅ Order created successfully:', orderId);
+      res.json({ 
+        success: true, 
+        orderId: orderId,
+        message: "تم إنشاء الطلب بنجاح"
+      });
+    } catch (error: any) {
+      console.error("❌ Create order error:", error?.message);
+      res.status(500).json({ 
+        success: false, 
+        error: "حدث خطأ أثناء إنشاء الطلب" 
+      });
+    }
+  });
+
+  // Check if nationalId has been used for foreign sheep order this year
+  app.post("/api/orders/check-national-id", async (req, res) => {
+    try {
+      const { nationalId } = req.body;
+      
+      if (!nationalId || nationalId.trim().length < 5) {
+        return res.status(400).json({ 
+          success: false, 
+          error: "رقم بطاقة التعريف الوطنية غير صالح" 
+        });
+      }
+
+      console.log('🔍 Checking nationalId for foreign sheep orders:', nationalId);
+
+      // Get the start of the current year (Gregorian calendar)
+      const currentYear = new Date().getFullYear();
+      const startOfYear = new Date(currentYear, 0, 1).getTime(); // January 1st of current year
+
+      // Query Firestore for orders with this nationalId that are foreign sheep orders from this year
+      const body = {
+        structuredQuery: {
+          from: [{ collectionId: "orders" }],
+          where: {
+            compositeFilter: {
+              op: "AND",
+              filters: [
+                {
+                  fieldFilter: {
+                    field: { fieldPath: "nationalId" },
+                    op: "EQUAL",
+                    value: { stringValue: nationalId.trim() }
+                  }
+                },
+                {
+                  fieldFilter: {
+                    field: { fieldPath: "sheepOrigin" },
+                    op: "EQUAL",
+                    value: { stringValue: "foreign" }
+                  }
+                },
+                {
+                  fieldFilter: {
+                    field: { fieldPath: "createdAt" },
+                    op: "GREATER_THAN_OR_EQUAL",
+                    value: { integerValue: startOfYear.toString() }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      };
+
+      const response = await fetch(
+        `https://firestore.googleapis.com/v1/projects/${FIREBASE_PROJECT_ID}/databases/(default)/documents:runQuery`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-Goog-Api-Key": FIREBASE_API_KEY || ""
+          },
+          body: JSON.stringify(body)
+        }
+      );
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("❌ Firestore API error:", response.status, errorText);
+        return res.status(500).json({ 
+          success: false, 
+          error: "فشل في التحقق من رقم بطاقة التعريف" 
+        });
+      }
+
+      const data = await response.json();
+      
+      // Check if any orders were found
+      const existingOrders = Array.isArray(data) 
+        ? data.filter((item: any) => item.document).length 
+        : 0;
+
+      console.log(`📋 Found ${existingOrders} existing foreign sheep orders with nationalId ${nationalId} this year`);
+
+      if (existingOrders > 0) {
+        return res.json({ 
+          success: false, 
+          alreadyUsed: true,
+          message: `رقم بطاقة التعريف الوطنية "${nationalId}" تم استخدامه بالفعل لطلب أضحية مستوردة هذا العام. يمكنك طلب أضحية مستوردة واحدة فقط في السنة.`
+        });
+      }
+
+      res.json({ 
+        success: true, 
+        alreadyUsed: false,
+        message: "رقم بطاقة التعريف الوطنية متاح للاستخدام"
+      });
+    } catch (error: any) {
+      console.error("❌ Check nationalId error:", error?.message);
+      res.status(500).json({ 
+        success: false, 
+        error: "حدث خطأ أثناء التحقق من رقم بطاقة التعريف" 
+      });
+    }
+  });
+
   // Serve municipalities data with proper JSON content-type
   app.get("/api/municipalities", async (req, res) => {
     try {

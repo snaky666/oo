@@ -5,10 +5,10 @@ import { useRoute } from "wouter";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { doc, getDoc, collection, addDoc } from "firebase/firestore";
+import { doc, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
-import { Sheep, InsertOrder, algeriaCities } from "@shared/schema";
+import { Sheep, algeriaCities } from "@shared/schema";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -207,11 +207,6 @@ export default function SheepDetail() {
         sheepWeight: Number(sheep.weight) || 0,
         sheepCity: sheep.city || "",
         totalPrice: Number(sheep.price) || 0,
-        status: "pending",
-        paymentMethod: "cash",
-        paymentStatus: "pending",
-        orderStatus: "new",
-        createdAt: Date.now(),
       };
 
       // Add foreign sheep specific fields only if it's a foreign sheep
@@ -226,9 +221,38 @@ export default function SheepDetail() {
 
       console.log("📝 Order data to be created:", baseOrderData);
 
-      const orderRef = await addDoc(collection(db, "orders"), baseOrderData);
+      // Use secure server-side API for order creation (validates nationalId for foreign sheep)
+      const response = await fetch("/api/orders/create", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(baseOrderData),
+      });
 
-      localStorage.setItem("pendingOrderId", orderRef.id);
+      const result = await response.json();
+
+      if (!result.success) {
+        // Handle nationalId already used error
+        if (result.alreadyUsed) {
+          toast({
+            title: "تنبيه",
+            description: result.error || "رقم بطاقة التعريف الوطنية تم استخدامه بالفعل لطلب أضحية مستوردة هذا العام",
+            variant: "destructive",
+          });
+        } else {
+          toast({
+            title: "خطأ",
+            description: result.error || "حدث خطأ أثناء إنشاء الطلب",
+            variant: "destructive",
+          });
+        }
+        setCreatingOrder(false);
+        setUploadingFiles(false);
+        return;
+      }
+
+      localStorage.setItem("pendingOrderId", result.orderId);
       localStorage.setItem("pendingOrderAmount", sheep.price.toString());
       localStorage.setItem("pendingOrderSheepOrigin", baseOrderData.sheepOrigin || "local");
 

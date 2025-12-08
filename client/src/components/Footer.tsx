@@ -11,7 +11,7 @@ export default function Footer() {
             <Link href="/request-ad">
               <Button variant="outline" size="sm" data-testid="button-footer-request-ad">
                 <Megaphone className="ml-2 h-4 w-4" />
-                اطلب إعلانك
+                انشر اعلانك
               </Button>
             </Link>
             <Link href="/contact">

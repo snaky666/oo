@@ -753,7 +753,7 @@ export default function AdminDashboard() {
         {/* Page Header */}
         <div className="mb-8">
           <h1 className="text-3xl md:text-4xl font-semibold mb-2">لوحة تحكم الإدارة</h1>
-          <p className="text-muted-foreground">إدارة شاملة للمنصة</p>
+          <p className="text-muted-foreground">إدارة شاملة للتطبيق</p>
         </div>
 
         {/* Stats Charts */}

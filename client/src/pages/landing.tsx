@@ -178,7 +178,7 @@ export default function LandingPage() {
             <div>
               <Badge className="mb-4">لماذا نحن؟</Badge>
               <h2 className="text-3xl md:text-4xl font-semibold mb-6">
-                منصة موثوقة مع إشراف كامل
+                تطبيق موثوق مع إشراف كامل
               </h2>
               <div className="space-y-4">
                 <div className="flex gap-4">
@@ -235,7 +235,7 @@ export default function LandingPage() {
               من نحن؟
             </h2>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              نحن منصة متخصصة في خدمة سوق الأغنام الجزائري
+              نحن تطبيق متخصص في خدمة سوق الأغنام الجزائري
             </p>
           </div>
 
@@ -250,7 +250,7 @@ export default function LandingPage() {
               <div>
                 <h3 className="text-xl font-semibold mb-3">مهمتنا</h3>
                 <p className="text-muted-foreground">
-                  توفير منصة سهلة الاستخدام وآمنة تربط بين البائعين والمشترين مع إشراف إداري شامل لضمان سلامة جميع المعاملات وحقوق الجميع.
+                  توفير تطبيق سهل الاستخدام وآمن يربط بين البائعين والمشترين مع إشراف إداري شامل لضمان سلامة جميع المعاملات وحقوق الجميع.
                 </p>
               </div>
               <div>

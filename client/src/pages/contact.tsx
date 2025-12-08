@@ -119,7 +119,7 @@ export default function ContactPage() {
               <div>
                 <h3 className="font-semibold mb-2">الدعم الفني</h3>
                 <p className="text-muted-foreground">
-                  فريقنا الفني مختص وجاهز للرد على جميع استفساراتك واستشاراتك المتعلقة بالمنصة.
+                  فريقنا الفني مختص وجاهز للرد على جميع استفساراتك واستشاراتك المتعلقة بالتطبيق.
                 </p>
               </div>
               <div className="border-t pt-4">

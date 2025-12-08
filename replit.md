@@ -1,4 +1,4 @@
-# أضحيتي (Odhiyati) - منصة بيع الأغنام
+# أضحيتي (Odhiyati) - تطبيق بيع الأغنام
 
 ## Overview
 أضحيتي (Odhiyati) is a comprehensive Arabic web platform for buying and selling sheep, primarily targeting the Algerian market. It features a complete administrative supervision system and supports three user roles: buyers, sellers, and administrators. The platform aims to streamline livestock exchange with a focus on ease of use, secure transactions, and robust management, including a VIP membership system, integrated orders management, comprehensive payment processing, and an advertising system.

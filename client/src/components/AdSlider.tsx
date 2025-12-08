@@ -33,7 +33,7 @@ export default function AdSlider({ ads, heroImage }: AdSliderProps) {
     {
       id: "hero",
       image: heroImage,
-      description: "منصة موثوقة لبيع وشراء الأغنام",
+      description: "تطبيق موثوق لبيع وشراء الأغنام",
       isHero: true,
     },
     ...ads.map((ad) => ({
@@ -93,7 +93,7 @@ export default function AdSlider({ ads, heroImage }: AdSliderProps) {
               {currentSlide.isHero && (
                 <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
                   <h1 className="text-4xl md:text-6xl lg:text-7xl font-black leading-tight text-right text-white drop-shadow-2xl">
-                    منصة موثوقة<br />
+                    تطبيق موثوق<br />
                     <span className="text-primary">لبيع وشراء</span><br />
                     الأغنام
                   </h1>

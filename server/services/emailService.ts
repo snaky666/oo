@@ -61,7 +61,7 @@ export async function sendVerificationEmail(email: string, code: string) {
         <div style="background-color: white; padding: 40px; border-radius: 10px; max-width: 600px; margin: 0 auto; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
           <div style="text-align: center; margin-bottom: 30px;">
             <h1 style="color: #1a472a; margin: 0 0 10px 0; font-size: 28px;">أهلاً بك في أضحيتي</h1>
-            <p style="color: #666; margin: 0;">منصة شراء وبيع الأضاحي في الجزائر</p>
+            <p style="color: #666; margin: 0;">تطبيق شراء وبيع الأضاحي في الجزائر</p>
           </div>
           
           <p style="color: #333; font-size: 16px; line-height: 1.6; margin-bottom: 20px;">
@@ -69,7 +69,7 @@ export async function sendVerificationEmail(email: string, code: string) {
           </p>
           
           <p style="color: #333; font-size: 16px; line-height: 1.6; margin-bottom: 25px;">
-            شكراً لتسجيلك في منصة <strong>أضحيتي</strong>. استخدم كود التحقق التالي لتفعيل حسابك:
+            شكراً لتسجيلك في تطبيق <strong>أضحيتي</strong>. استخدم كود التحقق التالي لتفعيل حسابك:
           </p>
           
           <div style="text-align: center; margin: 40px 0;">
@@ -107,7 +107,7 @@ export async function sendVerificationEmail(email: string, code: string) {
   const text = `
 مرحباً،
 
-شكراً لتسجيلك في منصة أضحيتي. 
+شكراً لتسجيلك في تطبيق أضحيتي. 
 
 كود التحقق الخاص بك هو: ${code}
 
@@ -143,7 +143,7 @@ export async function sendResetPasswordEmail(email: string, code: string) {
         <div style="background-color: white; padding: 40px; border-radius: 10px; max-width: 600px; margin: 0 auto; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
           <div style="text-align: center; margin-bottom: 30px;">
             <h1 style="color: #1a472a; margin: 0 0 10px 0; font-size: 28px;">إعادة تعيين كلمة المرور</h1>
-            <p style="color: #666; margin: 0;">منصة أضحيتي</p>
+            <p style="color: #666; margin: 0;">تطبيق أضحيتي</p>
           </div>
           
           <p style="color: #333; font-size: 16px; line-height: 1.6; margin-bottom: 20px;">

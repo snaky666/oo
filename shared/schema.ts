@@ -179,6 +179,7 @@ export interface Order {
   nationalId?: string;
   paySlipImageUrl?: string;
   workDocImageUrl?: string;
+  monthlySalary?: number; // الراتب الشهري
 }
 
 export const insertOrderSchema = z.object({
@@ -394,3 +395,11 @@ export const insertAdRequestSchema = z.object({
 });
 
 export type InsertAdRequest = z.infer<typeof insertAdRequestSchema>;
+
+// App Settings schema (Firestore)
+export interface AppSettings {
+  id: string;
+  maxSalaryForForeignSheep: number; // الحد الأقصى للراتب لطلب أضحية أجنبية
+  updatedAt: number;
+  updatedBy?: string;
+}

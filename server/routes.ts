@@ -1146,6 +1146,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
           });
         }
 
+        // Validate monthly salary - ensure it's a positive number
+        const monthlySalary = Number(orderData.monthlySalary);
+        if (!monthlySalary || isNaN(monthlySalary) || monthlySalary <= 0) {
+          return res.status(400).json({ 
+            success: false, 
+            error: "الراتب الشهري مطلوب للأضاحي المستوردة ويجب أن يكون رقماً موجباً" 
+          });
+        }
+
+        // Check max salary limit from settings
+        try {
+          if (!adminDb) {
+            console.error("❌ Firebase Admin DB not initialized for settings check");
+            return res.status(500).json({ 
+              success: false, 
+              error: "خطأ في الخادم. يرجى المحاولة لاحقاً." 
+            });
+          }
+          
+          const settingsDoc = await adminDb.collection('settings').doc('app').get();
+          if (settingsDoc.exists) {
+            const settings = settingsDoc.data();
+            const maxSalary = Number(settings?.maxSalaryForForeignSheep) || 0;
+            if (maxSalary > 0 && monthlySalary > maxSalary) {
+              return res.status(400).json({ 
+                success: false, 
+                error: `راتبك الشهري (${monthlySalary.toLocaleString()} DA) يتجاوز الحد الأقصى المسموح به (${maxSalary.toLocaleString()} DA) لطلب أضحية مستوردة`
+              });
+            }
+          }
+        } catch (settingsError) {
+          console.error("⚠️ Could not check salary settings:", settingsError);
+          return res.status(500).json({ 
+            success: false, 
+            error: "فشل في التحقق من إعدادات الراتب. يرجى المحاولة لاحقاً." 
+          });
+        }
+
         const nationalId = orderData.nationalId.trim();
 
         console.log('🔍 Checking nationalId for existing foreign sheep orders:', nationalId);
@@ -1230,6 +1268,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         orderDataToSave.nationalId = orderData.nationalId?.trim() || "";
         orderDataToSave.paySlipImageUrl = orderData.paySlipImageUrl || "";
         orderDataToSave.workDocImageUrl = orderData.workDocImageUrl || "";
+        orderDataToSave.monthlySalary = Number(orderData.monthlySalary) || 0;
       }
 
       try {
@@ -1311,6 +1350,57 @@ export async function registerRoutes(app: Express): Promise<Server> {
         success: false, 
         error: "حدث خطأ أثناء التحقق من رقم بطاقة التعريف" 
       });
+    }
+  });
+
+  // Settings API endpoints
+  app.get("/api/settings", async (req, res) => {
+    try {
+      if (!adminDb) {
+        return res.status(500).json({ error: "Database not initialized" });
+      }
+
+      const settingsDoc = await adminDb.collection('settings').doc('app').get();
+      
+      if (settingsDoc.exists) {
+        const data = settingsDoc.data();
+        res.json({
+          maxSalaryForForeignSheep: data?.maxSalaryForForeignSheep || 0,
+          updatedAt: data?.updatedAt || null,
+          updatedBy: data?.updatedBy || null,
+        });
+      } else {
+        res.json({
+          maxSalaryForForeignSheep: 0,
+          updatedAt: null,
+          updatedBy: null,
+        });
+      }
+    } catch (error: any) {
+      console.error("❌ Error fetching settings:", error?.message);
+      res.status(500).json({ error: "Failed to fetch settings" });
+    }
+  });
+
+  app.post("/api/settings", async (req, res) => {
+    try {
+      if (!adminDb) {
+        return res.status(500).json({ error: "Database not initialized" });
+      }
+
+      const { maxSalaryForForeignSheep, updatedBy } = req.body;
+
+      await adminDb.collection('settings').doc('app').set({
+        maxSalaryForForeignSheep: maxSalaryForForeignSheep || 0,
+        updatedAt: Date.now(),
+        updatedBy: updatedBy || null,
+      }, { merge: true });
+
+      console.log('✅ Settings updated:', { maxSalaryForForeignSheep, updatedBy });
+      res.json({ success: true });
+    } catch (error: any) {
+      console.error("❌ Error saving settings:", error?.message);
+      res.status(500).json({ error: "Failed to save settings" });
     }
   });
 

@@ -42,6 +42,7 @@ const orderFormSchema = z.object({
   address: z.string().min(5, "العنوان مطلوب"),
   city: z.string().min(1, "المدينة مطلوبة"),
   nationalId: z.string().optional(),
+  monthlySalary: z.number().optional(),
 });
 
 type OrderFormData = z.infer<typeof orderFormSchema>;
@@ -82,6 +83,7 @@ export default function SheepDetail() {
       address: user?.address || "",
       city: user?.city || "",
       nationalId: "",
+      monthlySalary: undefined,
     },
   });
 
@@ -138,6 +140,14 @@ export default function SheepDetail() {
         toast({
           title: "خطأ",
           description: "يجب إدخال رقم بطاقة التعريف الوطنية",
+          variant: "destructive",
+        });
+        return;
+      }
+      if (!formData.monthlySalary || formData.monthlySalary <= 0) {
+        toast({
+          title: "خطأ",
+          description: "يجب إدخال الراتب الشهري",
           variant: "destructive",
         });
         return;
@@ -215,6 +225,7 @@ export default function SheepDetail() {
         baseOrderData.nationalId = formData.nationalId.trim();
         baseOrderData.paySlipImageUrl = paySlipImageUrl;
         baseOrderData.workDocImageUrl = workDocImageUrl;
+        baseOrderData.monthlySalary = formData.monthlySalary;
       } else if (!isForeignSheep) {
         baseOrderData.sheepOrigin = "local";
       }
@@ -552,6 +563,23 @@ export default function SheepDetail() {
                     placeholder="أدخل رقم بطاقة التعريف الوطنية"
                     {...register("nationalId")}
                     data-testid="input-national-id"
+                  />
+                </div>
+
+                {/* Monthly Salary */}
+                <div className="space-y-2">
+                  <Label htmlFor="monthlySalary">
+                    <div className="flex items-center gap-2">
+                      <CreditCard className="h-4 w-4" />
+                      الراتب الشهري (DA) *
+                    </div>
+                  </Label>
+                  <Input
+                    id="monthlySalary"
+                    type="number"
+                    placeholder="أدخل الراتب الشهري"
+                    {...register("monthlySalary", { valueAsNumber: true })}
+                    data-testid="input-monthly-salary"
                   />
                 </div>
 

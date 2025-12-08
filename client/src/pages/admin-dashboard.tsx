@@ -2,7 +2,7 @@ import Header from "@/components/Header";
 import { useState, useEffect } from "react";
 import { collection, query, getDocs, doc, updateDoc, deleteDoc, where, orderBy, addDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import { Sheep, Order, User, VIPStatus, VIP_PACKAGES, algeriaCities } from "@shared/schema";
+import { Sheep, Order, User, VIPStatus, VIP_PACKAGES, algeriaCities, AppSettings } from "@shared/schema";
 import { uploadMultipleImagesToImgBB } from "@/lib/imgbb";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -32,6 +32,7 @@ import {
   Upload,
   Globe,
   X,
+  Settings,
 } from "lucide-react";
 import {
   Carousel,
@@ -92,6 +93,10 @@ export default function AdminDashboard() {
 
   // Active tab state for controlled Tabs
   const [activeTab, setActiveTab] = useState("pending");
+
+  // Settings state
+  const [appSettings, setAppSettings] = useState<Partial<AppSettings>>({ maxSalaryForForeignSheep: 0 });
+  const [savingSettings, setSavingSettings] = useState(false);
 
   // Filter state for all sheep tab
   const [allSheepOriginFilter, setAllSheepOriginFilter] = useState<"all" | "local" | "foreign">("all");
@@ -174,11 +179,56 @@ export default function AdminDashboard() {
         fetchSheep(),
         fetchOrders(),
         fetchUsers(),
+        fetchSettings(),
       ]);
     } catch (error) {
       console.error("Error fetching data:", error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchSettings = async () => {
+    try {
+      const response = await fetch("/api/settings");
+      if (response.ok) {
+        const data = await response.json();
+        setAppSettings(data);
+      }
+    } catch (error) {
+      console.error("Error fetching settings:", error);
+    }
+  };
+
+  const handleSaveSettings = async () => {
+    setSavingSettings(true);
+    try {
+      const response = await fetch("/api/settings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          maxSalaryForForeignSheep: appSettings.maxSalaryForForeignSheep || 0,
+          updatedBy: user?.email,
+        }),
+      });
+
+      if (response.ok) {
+        toast({
+          title: "تم الحفظ",
+          description: "تم حفظ الإعدادات بنجاح",
+        });
+      } else {
+        throw new Error("Failed to save settings");
+      }
+    } catch (error) {
+      console.error("Error saving settings:", error);
+      toast({
+        title: "خطأ",
+        description: "حدث خطأ أثناء حفظ الإعدادات",
+        variant: "destructive",
+      });
+    } finally {
+      setSavingSettings(false);
     }
   };
 
@@ -1102,6 +1152,10 @@ export default function AdminDashboard() {
                 <Globe className="h-4 w-4 ml-1" />
                 أضاحي مستوردة
               </TabsTrigger>
+              <TabsTrigger value="settings" data-testid="tab-settings">
+                <Settings className="h-4 w-4 ml-1" />
+                الإعدادات
+              </TabsTrigger>
             </TabsList>
           </div>
 
@@ -1830,6 +1884,56 @@ export default function AdminDashboard() {
                     ))}
                   </TableBody>
                 </Table>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Settings Tab */}
+          <TabsContent value="settings">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Settings className="h-5 w-5 text-blue-500" />
+                  إعدادات الأضاحي المستوردة
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="maxSalary">
+                      الحد الأقصى للراتب الشهري (DA)
+                    </Label>
+                    <p className="text-sm text-muted-foreground">
+                      عندما يكون راتب الزائر أكبر من هذا المبلغ، لا يمكنه طلب أضحية مستوردة
+                    </p>
+                    <Input
+                      id="maxSalary"
+                      type="number"
+                      placeholder="أدخل الحد الأقصى للراتب"
+                      value={appSettings.maxSalaryForForeignSheep || ""}
+                      onChange={(e) => setAppSettings({
+                        ...appSettings,
+                        maxSalaryForForeignSheep: parseInt(e.target.value) || 0,
+                      })}
+                      data-testid="input-max-salary"
+                    />
+                  </div>
+
+                  <Button
+                    onClick={handleSaveSettings}
+                    disabled={savingSettings}
+                    data-testid="button-save-settings"
+                  >
+                    {savingSettings ? (
+                      <>
+                        <Loader2 className="h-4 w-4 ml-2 animate-spin" />
+                        جاري الحفظ...
+                      </>
+                    ) : (
+                      "حفظ الإعدادات"
+                    )}
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           </TabsContent>

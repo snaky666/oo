@@ -756,153 +756,153 @@ export default function AdminAdsPage() {
       </Dialog>
 
       <Dialog open={editOpen} onOpenChange={setEditOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto relative">
-          <DialogHeader>
+        <DialogContent className="max-w-2xl max-h-[85vh] overflow-hidden flex flex-col">
+          <DialogHeader className="flex-shrink-0">
             <DialogTitle>تعديل الإعلان</DialogTitle>
             <DialogDescription>
               قم بتعديل بيانات الإعلان
             </DialogDescription>
           </DialogHeader>
 
-          <div className="flex justify-center py-2 animate-bounce text-muted-foreground">
-            <ChevronDown className="h-5 w-5" />
-            <span className="text-xs mr-1">مرر للأسفل للمزيد</span>
-          </div>
+          <div className="flex-1 overflow-y-auto px-1 -mx-1">
 
           <Form {...editForm}>
-            <form onSubmit={editForm.handleSubmit(onEditSubmit)} className="space-y-4">
-              <FormField
-                control={editForm.control}
-                name="image"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>صورة الإعلان</FormLabel>
-                    <FormControl>
-                      <div className="space-y-3">
-                        <div className="flex items-center gap-2">
-                          <Input
-                            type="file"
-                            accept="image/*"
-                            onChange={(e) => handleImageChange(e, editForm)}
-                            disabled={uploading}
-                            className="flex-1"
-                            data-testid="input-edit-ad-image"
-                          />
-                          {uploading && <Loader2 className="h-4 w-4 animate-spin" />}
+              <form onSubmit={editForm.handleSubmit(onEditSubmit)} className="space-y-4">
+                <FormField
+                  control={editForm.control}
+                  name="image"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>صورة الإعلان</FormLabel>
+                      <FormControl>
+                        <div className="space-y-3">
+                          <div className="flex items-center gap-2">
+                            <Input
+                              type="file"
+                              accept="image/*"
+                              onChange={(e) => handleImageChange(e, editForm)}
+                              disabled={uploading}
+                              className="flex-1"
+                              data-testid="input-edit-ad-image"
+                            />
+                            {uploading && <Loader2 className="h-4 w-4 animate-spin" />}
+                          </div>
+                          {(imagePreview || field.value) && (
+                            <img
+                              src={imagePreview || field.value}
+                              alt="معاينة"
+                              className="w-full h-40 object-cover rounded-md border"
+                            />
+                          )}
                         </div>
-                        {(imagePreview || field.value) && (
-                          <img
-                            src={imagePreview || field.value}
-                            alt="معاينة"
-                            className="w-full h-40 object-cover rounded-md border"
-                          />
-                        )}
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={editForm.control}
+                  name="companyName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>اسم الشركة</FormLabel>
+                      <FormControl>
+                        <Input {...field} data-testid="input-edit-company-name" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={editForm.control}
+                  name="description"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>وصف الإعلان</FormLabel>
+                      <FormControl>
+                        <Textarea {...field} data-testid="input-edit-description" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={editForm.control}
+                  name="link"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>رابط موقع الشركة</FormLabel>
+                      <FormControl>
+                        <Input {...field} data-testid="input-edit-link" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={editForm.control}
+                  name="durationDays"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>مدة الإعلان (بالأيام)</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          min={1}
+                          {...field}
+                          onChange={(e) => field.onChange(parseInt(e.target.value) || 30)}
+                          data-testid="input-edit-duration"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={editForm.control}
+                  name="active"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
+                      <div className="space-y-0.5">
+                        <FormLabel>حالة الإعلان</FormLabel>
+                        <p className="text-sm text-muted-foreground">
+                          {field.value ? "الإعلان نشط ويظهر للمستخدمين" : "الإعلان متوقف ولا يظهر للمستخدمين"}
+                        </p>
                       </div>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                      <FormControl>
+                        <Button
+                          type="button"
+                          variant={field.value ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => field.onChange(!field.value)}
+                          data-testid="button-toggle-active"
+                        >
+                          {field.value ? "نشط" : "متوقف"}
+                        </Button>
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
 
-              <FormField
-                control={editForm.control}
-                name="companyName"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>اسم الشركة</FormLabel>
-                    <FormControl>
-                      <Input {...field} data-testid="input-edit-company-name" />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={editForm.control}
-                name="description"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>وصف الإعلان</FormLabel>
-                    <FormControl>
-                      <Textarea {...field} data-testid="input-edit-description" />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={editForm.control}
-                name="link"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>رابط موقع الشركة</FormLabel>
-                    <FormControl>
-                      <Input {...field} data-testid="input-edit-link" />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={editForm.control}
-                name="durationDays"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>مدة الإعلان (بالأيام)</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="number"
-                        min={1}
-                        {...field}
-                        onChange={(e) => field.onChange(parseInt(e.target.value) || 30)}
-                        data-testid="input-edit-duration"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={editForm.control}
-                name="active"
-                render={({ field }) => (
-                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
-                    <div className="space-y-0.5">
-                      <FormLabel>حالة الإعلان</FormLabel>
-                      <p className="text-sm text-muted-foreground">
-                        {field.value ? "الإعلان نشط ويظهر للمستخدمين" : "الإعلان متوقف ولا يظهر للمستخدمين"}
-                      </p>
-                    </div>
-                    <FormControl>
-                      <Button
-                        type="button"
-                        variant={field.value ? "default" : "outline"}
-                        size="sm"
-                        onClick={() => field.onChange(!field.value)}
-                        data-testid="button-toggle-active"
-                      >
-                        {field.value ? "نشط" : "متوقف"}
-                      </Button>
-                    </FormControl>
-                  </FormItem>
-                )}
-              />
-
-              <Button
-                type="submit"
-                disabled={updateAdMutation.isPending}
-                className="w-full"
-                data-testid="button-save-edit"
-              >
-                {updateAdMutation.isPending && <Loader2 className="ml-2 h-4 w-4 animate-spin" />}
-                حفظ التعديلات
-              </Button>
-            </form>
-          </Form>
+                <div className="sticky bottom-0 bg-background pt-4 pb-2 border-t mt-4 -mx-1 px-1">
+                  <Button
+                    type="submit"
+                    disabled={updateAdMutation.isPending}
+                    className="w-full"
+                    data-testid="button-save-edit"
+                  >
+                    {updateAdMutation.isPending && <Loader2 className="ml-2 h-4 w-4 animate-spin" />}
+                    حفظ التعديلات
+                  </Button>
+                </div>
+              </form>
+            </Form>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

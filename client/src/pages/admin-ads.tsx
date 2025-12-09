@@ -756,18 +756,17 @@ export default function AdminAdsPage() {
       </Dialog>
 
       <Dialog open={editOpen} onOpenChange={setEditOpen}>
-        <DialogContent className="max-w-2xl max-h-[85vh] overflow-hidden flex flex-col">
-          <DialogHeader className="flex-shrink-0">
+        <DialogContent className="max-w-2xl max-h-[90vh]">
+          <DialogHeader>
             <DialogTitle>تعديل الإعلان</DialogTitle>
             <DialogDescription>
               قم بتعديل بيانات الإعلان
             </DialogDescription>
           </DialogHeader>
 
-          <div className="flex-1 overflow-y-auto px-1 -mx-1">
-
-          <Form {...editForm}>
-              <form onSubmit={editForm.handleSubmit(onEditSubmit)} className="space-y-4">
+          <div className="overflow-y-auto max-h-[calc(90vh-120px)] px-1">
+            <Form {...editForm}>
+              <form onSubmit={editForm.handleSubmit(onEditSubmit)} className="space-y-4 pb-4">
                 <FormField
                   control={editForm.control}
                   name="image"
@@ -822,7 +821,7 @@ export default function AdminAdsPage() {
                     <FormItem>
                       <FormLabel>وصف الإعلان</FormLabel>
                       <FormControl>
-                        <Textarea {...field} data-testid="input-edit-description" />
+                        <Textarea {...field} rows={3} data-testid="input-edit-description" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -889,17 +888,15 @@ export default function AdminAdsPage() {
                   )}
                 />
 
-                <div className="sticky bottom-0 bg-background pt-4 pb-2 border-t mt-4 -mx-1 px-1">
-                  <Button
-                    type="submit"
-                    disabled={updateAdMutation.isPending}
-                    className="w-full"
-                    data-testid="button-save-edit"
-                  >
-                    {updateAdMutation.isPending && <Loader2 className="ml-2 h-4 w-4 animate-spin" />}
-                    حفظ التعديلات
-                  </Button>
-                </div>
+                <Button
+                  type="submit"
+                  disabled={updateAdMutation.isPending}
+                  className="w-full"
+                  data-testid="button-save-edit"
+                >
+                  {updateAdMutation.isPending && <Loader2 className="ml-2 h-4 w-4 animate-spin" />}
+                  حفظ التعديلات
+                </Button>
               </form>
             </Form>
           </div>

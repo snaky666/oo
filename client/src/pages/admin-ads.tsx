@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Trash2, Loader2, Upload, Image as ImageIcon, Check, X, Clock, Edit, Phone, Mail, Calendar, ExternalLink } from "lucide-react";
+import { Plus, Trash2, Loader2, Upload, Image as ImageIcon, Check, X, Clock, Edit, Phone, Mail, Calendar, ExternalLink, ChevronDown } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -756,13 +756,18 @@ export default function AdminAdsPage() {
       </Dialog>
 
       <Dialog open={editOpen} onOpenChange={setEditOpen}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto relative">
           <DialogHeader>
             <DialogTitle>تعديل الإعلان</DialogTitle>
             <DialogDescription>
               قم بتعديل بيانات الإعلان
             </DialogDescription>
           </DialogHeader>
+
+          <div className="flex justify-center py-2 animate-bounce text-muted-foreground">
+            <ChevronDown className="h-5 w-5" />
+            <span className="text-xs mr-1">مرر للأسفل للمزيد</span>
+          </div>
 
           <Form {...editForm}>
             <form onSubmit={editForm.handleSubmit(onEditSubmit)} className="space-y-4">

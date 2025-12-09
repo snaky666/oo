@@ -7,18 +7,6 @@
       "destination": "/api/ads/[id]"
     },
     {
-      "source": "/api/ad-requests/:id/approve",
-      "destination": "/api/ad-requests/[id]/approve"
-    },
-    {
-      "source": "/api/ad-requests/:id/reject",
-      "destination": "/api/ad-requests/[id]/reject"
-    },
-    {
-      "source": "/api/ad-requests/:id",
-      "destination": "/api/ad-requests/[id]"
-    },
-    {
       "source": "/api/(.*)",
       "destination": "/api/$1"
     },

@@ -1,332 +1,599 @@
-
 rules_version = '2';
+
 service cloud.firestore {
   match /databases/{database}/documents {
-    
-    // ================= HELPER FUNCTIONS =================
+
+    // ══════════════════════════════════════════════════════════════════════════════════════
+    // دوال المصادقة (Authentication Functions)
+    // ══════════════════════════════════════════════════════════════════════════════════════
+
+    // التحقق من أن المستخدم مسجل دخول
     function isAuthenticated() {
       return request.auth != null;
     }
-    
+
+    // الحصول على معرف المستخدم الحالي
+    function currentUserId() {
+      return request.auth.uid;
+    }
+
+    // الحصول على بريد المستخدم الحالي
+    function currentUserEmail() {
+      return request.auth.token.email;
+    }
+
+    // التحقق من أن المستخدم هو صاحب المورد
+    function isOwner(userId) {
+      return isAuthenticated() && currentUserId() == userId;
+    }
+
+    // ══════════════════════════════════════════════════════════════════════════════════════
+    // دوال الأدوار (Role Functions)
+    // ══════════════════════════════════════════════════════════════════════════════════════
+
+    // الحصول على بيانات المستخدم من Firestore
+    function getUserData() {
+      return get(/databases/$(database)/documents/users/$(currentUserId())).data;
+    }
+
+    // التحقق من أن المستخدم موجود في قاعدة البيانات
+    function userExists() {
+      return isAuthenticated() && exists(/databases/$(database)/documents/users/$(currentUserId()));
+    }
+
+    // التحقق من دور المستخدم
+    function hasRole(role) {
+      return userExists() && getUserData().role == role;
+    }
+
+    // التحقق من أن المستخدم مدير
     function isAdmin() {
-      return isAuthenticated() && 
-        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+      return hasRole('admin');
     }
-    
+
+    // التحقق من أن المستخدم بائع
     function isSeller() {
-      return isAuthenticated() && 
-        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'seller';
+      return hasRole('seller');
     }
-    
+
+    // التحقق من أن المستخدم مشتري
     function isBuyer() {
-      return isAuthenticated() && 
-        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'buyer';
+      return hasRole('buyer');
     }
-    
-    function isOwner(uid) {
-      return request.auth.uid == uid;
+
+    // التحقق من أن المستخدم بائع أو مشتري (مستخدم عادي)
+    function isRegularUser() {
+      return isSeller() || isBuyer();
     }
-    
-    // Validation functions
+
+    // التحقق من أن المستخدم مدير أو صاحب المورد
+    function isAdminOrOwner(userId) {
+      return isAdmin() || isOwner(userId);
+    }
+
+    // ══════════════════════════════════════════════════════════════════════════════════════
+    // دوال التحقق من البيانات (Validation Functions)
+    // ══════════════════════════════════════════════════════════════════════════════════════
+
+    // التحقق من صحة البريد الإلكتروني
     function isValidEmail(email) {
-      return email.matches('^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$');
+      return email is string && 
+             email.size() >= 5 && 
+             email.size() <= 254 &&
+             email.matches('^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$');
     }
-    
+
+    // التحقق من أن الحقل موجود وغير فارغ
+    function isNonEmptyString(field) {
+      return field is string && field.size() > 0;
+    }
+
+    // التحقق من طول النص
+    function hasMinLength(field, minLen) {
+      return field is string && field.size() >= minLen;
+    }
+
+    function hasMaxLength(field, maxLen) {
+      return field is string && field.size() <= maxLen;
+    }
+
+    function hasLengthBetween(field, minLen, maxLen) {
+      return field is string && field.size() >= minLen && field.size() <= maxLen;
+    }
+
+    // التحقق من أن الرقم موجب
+    function isPositiveNumber(num) {
+      return num is number && num > 0;
+    }
+
+    // التحقق من أن الرقم غير سالب
+    function isNonNegativeNumber(num) {
+      return num is number && num >= 0;
+    }
+
+    // التحقق من أن الرقم عدد صحيح
+    function isPositiveInteger(num) {
+      return num is int && num > 0;
+    }
+
+    // التحقق من نطاق الأرقام
+    function isInRange(num, min, max) {
+      return num is number && num >= min && num <= max;
+    }
+
+    // التحقق من أن القيمة ضمن قائمة محددة
+    function isOneOf(value, allowedValues) {
+      return value in allowedValues;
+    }
+
+    // التحقق من الطابع الزمني
+    function isValidTimestamp(ts) {
+      return ts is int && ts > 0;
+    }
+
+    // التحقق من صحة السعر
     function isValidPrice(price) {
-      return price >= 10000 && price <= 10000000 && price == int(price);
+      return price is number && price >= 10000 && price <= 10000000;
     }
-    
+
+    // التحقق من صحة العمر بالأشهر
     function isValidAge(age) {
-      return age >= 6 && age <= 60 && age == int(age);
+      return age is number && age >= 6 && age <= 60;
     }
-    
+
+    // التحقق من صحة الوزن بالكيلوغرام
     function isValidWeight(weight) {
-      return weight >= 5 && weight <= 200 && weight == int(weight);
+      return weight is number && weight >= 5 && weight <= 200;
     }
 
-    // ================= USERS COLLECTION =================
+    // التحقق من صحة رابط URL
+    function isValidUrl(url) {
+      return url is string && url.matches('^https://.*');
+    }
+
+    // التحقق من صحة رقم الهاتف
+    function isValidPhone(phone) {
+      return phone is string && phone.size() >= 8 && phone.size() <= 15;
+    }
+
+    // التحقق من أن البيانات تحتوي على الحقول المطلوبة فقط
+    function hasOnly(fields) {
+      return request.resource.data.keys().hasOnly(fields);
+    }
+
+    // التحقق من أن البيانات تحتوي على جميع الحقول المطلوبة
+    function hasAll(fields) {
+      return request.resource.data.keys().hasAll(fields);
+    }
+
+    // التحقق من أن الحقل لم يتغير
+    function isUnchanged(field) {
+      return request.resource.data[field] == resource.data[field];
+    }
+
+    // ══════════════════════════════════════════════════════════════════════════════════════
+    // قواعد المستخدمين (Users Collection)
+    // ══════════════════════════════════════════════════════════════════════════════════════
+
     match /users/{userId} {
-      // Read: Anyone can read public profile info
-      allow read: if true;
-      
-      // Create: Owner creates their own profile (registration)
-      allow create: if isOwner(userId) && 
-        isValidEmail(request.resource.data.email) &&
-        request.resource.data.role in ['buyer', 'seller', 'admin'] &&
-        request.resource.data.fullName.size() >= 2;
-      
-      // Update: Owner updates own profile OR admin manages users
-      allow update: if isOwner(userId) || isAdmin();
-      
-      // Delete: Admin only
+      // القراءة: المستخدم يقرأ بياناته أو المدير يقرأ أي مستخدم
+      // البائعون يمكنهم رؤية معلومات عامة للمشترين والعكس (للتواصل في الطلبات)
+      allow read: if isAuthenticated() && (
+        isOwner(userId) || 
+        isAdmin() ||
+        (userExists() && resource.data.role in ['buyer', 'seller'])
+      );
+
+      // الإنشاء: فقط للمستخدم الجديد لإنشاء حسابه الخاص مع التحقق من البيانات
+      allow create: if isOwner(userId)
+        && hasAll(['uid', 'email', 'role', 'createdAt'])
+        && request.resource.data.uid == userId
+        && isValidEmail(request.resource.data.email)
+        && isOneOf(request.resource.data.role, ['buyer', 'seller'])
+        && isValidTimestamp(request.resource.data.createdAt)
+        && (!request.resource.data.keys().hasAny(['fullName']) || hasMinLength(request.resource.data.fullName, 2));
+
+      // التحديث: المستخدم يحدث بياناته (بدون تغيير الدور أو UID أو البريد) أو المدير يحدث أي شيء
+      allow update: if isAdmin()
+        || (isOwner(userId)
+            && isUnchanged('uid')
+            && isUnchanged('email')
+            && (isUnchanged('role') || (resource.data.role == 'buyer' && request.resource.data.role == 'seller')));
+
+      // الحذف: المدير فقط
       allow delete: if isAdmin();
     }
 
-    // ================= SHEEP COLLECTION =================
+    // ══════════════════════════════════════════════════════════════════════════════════════
+    // قواعد الأغنام (Sheep Collection)
+    // ══════════════════════════════════════════════════════════════════════════════════════
+
     match /sheep/{sheepId} {
-      // Read: Approved sheep visible to public, owner sees their own (pending/rejected), admin sees all
-      allow read: if resource.data.status == 'approved' || 
-                     (isAuthenticated() && isOwner(resource.data.sellerId)) ||
-                     isAdmin();
-      
-      // Create: Seller creates listing OR Admin creates foreign sheep
-      allow create: if (isSeller() && 
-                       isOwner(request.resource.data.sellerId) &&
-                       isValidPrice(request.resource.data.price) &&
-                       isValidAge(request.resource.data.age) &&
-                       isValidWeight(request.resource.data.weight) &&
-                       request.resource.data.description.size() >= 20 &&
-                       request.resource.data.images.size() >= 1 &&
-                       request.resource.data.status == 'pending') ||
-                       (isAdmin() &&
-                       isValidPrice(request.resource.data.price) &&
-                       isValidAge(request.resource.data.age) &&
-                       isValidWeight(request.resource.data.weight) &&
-                       request.resource.data.description.size() >= 10 &&
-                       request.resource.data.images.size() >= 1);
-      
-      // Update: Seller updates pending listings, admin can update any
-      allow update: if (isSeller() && isOwner(resource.data.sellerId) && resource.data.status == 'pending') ||
-                       (isAdmin() && request.resource.data.status in ['approved', 'rejected', 'pending']);
-      
-      // Delete: Seller deletes own, admin deletes any
-      allow delete: if (isSeller() && isOwner(resource.data.sellerId)) || isAdmin();
+      // القراءة: المشتري يرى المعتمدة فقط، البائع يرى أغنامه، المدير يرى الكل
+      allow read: if isAdmin()
+        || (isAuthenticated() && resource.data.status == 'approved')
+        || (isAuthenticated() && resource.data.sellerId == currentUserId());
+
+      // الإنشاء: البائع فقط يضيف أغنامه مع التحقق من جميع البيانات
+      allow create: if isSeller()
+        && hasAll(['id', 'sellerId', 'images', 'price', 'age', 'weight', 'city', 'description', 'status', 'createdAt'])
+        && request.resource.data.sellerId == currentUserId()
+        && request.resource.data.status == 'pending'
+        && request.resource.data.images is list
+        && request.resource.data.images.size() >= 1
+        && request.resource.data.images.size() <= 5
+        && isValidPrice(request.resource.data.price)
+        && isValidAge(request.resource.data.age)
+        && isValidWeight(request.resource.data.weight)
+        && isNonEmptyString(request.resource.data.city)
+        && hasMinLength(request.resource.data.description, 20)
+        && isValidTimestamp(request.resource.data.createdAt);
+
+      // التحديث: البائع يحدث أغنامه المعلقة فقط، المدير يحدث الحالة
+      allow update: if isAdmin()
+        || (isSeller()
+            && resource.data.sellerId == currentUserId()
+            && resource.data.status == 'pending'
+            && isUnchanged('sellerId')
+            && request.resource.data.status == 'pending'
+            && (isUnchanged('images') || (request.resource.data.images is list && request.resource.data.images.size() >= 1 && request.resource.data.images.size() <= 5))
+            && (isUnchanged('price') || isValidPrice(request.resource.data.price))
+            && (isUnchanged('age') || isValidAge(request.resource.data.age))
+            && (isUnchanged('weight') || isValidWeight(request.resource.data.weight))
+            && (isUnchanged('city') || isNonEmptyString(request.resource.data.city))
+            && (isUnchanged('description') || hasMinLength(request.resource.data.description, 20)));
+
+      // الحذف: البائع يحذف أغنامه المعلقة أو المدير يحذف أي شيء
+      allow delete: if isAdmin()
+        || (isSeller()
+            && resource.data.sellerId == currentUserId()
+            && resource.data.status == 'pending');
     }
 
-    // ================= ORDERS COLLECTION =================
+    // ══════════════════════════════════════════════════════════════════════════════════════
+    // قواعد الطلبات (Orders Collection)
+    // ══════════════════════════════════════════════════════════════════════════════════════
+
     match /orders/{orderId} {
-      // Read: Buyer reads own, seller reads orders for their sheep, admin reads all, backend can read
-      allow read: if isAdmin() || 
-                     (isAuthenticated() && isOwner(resource.data.buyerId)) ||
-                     (isAuthenticated() && isSeller() && resource.data.sellerId == request.auth.uid) ||
-                     request.auth == null;
-      
-      // Create: Authenticated users or backend server can create orders
-      allow create: if request.auth == null ||
-                       (isAuthenticated() && 
-                       request.auth.uid == request.resource.data.buyerId &&
-                       request.resource.data.status == 'pending' &&
-                       request.resource.data.totalPrice >= 1000 &&
-                       request.resource.data.totalPrice <= 10000000 &&
-                       request.resource.data.buyerName is string &&
-                       request.resource.data.buyerName.size() >= 2 &&
-                       request.resource.data.buyerPhone is string &&
-                       request.resource.data.buyerPhone.size() >= 7 &&
-                       request.resource.data.buyerCity is string &&
-                       request.resource.data.buyerAddress is string &&
-                       request.resource.data.paymentMethod in ['cash', 'card', 'installment'] &&
-                       request.resource.data.paymentStatus in ['pending', 'completed', 'verified', 'rejected'] &&
-                       request.resource.data.orderStatus in ['new', 'confirmed', 'ready', 'delivered', 'cancelled'] &&
-                       // Allow foreign sheep optional fields
-                       (!request.resource.data.keys().hasAny(['nationalId', 'paySlipImageUrl', 'workDocImageUrl']) ||
-                        (request.resource.data.sheepOrigin == 'foreign' &&
-                         request.resource.data.nationalId is string &&
-                         request.resource.data.nationalId.size() >= 5 &&
-                         request.resource.data.paySlipImageUrl is string &&
-                         request.resource.data.paySlipImageUrl.matches('^https://.*') &&
-                         request.resource.data.workDocImageUrl is string &&
-                         request.resource.data.workDocImageUrl.matches('^https://.*'))));
-      
-      // Update: Buyer can update own pending orders, Admin can update any, backend can update
-      allow update: if request.auth == null ||
-                       (isAuthenticated() && isOwner(resource.data.buyerId) && resource.data.status == 'pending') ||
-                       (isAdmin());
-      
-      // Delete: Admin only
+      // القراءة: المشتري يرى طلباته، البائع يرى طلبات أغنامه، المدير يرى الكل
+      allow read: if isAdmin()
+        || (isAuthenticated() && resource.data.buyerId == currentUserId())
+        || (isAuthenticated() && resource.data.sellerId == currentUserId());
+
+      // الإنشاء: المشتري فقط ينشئ طلب مع التحقق من جميع البيانات
+      allow create: if isBuyer()
+        && hasAll(['id', 'buyerId', 'sellerId', 'sheepId', 'totalPrice', 'status', 'createdAt'])
+        && request.resource.data.buyerId == currentUserId()
+        && request.resource.data.buyerId != request.resource.data.sellerId
+        && request.resource.data.status == 'pending'
+        && isValidPrice(request.resource.data.totalPrice)
+        && isNonEmptyString(request.resource.data.sheepId)
+        && isNonEmptyString(request.resource.data.sellerId)
+        && isValidTimestamp(request.resource.data.createdAt)
+        && (!request.resource.data.keys().hasAny(['buyerName']) || hasMinLength(request.resource.data.buyerName, 2))
+        && (!request.resource.data.keys().hasAny(['buyerPhone']) || isValidPhone(request.resource.data.buyerPhone))
+        && (!request.resource.data.keys().hasAny(['buyerCity']) || isNonEmptyString(request.resource.data.buyerCity))
+        && (!request.resource.data.keys().hasAny(['nationalId', 'paySlipImageUrl', 'workDocImageUrl']) ||
+            (request.resource.data.sheepOrigin == 'foreign' &&
+             hasMinLength(request.resource.data.nationalId, 5) &&
+             isValidUrl(request.resource.data.paySlipImageUrl) &&
+             isValidUrl(request.resource.data.workDocImageUrl)));
+
+      // التحديث: المشتري يحدث طلباته المعلقة (معلومات الاتصال فقط)، المدير يحدث أي شيء
+      allow update: if isAdmin()
+        || (isAuthenticated()
+            && (resource.data.buyerId == currentUserId() || resource.data.sellerId == currentUserId())
+            && isUnchanged('buyerId')
+            && isUnchanged('sellerId')
+            && isUnchanged('sheepId')
+            && isUnchanged('totalPrice')
+            && isUnchanged('createdAt'));
+
+      // الحذف: المدير فقط
       allow delete: if isAdmin();
     }
 
-    // ================= PAYMENTS COLLECTION =================
+    // ══════════════════════════════════════════════════════════════════════════════════════
+    // قواعد المدفوعات (Payments Collection)
+    // ══════════════════════════════════════════════════════════════════════════════════════
+
     match /payments/{paymentId} {
-      // Read: User reads own, admin reads all
-      allow read: if (isAuthenticated() && isOwner(resource.data.userId)) || isAdmin();
-      
-      // Create: Authenticated user creates for their order
-      allow create: if isAuthenticated() && 
-                       isOwner(request.resource.data.userId) &&
-                       isValidPrice(request.resource.data.amount) &&
-                       request.resource.data.method in ['card', 'cash', 'installment'];
-      
-      // Update: Admin only (verification)
-      allow update: if isAdmin() && request.resource.data.status in ['pending', 'completed', 'failed', 'cancelled'];
-      
-      // Delete: Admin only
+      // القراءة: المستخدم يرى مدفوعاته، المدير يرى الكل
+      allow read: if isAdminOrOwner(resource.data.userId);
+
+      // الإنشاء: المستخدم ينشئ مدفوعاته فقط مع التحقق
+      allow create: if isAuthenticated()
+        && hasAll(['id', 'userId', 'userEmail', 'amount', 'method', 'status', 'createdAt'])
+        && request.resource.data.userId == currentUserId()
+        && request.resource.data.status == 'pending'
+        && isValidPrice(request.resource.data.amount)
+        && isOneOf(request.resource.data.method, ['cib', 'stripe', 'cash', 'card', 'installment'])
+        && isValidTimestamp(request.resource.data.createdAt);
+
+      // التحديث: المدير فقط يحدث حالة الدفع
+      allow update: if isAdmin()
+        && isOneOf(request.resource.data.status, ['pending', 'completed', 'verified', 'failed', 'cancelled', 'rejected']);
+
+      // الحذف: المدير فقط
       allow delete: if isAdmin();
     }
 
-    // ================= CIB RECEIPTS COLLECTION =================
+    // ══════════════════════════════════════════════════════════════════════════════════════
+    // قواعد إيصالات CIB (CIB Receipts Collection)
+    // ══════════════════════════════════════════════════════════════════════════════════════
+
     match /cibReceipts/{receiptId} {
-      // Read: User reads own, admin reads all
-      allow read: if (isAuthenticated() && isOwner(resource.data.userId)) || isAdmin();
-      
-      // Create: User uploads own receipt
-      allow create: if isAuthenticated() && 
-                       isOwner(request.resource.data.userId) &&
-                       request.resource.data.receiptImageUrl.matches('^https://.*');
-      
-      // Update: Admin only (verification)
-      allow update: if isAdmin() && request.resource.data.status in ['pending', 'verified', 'rejected'];
-      
-      // Delete: Admin only
+      // القراءة: المستخدم يرى إيصالاته، المدير يرى الكل
+      allow read: if isAdminOrOwner(resource.data.userId);
+
+      // الإنشاء: المستخدم ينشئ إيصاله فقط مع التحقق
+      allow create: if isAuthenticated()
+        && hasAll(['id', 'paymentId', 'userId', 'userEmail', 'receiptImageUrl', 'amount', 'status', 'createdAt'])
+        && request.resource.data.userId == currentUserId()
+        && request.resource.data.status == 'pending'
+        && isValidUrl(request.resource.data.receiptImageUrl)
+        && isPositiveNumber(request.resource.data.amount)
+        && isValidTimestamp(request.resource.data.createdAt);
+
+      // التحديث: المدير فقط يتحقق من الإيصال
+      allow update: if isAdmin()
+        && isOneOf(request.resource.data.status, ['pending', 'verified', 'rejected']);
+
+      // الحذف: المدير فقط
       allow delete: if isAdmin();
     }
 
-    // ================= INSTALLMENTS COLLECTION =================
+    // ══════════════════════════════════════════════════════════════════════════════════════
+    // قواعد الأقساط (Installments Collection)
+    // ══════════════════════════════════════════════════════════════════════════════════════
+
     match /installments/{installmentId} {
-      // Read: User reads own, admin reads all
-      allow read: if (isAuthenticated() && isOwner(resource.data.userId)) || isAdmin();
-      
-      // Create: Backend creates (validated by admin)
-      allow create: if isAuthenticated() && isOwner(request.resource.data.userId);
-      
-      // Update: Admin only
-      allow update: if isAdmin();
-      
-      // Delete: Admin only
+      // القراءة: المستخدم يرى أقساطه، المدير يرى الكل
+      allow read: if isAdminOrOwner(resource.data.userId);
+
+      // الإنشاء: المستخدم ينشئ قسط مع التحقق
+      allow create: if isAuthenticated()
+        && hasAll(['id', 'paymentId', 'userId', 'totalAmount', 'downPayment', 'remainingAmount', 'monthlyInstallment', 'numberOfMonths', 'paidInstallments', 'nextDueDate', 'status', 'createdAt'])
+        && request.resource.data.userId == currentUserId()
+        && request.resource.data.status == 'active'
+        && isPositiveNumber(request.resource.data.totalAmount)
+        && isNonNegativeNumber(request.resource.data.downPayment)
+        && isNonNegativeNumber(request.resource.data.remainingAmount)
+        && isPositiveNumber(request.resource.data.monthlyInstallment)
+        && isInRange(request.resource.data.numberOfMonths, 1, 24)
+        && request.resource.data.paidInstallments == 0
+        && isValidTimestamp(request.resource.data.createdAt);
+
+      // التحديث: المدير فقط
+      allow update: if isAdmin()
+        && isOneOf(request.resource.data.status, ['active', 'completed', 'defaulted']);
+
+      // الحذف: المدير فقط
       allow delete: if isAdmin();
     }
 
-    // ================= VIP SUBSCRIPTIONS COLLECTION =================
+    // ══════════════════════════════════════════════════════════════════════════════════════
+    // قواعد اشتراكات VIP (VIP Subscriptions Collection)
+    // ══════════════════════════════════════════════════════════════════════════════════════
+
     match /vipSubscriptions/{subscriptionId} {
-      // Read: User reads own, admin reads all
-      allow read: if (isAuthenticated() && isOwner(resource.data.userId)) || isAdmin();
-      
-      // Create: User creates own subscription
-      allow create: if isAuthenticated() && 
-                       isOwner(request.resource.data.userId) &&
-                       request.resource.data.package in ['silver', 'gold', 'platinum'] &&
-                       isValidPrice(request.resource.data.price);
-      
-      // Update: User can toggle auto-renew, admin can update any
-      allow update: if (isAuthenticated() && isOwner(resource.data.userId)) || isAdmin();
-      
-      // Delete: Admin only
+      // القراءة: المستخدم يرى اشتراكاته، المدير يرى الكل
+      allow read: if isAdminOrOwner(resource.data.userId);
+
+      // الإنشاء: المستخدم ينشئ اشتراكه مع التحقق
+      allow create: if isAuthenticated()
+        && request.resource.data.userId == currentUserId()
+        && isOneOf(request.resource.data.package, ['silver', 'gold', 'platinum'])
+        && isPositiveNumber(request.resource.data.price);
+
+      // التحديث: المستخدم يغير التجديد التلقائي فقط، المدير يحدث أي شيء
+      allow update: if isAdmin()
+        || (isOwner(resource.data.userId)
+            && isUnchanged('userId')
+            && isUnchanged('package')
+            && isUnchanged('price')
+            && isUnchanged('createdAt'));
+
+      // الحذف: المدير فقط
       allow delete: if isAdmin();
     }
 
-    // ================= ADVERTISEMENTS COLLECTION =================
-    match /ads/{adId} {
-      // Read: Public can read active ads, admin can read all, backend can read
-      allow read: if resource.data.active == true || isAdmin() || request.auth == null;
-      
-      // Create: Admin or backend server
-      allow create: if isAdmin() || request.auth == null;
-      
-      // Update: Admin or backend server
-      allow update: if isAdmin() || request.auth == null;
-      
-      // Delete: Admin or backend server
-      allow delete: if isAdmin() || request.auth == null;
-    }
+    // ══════════════════════════════════════════════════════════════════════════════════════
+    // قواعد طلبات الإعلانات (Ad Requests Collection)
+    // ══════════════════════════════════════════════════════════════════════════════════════
 
-    // ================= REVIEWS COLLECTION =================
-    match /reviews/{reviewId} {
-      // Read: Public can read all reviews
-      allow read: if true;
-      
-      // Create: Buyer creates review for purchased sheep
-      allow create: if isBuyer() && 
-                       isOwner(request.resource.data.buyerId) &&
-                       request.resource.data.rating >= 1 && 
-                       request.resource.data.rating <= 5;
-      
-      // Update: Owner updates own review
-      allow update: if isAuthenticated() && isOwner(resource.data.buyerId);
-      
-      // Delete: Owner or admin
-      allow delete: if (isAuthenticated() && isOwner(resource.data.buyerId)) || isAdmin();
-    }
-
-    // ================= FAVORITES COLLECTION =================
-    match /favorites/{favoriteId} {
-      // Read: User reads own favorites
-      allow read: if isAuthenticated() && isOwner(resource.data.userId);
-      
-      // Create: User adds to favorites
-      allow create: if isAuthenticated() && isOwner(request.resource.data.userId);
-      
-      // Delete: User removes from favorites
-      allow delete: if isAuthenticated() && isOwner(resource.data.userId);
-    }
-
-    // ================= NOTIFICATIONS COLLECTION =================
-    match /notifications/{notificationId} {
-      // Read: User reads own notifications
-      allow read: if isAuthenticated() && isOwner(resource.data.userId);
-      
-      // Create: Backend or admin creates notifications
-      allow create: if isAdmin() || request.auth == null;
-      
-      // Update: User marks as read, admin can update
-      allow update: if (isAuthenticated() && isOwner(resource.data.userId)) || isAdmin();
-      
-      // Delete: Owner or admin
-      allow delete: if (isAuthenticated() && isOwner(resource.data.userId)) || isAdmin();
-    }
-
-    // ================= SUPPORT TICKETS COLLECTION =================
-    match /support/{ticketId} {
-      // Read: User reads own tickets, admin reads all
-      allow read: if (isAuthenticated() && isOwner(resource.data.userId)) || isAdmin();
-      
-      // Create: Authenticated user creates ticket
-      allow create: if isAuthenticated() && isOwner(request.resource.data.userId);
-      
-      // Update: Admin responds to tickets
-      allow update: if isAdmin();
-      
-      // Delete: Admin only
-      allow delete: if isAdmin();
-    }
-
-    // ================= PASSWORD RESET TOKENS COLLECTION =================
-    match /passwordResetTokens/{tokenId} {
-      // Read: Backend only (no client access)
-      allow read: if request.auth == null;
-      
-      // Create: Backend creates tokens
-      allow create: if request.auth == null;
-      
-      // Update: Backend updates tokens
-      allow update: if request.auth == null;
-      
-      // Delete: Backend deletes used tokens
-      allow delete: if request.auth == null;
-    }
-
-    // ================= EMAIL VERIFICATION TOKENS COLLECTION =================
-    match /emailVerificationTokens/{tokenId} {
-      // Read: Backend only (no client access)
-      allow read: if request.auth == null;
-      
-      // Create: Backend creates tokens
-      allow create: if request.auth == null;
-      
-      // Update: Backend updates tokens
-      allow update: if request.auth == null;
-      
-      // Delete: Backend deletes used tokens
-      allow delete: if request.auth == null;
-    }
-
-    // ================= AD REQUESTS COLLECTION =================
     match /ad_requests/{requestId} {
-      // Read: Admin or backend can read
-      allow read: if isAdmin() || request.auth == null;
-      
-      // Create: Anyone can submit ad request, backend can create
-      allow create: if true;
-      
-      // Update: Admin or backend can update
-      allow update: if isAdmin() || request.auth == null;
-      
-      // Delete: Admin or backend can delete
-      allow delete: if isAdmin() || request.auth == null;
+      // القراءة: المدير فقط، أو صاحب الطلب
+      allow read: if isAdmin()
+        || (isAuthenticated() && resource.data.userId == currentUserId());
+
+      // الإنشاء: أي مستخدم مسجل يمكنه طلب إعلان
+      allow create: if isAuthenticated()
+        && hasAll(['image', 'companyName', 'description', 'status', 'createdAt'])
+        && request.resource.data.status == 'pending'
+        && isNonEmptyString(request.resource.data.image)
+        && hasMinLength(request.resource.data.companyName, 2)
+        && hasMinLength(request.resource.data.description, 10)
+        && isValidTimestamp(request.resource.data.createdAt)
+        && (request.resource.data.keys().hasAny(['contactEmail']) || request.resource.data.keys().hasAny(['contactPhone']));
+
+      // التحديث: المدير فقط (للموافقة أو الرفض)
+      allow update: if isAdmin()
+        && isOneOf(request.resource.data.status, ['pending', 'approved', 'rejected']);
+
+      // الحذف: المدير فقط
+      allow delete: if isAdmin();
     }
 
-    // ================= DEFAULT DENY =================
+    // ══════════════════════════════════════════════════════════════════════════════════════
+    // قواعد الإعلانات (Ads Collection)
+    // ══════════════════════════════════════════════════════════════════════════════════════
+
+    match /ads/{adId} {
+      // القراءة: أي مستخدم مسجل يمكنه رؤية الإعلانات النشطة، المدير يرى الكل
+      allow read: if isAdmin()
+        || (isAuthenticated() && resource.data.active == true);
+
+      // الإنشاء: المدير فقط
+      allow create: if isAdmin()
+        && hasAll(['image', 'companyName', 'active', 'createdAt'])
+        && isNonEmptyString(request.resource.data.image)
+        && hasMinLength(request.resource.data.companyName, 2)
+        && isValidTimestamp(request.resource.data.createdAt);
+
+      // التحديث: المدير فقط
+      allow update: if isAdmin();
+
+      // الحذف: المدير فقط
+      allow delete: if isAdmin();
+    }
+
+    // ══════════════════════════════════════════════════════════════════════════════════════
+    // قواعد المراجعات (Reviews Collection)
+    // ══════════════════════════════════════════════════════════════════════════════════════
+
+    match /reviews/{reviewId} {
+      // القراءة: أي مستخدم مسجل يمكنه قراءة المراجعات
+      allow read: if isAuthenticated();
+
+      // الإنشاء: المشتري ينشئ مراجعة للخروف المشترى
+      allow create: if isBuyer()
+        && request.resource.data.buyerId == currentUserId()
+        && isInRange(request.resource.data.rating, 1, 5)
+        && isNonEmptyString(request.resource.data.sheepId)
+        && isNonEmptyString(request.resource.data.sellerId);
+
+      // التحديث: صاحب المراجعة يحدثها
+      allow update: if isAuthenticated()
+        && isOwner(resource.data.buyerId)
+        && isUnchanged('buyerId')
+        && isUnchanged('sheepId')
+        && isUnchanged('sellerId')
+        && isInRange(request.resource.data.rating, 1, 5);
+
+      // الحذف: صاحب المراجعة أو المدير
+      allow delete: if isAdminOrOwner(resource.data.buyerId);
+    }
+
+    // ══════════════════════════════════════════════════════════════════════════════════════
+    // قواعد المفضلة (Favorites Collection)
+    // ══════════════════════════════════════════════════════════════════════════════════════
+
+    match /favorites/{favoriteId} {
+      // القراءة: المستخدم يرى مفضلاته فقط
+      allow read: if isOwner(resource.data.userId);
+
+      // الإنشاء: المستخدم يضيف إلى مفضلاته
+      allow create: if isAuthenticated()
+        && request.resource.data.userId == currentUserId()
+        && isNonEmptyString(request.resource.data.sheepId);
+
+      // التحديث: غير مسموح
+      allow update: if false;
+
+      // الحذف: المستخدم يحذف من مفضلاته
+      allow delete: if isOwner(resource.data.userId);
+    }
+
+    // ══════════════════════════════════════════════════════════════════════════════════════
+    // قواعد الإشعارات (Notifications Collection)
+    // ══════════════════════════════════════════════════════════════════════════════════════
+
+    match /notifications/{notificationId} {
+      // القراءة: المستخدم يرى إشعاراته فقط
+      allow read: if isOwner(resource.data.userId);
+
+      // الإنشاء: المدير فقط (النظام يرسل الإشعارات عبر الخادم)
+      allow create: if isAdmin();
+
+      // التحديث: المستخدم يحدد كمقروء، المدير يحدث أي شيء
+      allow update: if isAdmin()
+        || (isOwner(resource.data.userId) && isUnchanged('userId'));
+
+      // الحذف: صاحب الإشعار أو المدير
+      allow delete: if isAdminOrOwner(resource.data.userId);
+    }
+
+    // ══════════════════════════════════════════════════════════════════════════════════════
+    // قواعد تذاكر الدعم (Support Tickets Collection)
+    // ══════════════════════════════════════════════════════════════════════════════════════
+
+    match /support/{ticketId} {
+      // القراءة: المستخدم يرى تذاكره، المدير يرى الكل
+      allow read: if isAdminOrOwner(resource.data.userId);
+
+      // الإنشاء: أي مستخدم مسجل ينشئ تذكرة
+      allow create: if isAuthenticated()
+        && request.resource.data.userId == currentUserId()
+        && hasMinLength(request.resource.data.subject, 5)
+        && hasMinLength(request.resource.data.message, 10)
+        && request.resource.data.status == 'open';
+
+      // التحديث: المدير يرد على التذاكر
+      allow update: if isAdmin();
+
+      // الحذف: المدير فقط
+      allow delete: if isAdmin();
+    }
+
+    // ══════════════════════════════════════════════════════════════════════════════════════
+    // قواعد الإعدادات (Settings Collection)
+    // ══════════════════════════════════════════════════════════════════════════════════════
+
+    match /settings/{settingId} {
+      // القراءة: أي مستخدم مسجل يمكنه قراءة الإعدادات
+      allow read: if isAuthenticated();
+
+      // الكتابة: المدير فقط
+      allow create: if isAdmin();
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // ══════════════════════════════════════════════════════════════════════════════════════
+    // قواعد البيانات المؤقتة للنظام (System Collections - Server Only)
+    // هذه الـ Collections يتم الوصول إليها فقط من الخادم عبر Admin SDK
+    // ══════════════════════════════════════════════════════════════════════════════════════
+
+    // إعادة تعيين كلمة المرور - الخادم فقط
+    match /password_resets/{resetId} {
+      allow read: if false;
+      allow create: if false;
+      allow update: if false;
+      allow delete: if false;
+    }
+
+    // التسجيلات المعلقة - الخادم فقط
+    match /pending_registrations/{registrationId} {
+      allow read: if false;
+      allow create: if false;
+      allow update: if false;
+      allow delete: if false;
+    }
+
+    // رموز إعادة تعيين كلمة المرور - الخادم فقط
+    match /passwordResetTokens/{tokenId} {
+      allow read: if false;
+      allow create: if false;
+      allow update: if false;
+      allow delete: if false;
+    }
+
+    // رموز التحقق من البريد - الخادم فقط
+    match /emailVerificationTokens/{tokenId} {
+      allow read: if false;
+      allow create: if false;
+      allow update: if false;
+      allow delete: if false;
+    }
+
+    // ══════════════════════════════════════════════════════════════════════════════════════
+    // حماية افتراضية - رفض الوصول لأي collection غير محدد
+    // ══════════════════════════════════════════════════════════════════════════════════════
+
     match /{document=**} {
-      allow read, write: if false;
+      allow read: if false;
+      allow write: if false;
     }
   }
 }

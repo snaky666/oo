@@ -17,18 +17,38 @@ let adminAuth: ReturnType<typeof getAuth> | null = null;
 function initFirebaseAdmin() {
   if (!getApps().length) {
     try {
-      const serviceAccount = process.env.FIREBASE_SERVICE_ACCOUNT 
-        ? JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT)
-        : {
-            projectId: process.env.VITE_FIREBASE_PROJECT_ID,
-            clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-            privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
-          };
+      let serviceAccount;
       
-      if (serviceAccount.projectId && serviceAccount.clientEmail && serviceAccount.privateKey) {
-        initializeApp({ credential: cert(serviceAccount) });
+      if (process.env.FIREBASE_SERVICE_ACCOUNT) {
+        serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+        if (serviceAccount.private_key) {
+          serviceAccount.private_key = serviceAccount.private_key.replace(/\\n/g, '\n');
+        }
+      } else {
+        serviceAccount = {
+          projectId: process.env.VITE_FIREBASE_PROJECT_ID,
+          clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+          privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
+        };
+      }
+      
+      const projectId = serviceAccount.projectId || serviceAccount.project_id;
+      const clientEmail = serviceAccount.clientEmail || serviceAccount.client_email;
+      const privateKey = serviceAccount.privateKey || serviceAccount.private_key;
+      
+      if (projectId && clientEmail && privateKey) {
+        initializeApp({ 
+          credential: cert({
+            projectId,
+            clientEmail,
+            privateKey,
+          }) 
+        });
         adminDb = getFirestore();
         adminAuth = getAuth();
+        console.log('✅ Firebase Admin initialized successfully');
+      } else {
+        console.warn('⚠️ Firebase Admin: Missing required credentials');
       }
     } catch (error) {
       console.error('Firebase Admin init error:', error);

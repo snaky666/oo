@@ -18,6 +18,9 @@ const transporter = nodemailer.createTransport({
     user: process.env.SMTP_USER || 'verification@odhiyaty.com',
     pass: process.env.SMTP_PASSWORD,
   },
+  connectionTimeout: 10000, // 10 seconds
+  greetingTimeout: 10000,
+  socketTimeout: 15000,
 });
 
 export interface EmailOptions {

@@ -538,13 +538,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { email, code } = req.body;
       console.log('📧 Sending verification code to:', email);
 
-      const result = await sendVerificationEmail(email, code);
+      // Respond immediately, send email in background
+      res.json({ success: true, message: "Verification code sent" });
 
-      if (result.success) {
-        res.json({ success: true, message: "Verification code sent" });
-      } else {
-        res.status(500).json({ success: false, error: result.error });
-      }
+      // Send email asynchronously (don't await)
+      sendVerificationEmail(email, code)
+        .then(result => {
+          if (result.success) {
+            console.log('✅ Verification email sent to:', email);
+          } else {
+            console.error('❌ Failed to send verification email:', result.error);
+          }
+        })
+        .catch(error => {
+          console.error('❌ Email sending error:', error?.message);
+        });
     } catch (error: any) {
       console.error("❌ Send verification error:", error?.message);
       res.status(500).json({ success: false, error: error?.message });

@@ -7,12 +7,34 @@ let adminAuth: Auth | null = null;
 let adminDb: Firestore | null = null;
 
 function formatPrivateKey(key: string): string {
-  let formattedKey = key;
+  let formattedKey = key.trim();
+  
+  // Remove surrounding quotes if present
+  if ((formattedKey.startsWith('"') && formattedKey.endsWith('"')) ||
+      (formattedKey.startsWith("'") && formattedKey.endsWith("'"))) {
+    formattedKey = formattedKey.slice(1, -1);
+  }
+  
+  // Handle various newline escape formats
+  // First, replace literal \n strings with actual newlines
   formattedKey = formattedKey.replace(/\\n/g, '\n');
+  // Handle double-escaped newlines
+  formattedKey = formattedKey.replace(/\\\\n/g, '\n');
+  // Remove any stray quotes
   formattedKey = formattedKey.replace(/"/g, '');
-  if (!formattedKey.includes('-----BEGIN')) {
+  
+  // Ensure proper PEM format
+  if (!formattedKey.includes('-----BEGIN PRIVATE KEY-----')) {
     formattedKey = `-----BEGIN PRIVATE KEY-----\n${formattedKey}\n-----END PRIVATE KEY-----\n`;
   }
+  
+  // Ensure there's a newline after BEGIN and before END
+  formattedKey = formattedKey.replace('-----BEGIN PRIVATE KEY-----', '-----BEGIN PRIVATE KEY-----\n');
+  formattedKey = formattedKey.replace('-----END PRIVATE KEY-----', '\n-----END PRIVATE KEY-----');
+  
+  // Clean up any double newlines
+  formattedKey = formattedKey.replace(/\n\n+/g, '\n');
+  
   return formattedKey;
 }
 

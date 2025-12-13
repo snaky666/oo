@@ -309,6 +309,21 @@ service cloud.firestore {
       allow delete: if request.auth == null;
     }
 
+    // ================= AD REQUESTS COLLECTION =================
+    match /ad_requests/{requestId} {
+      // Read: Admin or backend can read
+      allow read: if isAdmin() || request.auth == null;
+      
+      // Create: Anyone can submit ad request, backend can create
+      allow create: if true;
+      
+      // Update: Admin or backend can update
+      allow update: if isAdmin() || request.auth == null;
+      
+      // Delete: Admin or backend can delete
+      allow delete: if isAdmin() || request.auth == null;
+    }
+
     // ================= DEFAULT DENY =================
     match /{document=**} {
       allow read, write: if false;

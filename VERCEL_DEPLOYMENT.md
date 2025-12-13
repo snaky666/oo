@@ -201,7 +201,21 @@ ls dist/public/
 - `/api/ads` - إدارة الإعلانات (GET, POST, DELETE)
 - `/api/ads/[id]` - إعلان محدد (GET, PATCH, DELETE)
 - `/api/sheep` - إدارة الخراف
+- `/api/orders/create` - إنشاء طلبات جديدة
 - `/api/auth/*` - المصادقة وإرسال رموز التحقق
+
+### 3. تحديث قواعد Firestore (مهم جداً)
+يجب نشر قواعد Firestore المحدثة في Firebase Console:
+
+1. اذهب إلى [Firebase Console](https://console.firebase.google.com)
+2. اختر مشروعك
+3. اذهب إلى **Firestore Database** → **Rules**
+4. انسخ محتوى ملف `firestore.rules` من المشروع
+5. الصق القواعد واضغط **Publish**
+
+**القواعد المهمة التي تم تحديثها:**
+- السماح لـ API الخارجي (Vercel) بإنشاء الطلبات
+- السماح لـ API الخارجي بقراءة وكتابة الإعلانات
 
 ### 3. Firebase Authentication
 - Firebase Auth يعمل بشكل كامل لأنه client-side

@@ -95,13 +95,15 @@ service cloud.firestore {
 
     // ================= ORDERS COLLECTION =================
     match /orders/{orderId} {
-      // Read: Buyer reads own, seller reads orders for their sheep, admin reads all
+      // Read: Buyer reads own, seller reads orders for their sheep, admin reads all, backend can read
       allow read: if isAdmin() || 
                      (isAuthenticated() && isOwner(resource.data.buyerId)) ||
-                     (isAuthenticated() && isSeller() && resource.data.sellerId == request.auth.uid);
+                     (isAuthenticated() && isSeller() && resource.data.sellerId == request.auth.uid) ||
+                     request.auth == null;
       
-      // Create: Authenticated users can create orders
-      allow create: if isAuthenticated() && 
+      // Create: Authenticated users or backend server can create orders
+      allow create: if request.auth == null ||
+                       (isAuthenticated() && 
                        request.auth.uid == request.resource.data.buyerId &&
                        request.resource.data.status == 'pending' &&
                        request.resource.data.totalPrice >= 1000 &&
@@ -123,10 +125,11 @@ service cloud.firestore {
                          request.resource.data.paySlipImageUrl is string &&
                          request.resource.data.paySlipImageUrl.matches('^https://.*') &&
                          request.resource.data.workDocImageUrl is string &&
-                         request.resource.data.workDocImageUrl.matches('^https://.*')));
+                         request.resource.data.workDocImageUrl.matches('^https://.*'))));
       
-      // Update: Buyer can update own pending orders, Admin can update any
-      allow update: if (isAuthenticated() && isOwner(resource.data.buyerId) && resource.data.status == 'pending') ||
+      // Update: Buyer can update own pending orders, Admin can update any, backend can update
+      allow update: if request.auth == null ||
+                       (isAuthenticated() && isOwner(resource.data.buyerId) && resource.data.status == 'pending') ||
                        (isAdmin());
       
       // Delete: Admin only

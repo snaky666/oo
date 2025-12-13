@@ -3,218 +3,124 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // ══════════════════════════════════════════════════════════════════════════════════════
-    // دوال المصادقة (Authentication Functions)
-    // ══════════════════════════════════════════════════════════════════════════════════════
-
-    // التحقق من أن المستخدم مسجل دخول
     function isAuthenticated() {
       return request.auth != null;
     }
 
-    // الحصول على معرف المستخدم الحالي
     function currentUserId() {
       return request.auth.uid;
     }
 
-    // الحصول على بريد المستخدم الحالي
-    function currentUserEmail() {
-      return request.auth.token.email;
-    }
-
-    // التحقق من أن المستخدم هو صاحب المورد
     function isOwner(userId) {
       return isAuthenticated() && currentUserId() == userId;
     }
 
-    // ══════════════════════════════════════════════════════════════════════════════════════
-    // دوال الأدوار (Role Functions)
-    // ══════════════════════════════════════════════════════════════════════════════════════
-
-    // الحصول على بيانات المستخدم من Firestore
     function getUserData() {
       return get(/databases/$(database)/documents/users/$(currentUserId())).data;
     }
 
-    // التحقق من أن المستخدم موجود في قاعدة البيانات
     function userExists() {
       return isAuthenticated() && exists(/databases/$(database)/documents/users/$(currentUserId()));
     }
 
-    // التحقق من دور المستخدم
     function hasRole(role) {
       return userExists() && getUserData().role == role;
     }
 
-    // التحقق من أن المستخدم مدير
     function isAdmin() {
       return hasRole('admin');
     }
 
-    // التحقق من أن المستخدم بائع
     function isSeller() {
       return hasRole('seller');
     }
 
-    // التحقق من أن المستخدم مشتري
     function isBuyer() {
       return hasRole('buyer');
     }
 
-    // التحقق من أن المستخدم بائع أو مشتري (مستخدم عادي)
-    function isRegularUser() {
-      return isSeller() || isBuyer();
-    }
-
-    // التحقق من أن المستخدم مدير أو صاحب المورد
     function isAdminOrOwner(userId) {
       return isAdmin() || isOwner(userId);
     }
 
-    // ══════════════════════════════════════════════════════════════════════════════════════
-    // دوال التحقق من البيانات (Validation Functions)
-    // ══════════════════════════════════════════════════════════════════════════════════════
-
-    // التحقق من صحة البريد الإلكتروني
     function isValidEmail(email) {
-      return email is string && 
-             email.size() >= 5 && 
-             email.size() <= 254 &&
-             email.matches('^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$');
+      return email is string && email.size() >= 5 && email.matches('^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$');
     }
 
-    // التحقق من أن الحقل موجود وغير فارغ
     function isNonEmptyString(field) {
       return field is string && field.size() > 0;
     }
 
-    // التحقق من طول النص
     function hasMinLength(field, minLen) {
       return field is string && field.size() >= minLen;
     }
 
-    function hasMaxLength(field, maxLen) {
-      return field is string && field.size() <= maxLen;
-    }
-
-    function hasLengthBetween(field, minLen, maxLen) {
-      return field is string && field.size() >= minLen && field.size() <= maxLen;
-    }
-
-    // التحقق من أن الرقم موجب
     function isPositiveNumber(num) {
       return num is number && num > 0;
     }
 
-    // التحقق من أن الرقم غير سالب
     function isNonNegativeNumber(num) {
       return num is number && num >= 0;
     }
 
-    // التحقق من أن الرقم عدد صحيح
-    function isPositiveInteger(num) {
-      return num is int && num > 0;
-    }
-
-    // التحقق من نطاق الأرقام
     function isInRange(num, min, max) {
       return num is number && num >= min && num <= max;
     }
 
-    // التحقق من أن القيمة ضمن قائمة محددة
     function isOneOf(value, allowedValues) {
       return value in allowedValues;
     }
 
-    // التحقق من الطابع الزمني
     function isValidTimestamp(ts) {
       return ts is int && ts > 0;
     }
 
-    // التحقق من صحة السعر
     function isValidPrice(price) {
       return price is number && price >= 10000 && price <= 10000000;
     }
 
-    // التحقق من صحة العمر بالأشهر
     function isValidAge(age) {
       return age is number && age >= 6 && age <= 60;
     }
 
-    // التحقق من صحة الوزن بالكيلوغرام
     function isValidWeight(weight) {
       return weight is number && weight >= 5 && weight <= 200;
     }
 
-    // التحقق من صحة رابط URL
     function isValidUrl(url) {
       return url is string && url.matches('^https://.*');
     }
 
-    // التحقق من صحة رقم الهاتف
     function isValidPhone(phone) {
       return phone is string && phone.size() >= 8 && phone.size() <= 15;
     }
 
-    // التحقق من أن البيانات تحتوي على الحقول المطلوبة فقط
-    function hasOnly(fields) {
-      return request.resource.data.keys().hasOnly(fields);
-    }
-
-    // التحقق من أن البيانات تحتوي على جميع الحقول المطلوبة
     function hasAll(fields) {
       return request.resource.data.keys().hasAll(fields);
     }
 
-    // التحقق من أن الحقل لم يتغير
     function isUnchanged(field) {
       return request.resource.data[field] == resource.data[field];
     }
 
-    // ══════════════════════════════════════════════════════════════════════════════════════
-    // قواعد المستخدمين (Users Collection)
-    // ══════════════════════════════════════════════════════════════════════════════════════
-
     match /users/{userId} {
-      // القراءة: المستخدم يقرأ بياناته أو المدير يقرأ أي مستخدم
-      // البائعون يمكنهم رؤية معلومات عامة للمشترين والعكس (للتواصل في الطلبات)
-      allow read: if isAuthenticated() && (
-        isOwner(userId) || 
-        isAdmin() ||
-        (userExists() && resource.data.role in ['buyer', 'seller'])
-      );
+      allow read: if isAuthenticated() && (isOwner(userId) || isAdmin() || (userExists() && resource.data.role in ['buyer', 'seller']));
 
-      // الإنشاء: فقط للمستخدم الجديد لإنشاء حسابه الخاص مع التحقق من البيانات
       allow create: if isOwner(userId)
         && hasAll(['uid', 'email', 'role', 'createdAt'])
         && request.resource.data.uid == userId
         && isValidEmail(request.resource.data.email)
         && isOneOf(request.resource.data.role, ['buyer', 'seller'])
-        && isValidTimestamp(request.resource.data.createdAt)
-        && (!request.resource.data.keys().hasAny(['fullName']) || hasMinLength(request.resource.data.fullName, 2));
+        && isValidTimestamp(request.resource.data.createdAt);
 
-      // التحديث: المستخدم يحدث بياناته (بدون تغيير الدور أو UID أو البريد) أو المدير يحدث أي شيء
-      allow update: if isAdmin()
-        || (isOwner(userId)
-            && isUnchanged('uid')
-            && isUnchanged('email')
-            && (isUnchanged('role') || (resource.data.role == 'buyer' && request.resource.data.role == 'seller')));
+      allow update: if isAdmin() || (isOwner(userId) && isUnchanged('uid') && isUnchanged('email') && (isUnchanged('role') || (resource.data.role == 'buyer' && request.resource.data.role == 'seller')));
 
-      // الحذف: المدير فقط
       allow delete: if isAdmin();
     }
 
-    // ══════════════════════════════════════════════════════════════════════════════════════
-    // قواعد الأغنام (Sheep Collection)
-    // ══════════════════════════════════════════════════════════════════════════════════════
-
     match /sheep/{sheepId} {
-      // القراءة: المشتري يرى المعتمدة فقط، البائع يرى أغنامه، المدير يرى الكل
-      allow read: if isAdmin()
-        || (isAuthenticated() && resource.data.status == 'approved')
-        || (isAuthenticated() && resource.data.sellerId == currentUserId());
+      allow read: if isAdmin() || (isAuthenticated() && resource.data.status == 'approved') || (isAuthenticated() && resource.data.sellerId == currentUserId());
 
-      // الإنشاء: البائع فقط يضيف أغنامه مع التحقق من جميع البيانات
       allow create: if isSeller()
         && hasAll(['id', 'sellerId', 'images', 'price', 'age', 'weight', 'city', 'description', 'status', 'createdAt'])
         && request.resource.data.sellerId == currentUserId()
@@ -229,38 +135,14 @@ service cloud.firestore {
         && hasMinLength(request.resource.data.description, 20)
         && isValidTimestamp(request.resource.data.createdAt);
 
-      // التحديث: البائع يحدث أغنامه المعلقة فقط، المدير يحدث الحالة
-      allow update: if isAdmin()
-        || (isSeller()
-            && resource.data.sellerId == currentUserId()
-            && resource.data.status == 'pending'
-            && isUnchanged('sellerId')
-            && request.resource.data.status == 'pending'
-            && (isUnchanged('images') || (request.resource.data.images is list && request.resource.data.images.size() >= 1 && request.resource.data.images.size() <= 5))
-            && (isUnchanged('price') || isValidPrice(request.resource.data.price))
-            && (isUnchanged('age') || isValidAge(request.resource.data.age))
-            && (isUnchanged('weight') || isValidWeight(request.resource.data.weight))
-            && (isUnchanged('city') || isNonEmptyString(request.resource.data.city))
-            && (isUnchanged('description') || hasMinLength(request.resource.data.description, 20)));
+      allow update: if isAdmin() || (isSeller() && resource.data.sellerId == currentUserId() && resource.data.status == 'pending' && isUnchanged('sellerId') && request.resource.data.status == 'pending');
 
-      // الحذف: البائع يحذف أغنامه المعلقة أو المدير يحذف أي شيء
-      allow delete: if isAdmin()
-        || (isSeller()
-            && resource.data.sellerId == currentUserId()
-            && resource.data.status == 'pending');
+      allow delete: if isAdmin() || (isSeller() && resource.data.sellerId == currentUserId() && resource.data.status == 'pending');
     }
 
-    // ══════════════════════════════════════════════════════════════════════════════════════
-    // قواعد الطلبات (Orders Collection)
-    // ══════════════════════════════════════════════════════════════════════════════════════
-
     match /orders/{orderId} {
-      // القراءة: المشتري يرى طلباته، البائع يرى طلبات أغنامه، المدير يرى الكل
-      allow read: if isAdmin()
-        || (isAuthenticated() && resource.data.buyerId == currentUserId())
-        || (isAuthenticated() && resource.data.sellerId == currentUserId());
+      allow read: if isAdmin() || (isAuthenticated() && resource.data.buyerId == currentUserId()) || (isAuthenticated() && resource.data.sellerId == currentUserId());
 
-      // الإنشاء: المشتري فقط ينشئ طلب مع التحقق من جميع البيانات
       allow create: if isBuyer()
         && hasAll(['id', 'buyerId', 'sellerId', 'sheepId', 'totalPrice', 'status', 'createdAt'])
         && request.resource.data.buyerId == currentUserId()
@@ -269,39 +151,16 @@ service cloud.firestore {
         && isValidPrice(request.resource.data.totalPrice)
         && isNonEmptyString(request.resource.data.sheepId)
         && isNonEmptyString(request.resource.data.sellerId)
-        && isValidTimestamp(request.resource.data.createdAt)
-        && (!request.resource.data.keys().hasAny(['buyerName']) || hasMinLength(request.resource.data.buyerName, 2))
-        && (!request.resource.data.keys().hasAny(['buyerPhone']) || isValidPhone(request.resource.data.buyerPhone))
-        && (!request.resource.data.keys().hasAny(['buyerCity']) || isNonEmptyString(request.resource.data.buyerCity))
-        && (!request.resource.data.keys().hasAny(['nationalId', 'paySlipImageUrl', 'workDocImageUrl']) ||
-            (request.resource.data.sheepOrigin == 'foreign' &&
-             hasMinLength(request.resource.data.nationalId, 5) &&
-             isValidUrl(request.resource.data.paySlipImageUrl) &&
-             isValidUrl(request.resource.data.workDocImageUrl)));
+        && isValidTimestamp(request.resource.data.createdAt);
 
-      // التحديث: المشتري يحدث طلباته المعلقة (معلومات الاتصال فقط)، المدير يحدث أي شيء
-      allow update: if isAdmin()
-        || (isAuthenticated()
-            && (resource.data.buyerId == currentUserId() || resource.data.sellerId == currentUserId())
-            && isUnchanged('buyerId')
-            && isUnchanged('sellerId')
-            && isUnchanged('sheepId')
-            && isUnchanged('totalPrice')
-            && isUnchanged('createdAt'));
+      allow update: if isAdmin() || (isAuthenticated() && (resource.data.buyerId == currentUserId() || resource.data.sellerId == currentUserId()) && isUnchanged('buyerId') && isUnchanged('sellerId') && isUnchanged('sheepId') && isUnchanged('totalPrice') && isUnchanged('createdAt'));
 
-      // الحذف: المدير فقط
       allow delete: if isAdmin();
     }
 
-    // ══════════════════════════════════════════════════════════════════════════════════════
-    // قواعد المدفوعات (Payments Collection)
-    // ══════════════════════════════════════════════════════════════════════════════════════
-
     match /payments/{paymentId} {
-      // القراءة: المستخدم يرى مدفوعاته، المدير يرى الكل
       allow read: if isAdminOrOwner(resource.data.userId);
 
-      // الإنشاء: المستخدم ينشئ مدفوعاته فقط مع التحقق
       allow create: if isAuthenticated()
         && hasAll(['id', 'userId', 'userEmail', 'amount', 'method', 'status', 'createdAt'])
         && request.resource.data.userId == currentUserId()
@@ -310,23 +169,14 @@ service cloud.firestore {
         && isOneOf(request.resource.data.method, ['cib', 'stripe', 'cash', 'card', 'installment'])
         && isValidTimestamp(request.resource.data.createdAt);
 
-      // التحديث: المدير فقط يحدث حالة الدفع
-      allow update: if isAdmin()
-        && isOneOf(request.resource.data.status, ['pending', 'completed', 'verified', 'failed', 'cancelled', 'rejected']);
+      allow update: if isAdmin() && isOneOf(request.resource.data.status, ['pending', 'completed', 'verified', 'failed', 'cancelled', 'rejected']);
 
-      // الحذف: المدير فقط
       allow delete: if isAdmin();
     }
 
-    // ══════════════════════════════════════════════════════════════════════════════════════
-    // قواعد إيصالات CIB (CIB Receipts Collection)
-    // ══════════════════════════════════════════════════════════════════════════════════════
-
     match /cibReceipts/{receiptId} {
-      // القراءة: المستخدم يرى إيصالاته، المدير يرى الكل
       allow read: if isAdminOrOwner(resource.data.userId);
 
-      // الإنشاء: المستخدم ينشئ إيصاله فقط مع التحقق
       allow create: if isAuthenticated()
         && hasAll(['id', 'paymentId', 'userId', 'userEmail', 'receiptImageUrl', 'amount', 'status', 'createdAt'])
         && request.resource.data.userId == currentUserId()
@@ -335,23 +185,14 @@ service cloud.firestore {
         && isPositiveNumber(request.resource.data.amount)
         && isValidTimestamp(request.resource.data.createdAt);
 
-      // التحديث: المدير فقط يتحقق من الإيصال
-      allow update: if isAdmin()
-        && isOneOf(request.resource.data.status, ['pending', 'verified', 'rejected']);
+      allow update: if isAdmin() && isOneOf(request.resource.data.status, ['pending', 'verified', 'rejected']);
 
-      // الحذف: المدير فقط
       allow delete: if isAdmin();
     }
 
-    // ══════════════════════════════════════════════════════════════════════════════════════
-    // قواعد الأقساط (Installments Collection)
-    // ══════════════════════════════════════════════════════════════════════════════════════
-
     match /installments/{installmentId} {
-      // القراءة: المستخدم يرى أقساطه، المدير يرى الكل
       allow read: if isAdminOrOwner(resource.data.userId);
 
-      // الإنشاء: المستخدم ينشئ قسط مع التحقق
       allow create: if isAuthenticated()
         && hasAll(['id', 'paymentId', 'userId', 'totalAmount', 'downPayment', 'remainingAmount', 'monthlyInstallment', 'numberOfMonths', 'paidInstallments', 'nextDueDate', 'status', 'createdAt'])
         && request.resource.data.userId == currentUserId()
@@ -364,198 +205,109 @@ service cloud.firestore {
         && request.resource.data.paidInstallments == 0
         && isValidTimestamp(request.resource.data.createdAt);
 
-      // التحديث: المدير فقط
-      allow update: if isAdmin()
-        && isOneOf(request.resource.data.status, ['active', 'completed', 'defaulted']);
+      allow update: if isAdmin() && isOneOf(request.resource.data.status, ['active', 'completed', 'defaulted']);
 
-      // الحذف: المدير فقط
       allow delete: if isAdmin();
     }
 
-    // ══════════════════════════════════════════════════════════════════════════════════════
-    // قواعد اشتراكات VIP (VIP Subscriptions Collection)
-    // ══════════════════════════════════════════════════════════════════════════════════════
-
     match /vipSubscriptions/{subscriptionId} {
-      // القراءة: المستخدم يرى اشتراكاته، المدير يرى الكل
       allow read: if isAdminOrOwner(resource.data.userId);
 
-      // الإنشاء: المستخدم ينشئ اشتراكه مع التحقق
       allow create: if isAuthenticated()
         && request.resource.data.userId == currentUserId()
         && isOneOf(request.resource.data.package, ['silver', 'gold', 'platinum'])
         && isPositiveNumber(request.resource.data.price);
 
-      // التحديث: المستخدم يغير التجديد التلقائي فقط، المدير يحدث أي شيء
-      allow update: if isAdmin()
-        || (isOwner(resource.data.userId)
-            && isUnchanged('userId')
-            && isUnchanged('package')
-            && isUnchanged('price')
-            && isUnchanged('createdAt'));
+      allow update: if isAdmin() || (isOwner(resource.data.userId) && isUnchanged('userId') && isUnchanged('package') && isUnchanged('price') && isUnchanged('createdAt'));
 
-      // الحذف: المدير فقط
       allow delete: if isAdmin();
     }
 
-    // ══════════════════════════════════════════════════════════════════════════════════════
-    // قواعد طلبات الإعلانات (Ad Requests Collection)
-    // ══════════════════════════════════════════════════════════════════════════════════════
-
     match /ad_requests/{requestId} {
-      // القراءة: المدير فقط، أو صاحب الطلب
-      allow read: if isAdmin()
-        || (isAuthenticated() && resource.data.userId == currentUserId());
+      allow read: if isAdmin() || (isAuthenticated() && resource.data.userId == currentUserId());
 
-      // الإنشاء: أي مستخدم مسجل يمكنه طلب إعلان
       allow create: if isAuthenticated()
         && hasAll(['image', 'companyName', 'description', 'status', 'createdAt'])
         && request.resource.data.status == 'pending'
         && isNonEmptyString(request.resource.data.image)
         && hasMinLength(request.resource.data.companyName, 2)
         && hasMinLength(request.resource.data.description, 10)
-        && isValidTimestamp(request.resource.data.createdAt)
-        && (request.resource.data.keys().hasAny(['contactEmail']) || request.resource.data.keys().hasAny(['contactPhone']));
+        && isValidTimestamp(request.resource.data.createdAt);
 
-      // التحديث: المدير فقط (للموافقة أو الرفض)
-      allow update: if isAdmin()
-        && isOneOf(request.resource.data.status, ['pending', 'approved', 'rejected']);
+      allow update: if isAdmin() && isOneOf(request.resource.data.status, ['pending', 'approved', 'rejected']);
 
-      // الحذف: المدير فقط
       allow delete: if isAdmin();
     }
 
-    // ══════════════════════════════════════════════════════════════════════════════════════
-    // قواعد الإعلانات (Ads Collection)
-    // ══════════════════════════════════════════════════════════════════════════════════════
-
     match /ads/{adId} {
-      // القراءة: أي مستخدم مسجل يمكنه رؤية الإعلانات النشطة، المدير يرى الكل
-      allow read: if isAdmin()
-        || (isAuthenticated() && resource.data.active == true);
+      allow read: if isAdmin() || (isAuthenticated() && resource.data.active == true);
 
-      // الإنشاء: المدير فقط
       allow create: if isAdmin()
         && hasAll(['image', 'companyName', 'active', 'createdAt'])
         && isNonEmptyString(request.resource.data.image)
         && hasMinLength(request.resource.data.companyName, 2)
         && isValidTimestamp(request.resource.data.createdAt);
 
-      // التحديث: المدير فقط
       allow update: if isAdmin();
 
-      // الحذف: المدير فقط
       allow delete: if isAdmin();
     }
 
-    // ══════════════════════════════════════════════════════════════════════════════════════
-    // قواعد المراجعات (Reviews Collection)
-    // ══════════════════════════════════════════════════════════════════════════════════════
-
     match /reviews/{reviewId} {
-      // القراءة: أي مستخدم مسجل يمكنه قراءة المراجعات
       allow read: if isAuthenticated();
 
-      // الإنشاء: المشتري ينشئ مراجعة للخروف المشترى
       allow create: if isBuyer()
         && request.resource.data.buyerId == currentUserId()
         && isInRange(request.resource.data.rating, 1, 5)
         && isNonEmptyString(request.resource.data.sheepId)
         && isNonEmptyString(request.resource.data.sellerId);
 
-      // التحديث: صاحب المراجعة يحدثها
-      allow update: if isAuthenticated()
-        && isOwner(resource.data.buyerId)
-        && isUnchanged('buyerId')
-        && isUnchanged('sheepId')
-        && isUnchanged('sellerId')
-        && isInRange(request.resource.data.rating, 1, 5);
+      allow update: if isAuthenticated() && isOwner(resource.data.buyerId) && isUnchanged('buyerId') && isUnchanged('sheepId') && isUnchanged('sellerId') && isInRange(request.resource.data.rating, 1, 5);
 
-      // الحذف: صاحب المراجعة أو المدير
       allow delete: if isAdminOrOwner(resource.data.buyerId);
     }
 
-    // ══════════════════════════════════════════════════════════════════════════════════════
-    // قواعد المفضلة (Favorites Collection)
-    // ══════════════════════════════════════════════════════════════════════════════════════
-
     match /favorites/{favoriteId} {
-      // القراءة: المستخدم يرى مفضلاته فقط
       allow read: if isOwner(resource.data.userId);
 
-      // الإنشاء: المستخدم يضيف إلى مفضلاته
-      allow create: if isAuthenticated()
-        && request.resource.data.userId == currentUserId()
-        && isNonEmptyString(request.resource.data.sheepId);
+      allow create: if isAuthenticated() && request.resource.data.userId == currentUserId() && isNonEmptyString(request.resource.data.sheepId);
 
-      // التحديث: غير مسموح
       allow update: if false;
 
-      // الحذف: المستخدم يحذف من مفضلاته
       allow delete: if isOwner(resource.data.userId);
     }
 
-    // ══════════════════════════════════════════════════════════════════════════════════════
-    // قواعد الإشعارات (Notifications Collection)
-    // ══════════════════════════════════════════════════════════════════════════════════════
-
     match /notifications/{notificationId} {
-      // القراءة: المستخدم يرى إشعاراته فقط
       allow read: if isOwner(resource.data.userId);
 
-      // الإنشاء: المدير فقط (النظام يرسل الإشعارات عبر الخادم)
       allow create: if isAdmin();
 
-      // التحديث: المستخدم يحدد كمقروء، المدير يحدث أي شيء
-      allow update: if isAdmin()
-        || (isOwner(resource.data.userId) && isUnchanged('userId'));
+      allow update: if isAdmin() || (isOwner(resource.data.userId) && isUnchanged('userId'));
 
-      // الحذف: صاحب الإشعار أو المدير
       allow delete: if isAdminOrOwner(resource.data.userId);
     }
 
-    // ══════════════════════════════════════════════════════════════════════════════════════
-    // قواعد تذاكر الدعم (Support Tickets Collection)
-    // ══════════════════════════════════════════════════════════════════════════════════════
-
     match /support/{ticketId} {
-      // القراءة: المستخدم يرى تذاكره، المدير يرى الكل
       allow read: if isAdminOrOwner(resource.data.userId);
 
-      // الإنشاء: أي مستخدم مسجل ينشئ تذكرة
       allow create: if isAuthenticated()
         && request.resource.data.userId == currentUserId()
         && hasMinLength(request.resource.data.subject, 5)
         && hasMinLength(request.resource.data.message, 10)
         && request.resource.data.status == 'open';
 
-      // التحديث: المدير يرد على التذاكر
       allow update: if isAdmin();
 
-      // الحذف: المدير فقط
       allow delete: if isAdmin();
     }
 
-    // ══════════════════════════════════════════════════════════════════════════════════════
-    // قواعد الإعدادات (Settings Collection)
-    // ══════════════════════════════════════════════════════════════════════════════════════
-
     match /settings/{settingId} {
-      // القراءة: أي مستخدم مسجل يمكنه قراءة الإعدادات
       allow read: if isAuthenticated();
-
-      // الكتابة: المدير فقط
       allow create: if isAdmin();
       allow update: if isAdmin();
       allow delete: if isAdmin();
     }
 
-    // ══════════════════════════════════════════════════════════════════════════════════════
-    // قواعد البيانات المؤقتة للنظام (System Collections - Server Only)
-    // هذه الـ Collections يتم الوصول إليها فقط من الخادم عبر Admin SDK
-    // ══════════════════════════════════════════════════════════════════════════════════════
-
-    // إعادة تعيين كلمة المرور - الخادم فقط
     match /password_resets/{resetId} {
       allow read: if false;
       allow create: if false;
@@ -563,7 +315,6 @@ service cloud.firestore {
       allow delete: if false;
     }
 
-    // التسجيلات المعلقة - الخادم فقط
     match /pending_registrations/{registrationId} {
       allow read: if false;
       allow create: if false;
@@ -571,7 +322,6 @@ service cloud.firestore {
       allow delete: if false;
     }
 
-    // رموز إعادة تعيين كلمة المرور - الخادم فقط
     match /passwordResetTokens/{tokenId} {
       allow read: if false;
       allow create: if false;
@@ -579,17 +329,12 @@ service cloud.firestore {
       allow delete: if false;
     }
 
-    // رموز التحقق من البريد - الخادم فقط
     match /emailVerificationTokens/{tokenId} {
       allow read: if false;
       allow create: if false;
       allow update: if false;
       allow delete: if false;
     }
-
-    // ══════════════════════════════════════════════════════════════════════════════════════
-    // حماية افتراضية - رفض الوصول لأي collection غير محدد
-    // ══════════════════════════════════════════════════════════════════════════════════════
 
     match /{document=**} {
       allow read: if false;

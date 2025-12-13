@@ -1,4 +1,4 @@
-import { Resend } from 'resend';
+import nodemailer from 'nodemailer';
 
 const isDev = process.env.NODE_ENV !== 'production';
 
@@ -9,8 +9,16 @@ const getBaseUrl = () => {
   return 'http://localhost:5000';
 };
 
-// Use Resend for all environments (development and production)
-const resend = new Resend(process.env.RESEND_API_KEY || 're_test_');
+// Create SMTP transporter using your own email server
+const transporter = nodemailer.createTransport({
+  host: process.env.SMTP_HOST || 'mail.odhiyaty.com',
+  port: parseInt(process.env.SMTP_PORT || '465'),
+  secure: true, // use SSL
+  auth: {
+    user: process.env.SMTP_USER || 'verification@odhiyaty.com',
+    pass: process.env.SMTP_PASSWORD,
+  },
+});
 
 export interface EmailOptions {
   to: string;
@@ -21,23 +29,20 @@ export interface EmailOptions {
 
 export async function sendEmail(options: EmailOptions) {
   try {
-    console.log('📧 Sending email via Resend to:', options.to);
-    console.log('🔑 Using API Key:', process.env.RESEND_API_KEY ? '✓ Available' : '✗ Missing');
+    const fromEmail = process.env.SMTP_FROM_EMAIL || process.env.SMTP_USER || 'verification@odhiyaty.com';
+    console.log('📧 Sending email via SMTP to:', options.to);
+    console.log('📤 From:', fromEmail);
 
-    const result = await resend.emails.send({
-      from: process.env.RESEND_FROM_EMAIL || 'onboarding@resend.dev',
+    const result = await transporter.sendMail({
+      from: `"أضحيتي" <${fromEmail}>`,
       to: options.to,
       subject: options.subject,
       html: options.html,
+      text: options.text,
     });
 
-    if (result.error) {
-      console.error('❌ Resend error:', result.error);
-      return { success: false, error: result.error?.message };
-    }
-
-    console.log('✅ Email sent successfully:', result.data?.id);
-    return { success: true, messageId: result.data?.id };
+    console.log('✅ Email sent successfully:', result.messageId);
+    return { success: true, messageId: result.messageId };
   } catch (error: any) {
     console.error('❌ Email error:', error?.message);
     return { success: false, error: error?.message };

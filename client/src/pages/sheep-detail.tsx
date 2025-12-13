@@ -91,7 +91,7 @@ export default function SheepDetail() {
     if (params?.id) {
       fetchSheep(params.id);
     }
-  }, [params?.id]);
+  }, [params?.id, user]);
 
   useEffect(() => {
     if (user) {
@@ -108,8 +108,10 @@ export default function SheepDetail() {
       const sheepDoc = await getDoc(doc(db, "sheep", id));
       if (sheepDoc.exists()) {
         const data = sheepDoc.data();
-        // Only allow viewing if approved
-        if (data?.status === "approved") {
+        // Allow viewing if approved OR if the user is the owner (seller)
+        const isOwner = user && data?.sellerId === user.uid;
+        const isAdmin = user && user.role === "admin";
+        if (data?.status === "approved" || isOwner || isAdmin) {
           setSheep({ id: sheepDoc.id, ...data } as Sheep);
         } else {
           throw new Error("Sheep not approved");

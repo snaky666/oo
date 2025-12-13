@@ -81,6 +81,16 @@ export default function SheepCheckout() {
       return;
     }
 
+    if (!orderId) {
+      toast({
+        title: "خطأ",
+        description: "لا يوجد طلب معلق. يرجى إنشاء طلب أولاً",
+        variant: "destructive",
+      });
+      setLocation("/browse");
+      return;
+    }
+
     if (paymentMethod === "card" && !receiptFile) {
       toast({
         title: "تنبيه",

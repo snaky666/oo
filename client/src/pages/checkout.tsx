@@ -60,6 +60,17 @@ export default function Checkout() {
       return;
     }
 
+    // Validate orderId for non-VIP payments
+    if (!isVIPUpgrade && !orderId) {
+      toast({
+        title: "خطأ",
+        description: "لا يوجد طلب معلق. يرجى إنشاء طلب أولاً",
+        variant: "destructive",
+      });
+      setLocation("/browse");
+      return;
+    }
+
     if (paymentMethod === "card" && !receiptFile) {
       toast({
         title: "تنبيه",
@@ -78,35 +89,43 @@ export default function Checkout() {
         receiptUrl = await uploadToImgBB(receiptFile);
       }
 
-      // إنشاء سجل الدفع
-      const paymentData = {
+      // إنشاء سجل الدفع - only include orderId if it exists
+      const paymentData: Record<string, any> = {
         userId: user.uid,
         userEmail: user.email,
         amount: amount,
         method: paymentMethod,
         status: paymentMethod === "cash" ? "pending" : paymentMethod === "card" ? "pending" : "completed",
-        orderId: orderId || undefined,
         vipUpgrade: isVIPUpgrade,
         createdAt: Date.now(),
         updatedAt: Date.now(),
       };
+      
+      if (orderId) {
+        paymentData.orderId = orderId;
+      }
 
       const paymentRef = await addDoc(collection(db, "payments"), paymentData);
 
       // إذا كان CIB، أنشئ سجل الوصل
       if (paymentMethod === "card") {
-        await addDoc(collection(db, "cibReceipts"), {
+        const cibReceiptData: Record<string, any> = {
           paymentId: paymentRef.id,
           userId: user.uid,
           userEmail: user.email,
           receiptImageUrl: receiptUrl,
           amount: amount,
-          orderId: orderId || undefined,
           vipUpgrade: isVIPUpgrade,
           status: "pending",
           createdAt: Date.now(),
           updatedAt: Date.now(),
-        });
+        };
+        
+        if (orderId) {
+          cibReceiptData.orderId = orderId;
+        }
+        
+        await addDoc(collection(db, "cibReceipts"), cibReceiptData);
       }
 
       // إذا كان VIP upgrade

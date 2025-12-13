@@ -143,7 +143,7 @@ export interface Sheep {
   updatedAt?: number;
 }
 
-// Schema for creating a sheep (used in forms)
+// Schema for creating a sheep (used in forms) - images handled separately
 export const insertSheepSchema = z.object({
   price: z.number().min(1, "السعر يجب أن يكون أكبر من صفر"),
   age: z.number().min(1, "العمر يجب أن يكون أكبر من صفر"),
@@ -151,7 +151,6 @@ export const insertSheepSchema = z.object({
   city: z.string().min(2, "يجب اختيار الولاية"),
   municipality: z.string().min(2, "يجب اختيار البلدية"),
   description: z.string().min(10, "الوصف يجب أن يكون 10 أحرف على الأقل"),
-  images: z.array(z.string()).min(1, "يجب تحميل صورة واحدة على الأقل").max(5, "يمكن تحميل 5 صور كحد أقصى"),
   isVIP: z.boolean().optional().default(false),
 });
 

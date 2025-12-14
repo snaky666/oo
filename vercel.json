@@ -1,0 +1,27 @@
+{
+  "version": 2,
+  "framework": "vite",
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist/public",
+  "rewrites": [
+    { "source": "/api/health", "destination": "/api/health" },
+    { "source": "/api/sheep/:id", "destination": "/api/sheep?id=:id" },
+    { "source": "/api/sheep/approved", "destination": "/api/sheep?approved=true" },
+    { "source": "/api/sheep", "destination": "/api/sheep" },
+    { "source": "/api/auth/:action", "destination": "/api/auth?action=:action" },
+    { "source": "/api/orders/:action", "destination": "/api/orders?action=:action" },
+    { "source": "/api/users/:id", "destination": "/api/users?action=get&id=:id" },
+    { "source": "/api/settings", "destination": "/api/settings" },
+    { "source": "/api/ads", "destination": "/api/ads" },
+    { "source": "/api/ads/:id", "destination": "/api/ads?id=:id" },
+    { "source": "/api/ad-requests", "destination": "/api/ads?type=requests" },
+    { "source": "/api/ad-requests/:id/:action", "destination": "/api/ads?type=requests&id=:id&action=:action" },
+    { "source": "/api/municipalities", "destination": "/api/municipalities" },
+    { "source": "/(.*)", "destination": "/index.html" }
+  ],
+  "functions": {
+    "api/*.ts": {
+      "maxDuration": 30
+    }
+  }
+}

@@ -7,20 +7,29 @@ let adminAuth: Auth | null = null;
 let adminDb: Firestore | null = null;
 
 function formatPrivateKey(key: string): string {
+  if (!key) {
+    throw new Error('Private key is empty or undefined');
+  }
+  
   let formattedKey = key.trim();
+  
+  // Only remove surrounding quotes if the entire string is quoted
   if ((formattedKey.startsWith('"') && formattedKey.endsWith('"')) ||
       (formattedKey.startsWith("'") && formattedKey.endsWith("'"))) {
     formattedKey = formattedKey.slice(1, -1);
   }
+  
+  // Replace escaped newlines with actual newlines (Vercel stores \n as literal characters)
   formattedKey = formattedKey.replace(/\\n/g, '\n');
-  formattedKey = formattedKey.replace(/\\\\n/g, '\n');
-  formattedKey = formattedKey.replace(/"/g, '');
+  
+  // Validate PEM format
   if (!formattedKey.includes('-----BEGIN PRIVATE KEY-----')) {
-    formattedKey = `-----BEGIN PRIVATE KEY-----\n${formattedKey}\n-----END PRIVATE KEY-----\n`;
+    throw new Error('Invalid private key format: missing BEGIN marker');
   }
-  formattedKey = formattedKey.replace('-----BEGIN PRIVATE KEY-----', '-----BEGIN PRIVATE KEY-----\n');
-  formattedKey = formattedKey.replace('-----END PRIVATE KEY-----', '\n-----END PRIVATE KEY-----');
-  formattedKey = formattedKey.replace(/\n\n+/g, '\n');
+  if (!formattedKey.includes('-----END PRIVATE KEY-----')) {
+    throw new Error('Invalid private key format: missing END marker');
+  }
+  
   return formattedKey;
 }
 

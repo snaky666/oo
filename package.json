@@ -4,7 +4,7 @@
   "type": "module",
   "license": "MIT",
   "scripts": {
-    "dev": "NODE_ENV=development tsx server/index-dev.ts",
+    "dev": "NODE_ENV=development npx tsx server/index-dev.ts",
     "build": "vite build && mkdir -p dist/public && cp -r dist/* dist/public/ 2>/dev/null || true",
     "build:client": "vite build",
     "vercel-build": "vite build",

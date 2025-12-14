@@ -33,6 +33,11 @@ export function initFirebase() {
       const privateKey = process.env.FIREBASE_PRIVATE_KEY;
       const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
 
+      console.log('[Vercel Firebase] Initializing...');
+      console.log('[Vercel Firebase] Has projectId:', !!projectId);
+      console.log('[Vercel Firebase] Has privateKey:', !!privateKey);
+      console.log('[Vercel Firebase] Has clientEmail:', !!clientEmail);
+
       if (process.env.FIREBASE_SERVICE_ACCOUNT) {
         let serviceAccountJson = process.env.FIREBASE_SERVICE_ACCOUNT;
         try {
@@ -50,8 +55,11 @@ export function initFirebase() {
         
         adminAuth = getAuth(adminApp);
         adminDb = getFirestore(adminApp);
+        console.log('[Vercel Firebase] Initialized with service account JSON');
       } else if (privateKey && clientEmail && projectId) {
         const formattedPrivateKey = formatPrivateKey(privateKey);
+        console.log('[Vercel Firebase] Private key starts with:', formattedPrivateKey.substring(0, 30));
+        
         const serviceAccount = {
           type: 'service_account',
           project_id: projectId,
@@ -66,14 +74,22 @@ export function initFirebase() {
         
         adminAuth = getAuth(adminApp);
         adminDb = getFirestore(adminApp);
+        console.log('[Vercel Firebase] Initialized with individual credentials');
+      } else {
+        console.error('[Vercel Firebase] Missing required credentials');
+        console.error('[Vercel Firebase] VITE_FIREBASE_PROJECT_ID:', projectId ? 'present' : 'MISSING');
+        console.error('[Vercel Firebase] FIREBASE_PRIVATE_KEY:', privateKey ? 'present' : 'MISSING');
+        console.error('[Vercel Firebase] FIREBASE_CLIENT_EMAIL:', clientEmail ? 'present' : 'MISSING');
       }
     } catch (error: any) {
-      console.error('Failed to initialize Firebase Admin:', error?.message);
+      console.error('[Vercel Firebase] Failed to initialize:', error?.message);
+      console.error('[Vercel Firebase] Stack:', error?.stack);
     }
   } else {
     adminApp = getApps()[0];
     adminAuth = getAuth(adminApp);
     adminDb = getFirestore(adminApp);
+    console.log('[Vercel Firebase] Using existing app');
   }
   
   return { adminAuth, adminDb };

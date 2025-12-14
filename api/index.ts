@@ -825,6 +825,22 @@ app.get('/api/sheep', async (req: Request, res: Response) => {
   const { approved } = req.query;
 
   try {
+    // Use Firebase Admin SDK if available (bypasses security rules)
+    if (adminDb) {
+      let query: FirebaseFirestore.Query = adminDb.collection('sheep');
+      if (approved === 'true') {
+        query = query.where('status', '==', 'approved');
+      }
+      const snapshot = await query.get();
+      const data = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+      console.log(`✅ Found ${data.length} ${approved === 'true' ? 'approved' : ''} sheep (Admin SDK)`);
+      return res.status(200).json(data);
+    }
+
+    // Fallback to REST API
     if (approved === 'true') {
       const body = {
         structuredQuery: {

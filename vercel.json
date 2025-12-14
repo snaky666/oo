@@ -16,6 +16,7 @@
     { "source": "/api/ads/:id", "destination": "/api/ads?id=:id" },
     { "source": "/api/ad-requests", "destination": "/api/ads?type=requests" },
     { "source": "/api/ad-requests/:id/:action", "destination": "/api/ads?type=requests&id=:id&action=:action" },
+    { "source": "/api/ad-requests/:id", "destination": "/api/ads?type=requests&id=:id" },
     { "source": "/api/municipalities", "destination": "/api/municipalities" },
     { "source": "/(.*)", "destination": "/index.html" }
   ],

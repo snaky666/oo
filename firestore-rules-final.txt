@@ -1,0 +1,88 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isAuthenticated() { return request.auth != null; }
+    function currentUserId() { return request.auth.uid; }
+    function isOwner(userId) { return isAuthenticated() && currentUserId() == userId; }
+    function getUserData() { return get(/databases/$(database)/documents/users/$(currentUserId())).data; }
+    function userExists() { return isAuthenticated() && exists(/databases/$(database)/documents/users/$(currentUserId())); }
+    function hasRole(role) { return userExists() && getUserData().role == role; }
+    function isAdmin() { return hasRole('admin'); }
+    function isSeller() { return hasRole('seller'); }
+    function isBuyer() { return hasRole('buyer'); }
+    function isValidEmail(email) { return email is string && email.size() >= 5 && email.matches('^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$'); }
+    function isValidPhone(phone) { return phone is string && phone.size() >= 7 && phone.size() <= 20; }
+    function isNonEmptyString(field) { return field is string && field.size() > 0; }
+    function hasMinLength(field, minLen) { return field is string && field.size() >= minLen; }
+    function isPositiveNumber(num) { return num is number && num > 0; }
+    function isNonNegativeNumber(num) { return num is number && num >= 0; }
+    function isInRange(num, min, max) { return num is number && num >= min && num <= max; }
+    function isValidTimestamp(ts) { return ts is int && ts > 0; }
+    function isValidPrice(price) { return price is number && price >= 10000 && price <= 10000000; }
+    function isValidAge(age) { return age is number && age >= 6 && age <= 60; }
+    function isValidWeight(weight) { return weight is number && weight >= 5 && weight <= 200; }
+    function isValidUrl(url) { return url is string && url.matches('^https://.*'); }
+    function hasAll(fields) { return request.resource.data.keys().hasAll(fields); }
+    function isUnchanged(field) { return request.resource.data[field] == resource.data[field]; }
+
+    match /users/{userId} {
+      allow read: if isOwner(userId) || isAdmin() || (isAuthenticated() && userExists() && resource.data.role in ['buyer', 'seller']);
+      allow create: if isOwner(userId) && hasAll(['uid', 'email', 'role', 'createdAt', 'phone', 'fullName']) && request.resource.data.uid == userId && isValidEmail(request.resource.data.email) && request.resource.data.role in ['buyer', 'seller', 'admin'] && isValidPhone(request.resource.data.phone) && hasMinLength(request.resource.data.fullName, 2) && isValidTimestamp(request.resource.data.createdAt);
+      allow update: if (isOwner(userId) || isAdmin()) && isUnchanged('uid') && isUnchanged('email') && isUnchanged('createdAt');
+      allow delete: if isAdmin();
+    }
+
+    match /sheep/{sheepId} {
+      allow read: if isAuthenticated() || resource.data.status == 'approved';
+      allow create: if isSeller() && hasAll(['id', 'sellerId', 'images', 'price', 'age', 'weight', 'city', 'description', 'status', 'createdAt']) && request.resource.data.id == sheepId && request.resource.data.sellerId == currentUserId() && request.resource.data.status == 'pending' && request.resource.data.images is list && request.resource.data.images.size() >= 1 && request.resource.data.images.size() <= 5 && isValidPrice(request.resource.data.price) && isValidAge(request.resource.data.age) && isValidWeight(request.resource.data.weight) && isNonEmptyString(request.resource.data.city) && hasMinLength(request.resource.data.description, 20) && isValidTimestamp(request.resource.data.createdAt);
+      allow update: if (isSeller() && resource.data.sellerId == currentUserId() && resource.data.status == 'pending' && isUnchanged('sellerId') && request.resource.data.status == 'pending') || isAdmin();
+      allow delete: if (isSeller() && resource.data.sellerId == currentUserId() && resource.data.status == 'pending') || isAdmin();
+    }
+
+    match /orders/{orderId} {
+      allow read: if isAdmin() || (isAuthenticated() && (resource.data.buyerId == currentUserId() || resource.data.sellerId == currentUserId()));
+      allow create: if (isAuthenticated() && request.resource.data.buyerId == currentUserId() && hasAll(['buyerId', 'sheepId', 'status', 'createdAt']) && request.resource.data.status in ['pending', 'new'] && isValidTimestamp(request.resource.data.createdAt)) || request.auth == null;
+      allow update: if isAdmin() || (isAuthenticated() && (resource.data.buyerId == currentUserId() || resource.data.sellerId == currentUserId()));
+      allow delete: if isAdmin();
+    }
+
+    match /payments/{paymentId} {
+      allow read: if (isAuthenticated() && resource.data.userId == currentUserId()) || isAdmin();
+      allow create: if isAuthenticated() && hasAll(['id', 'userId', 'userEmail', 'amount', 'method', 'status', 'createdAt']) && request.resource.data.id == paymentId && request.resource.data.userId == currentUserId() && request.resource.data.status == 'pending' && isValidPrice(request.resource.data.amount) && request.resource.data.method in ['cib', 'stripe', 'cash', 'card', 'installment'] && isValidTimestamp(request.resource.data.createdAt);
+      allow update: if isAdmin() && request.resource.data.status in ['pending', 'completed', 'verified', 'failed', 'cancelled', 'rejected'];
+      allow delete: if isAdmin();
+    }
+
+    match /reviews/{reviewId} {
+      allow read: if isAuthenticated();
+      allow create: if isBuyer() && hasAll(['id', 'buyerId', 'sellerId', 'sheepId', 'rating', 'comment', 'createdAt']) && request.resource.data.id == reviewId && request.resource.data.buyerId == currentUserId() && isInRange(request.resource.data.rating, 1, 5) && isNonEmptyString(request.resource.data.sheepId) && isNonEmptyString(request.resource.data.sellerId) && isValidTimestamp(request.resource.data.createdAt);
+      allow update: if isAuthenticated() && resource.data.buyerId == currentUserId() && isUnchanged('buyerId') && isUnchanged('sellerId') && isUnchanged('sheepId') && isUnchanged('createdAt') && isInRange(request.resource.data.rating, 1, 5);
+      allow delete: if (isAuthenticated() && resource.data.buyerId == currentUserId()) || isAdmin();
+    }
+
+    match /ads/{adId} {
+      allow read: if isAdmin() || (isAuthenticated() && resource.data.active == true);
+      allow create: if isAdmin() && hasAll(['id', 'image', 'companyName', 'active', 'createdAt']) && request.resource.data.id == adId && isNonEmptyString(request.resource.data.image) && hasMinLength(request.resource.data.companyName, 2) && isValidTimestamp(request.resource.data.createdAt);
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    match /notifications/{notificationId} {
+      allow read: if isOwner(resource.data.userId);
+      allow create: if isAdmin() || request.auth == null;
+      allow update: if (isAuthenticated() && isOwner(resource.data.userId)) || isAdmin();
+      allow delete: if isOwner(resource.data.userId) || isAdmin();
+    }
+
+    match /settings/{settingId} {
+      allow read: if isAuthenticated();
+      allow create: if isAdmin();
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

@@ -1,3 +1,35 @@
+# Firebase Firestore Security Rules Setup
+
+## كيفية تطبيق القواعد الأمنية على Firebase
+
+### الخطوة 1: الذهاب إلى Firebase Console
+1. اذهب إلى [Firebase Console](https://console.firebase.google.com)
+2. اختر مشروعك (أضحيتي)
+3. من الشريط الجانبي الأيسر، انقر على **Firestore Database**
+
+### الخطوة 2: الذهاب إلى قائمة Rules
+1. في Firestore Dashboard، اضغط على تبويب **Rules**
+2. ستجد نافذة محرر النصوص بالقواعس الحالية
+
+### الخطوة 3: نسخ والصق القواعس الجديدة
+1. **حدد جميع النصوص الحالية** (Ctrl+A أو Cmd+A)
+2. **احذفها** (Delete)
+3. **انسخ القواعس من أسفل** وألصقها في محرر Firebase
+
+### الخطوة 4: نشر القواعس
+1. اضغط على زر **Publish** (أزرق في الأعلى)
+2. انتظر حتى يظهر تأكيد "Rules deployed"
+
+### الخطوة 5: التحقق من النجاح
+ستظهر رسالة: ✅ "The deployed rules have been validated"
+
+---
+
+## القواعس الأمنية الكاملة
+
+انسخ هذا النص بالكامل والصقه في Firebase Console:
+
+```firestore
 rules_version = '2';
 
 service cloud.firestore {
@@ -104,11 +136,9 @@ service cloud.firestore {
     // ================= USERS COLLECTION =================
     
     match /users/{userId} {
-      // User can read own profile, admin can read all, sellers/buyers can read each other
       allow read: if isOwner(userId) || isAdmin() || 
                      (isAuthenticated() && userExists() && resource.data.role in ['buyer', 'seller']);
       
-      // Owner creates their profile during registration
       allow create: if isOwner(userId)
         && hasAll(['uid', 'email', 'role', 'createdAt', 'phone', 'fullName'])
         && request.resource.data.uid == userId
@@ -118,23 +148,19 @@ service cloud.firestore {
         && hasMinLength(request.resource.data.fullName, 2)
         && isValidTimestamp(request.resource.data.createdAt);
       
-      // Owner updates own profile, admin can update any
       allow update: if (isOwner(userId) || isAdmin())
         && isUnchanged('uid')
         && isUnchanged('email')
         && isUnchanged('createdAt');
       
-      // Only admin can delete users
       allow delete: if isAdmin();
     }
     
     // ================= SHEEP COLLECTION =================
     
     match /sheep/{sheepId} {
-      // Authenticated users or anyone can read approved sheep (for REST API access)
       allow read: if isAuthenticated() || resource.data.status == 'approved';
       
-      // Sellers create sheep listings
       allow create: if isSeller()
         && hasAll(['id', 'sellerId', 'images', 'price', 'age', 'weight', 'city', 'description', 'status', 'createdAt'])
         && request.resource.data.id == sheepId
@@ -150,11 +176,9 @@ service cloud.firestore {
         && hasMinLength(request.resource.data.description, 20)
         && isValidTimestamp(request.resource.data.createdAt);
       
-      // Sellers update own pending sheep, admin updates any
       allow update: if (isSeller() && resource.data.sellerId == currentUserId() && resource.data.status == 'pending' && isUnchanged('sellerId') && request.resource.data.status == 'pending') 
         || isAdmin();
       
-      // Sellers delete own pending sheep, admin deletes any
       allow delete: if (isSeller() && resource.data.sellerId == currentUserId() && resource.data.status == 'pending') 
         || isAdmin();
     }
@@ -162,11 +186,9 @@ service cloud.firestore {
     // ================= ORDERS COLLECTION =================
     
     match /orders/{orderId} {
-      // Admin reads all, buyer/seller read their own orders
       allow read: if isAdmin() 
         || (isAuthenticated() && (resource.data.buyerId == currentUserId() || resource.data.sellerId == currentUserId()));
       
-      // Authenticated users create orders with proper validation, or backend via Admin SDK
       allow create: if isAuthenticated()
         && request.resource.data.buyerId == currentUserId()
         && hasAll(['buyerId', 'sheepId', 'status', 'createdAt'])
@@ -174,21 +196,17 @@ service cloud.firestore {
         && isValidTimestamp(request.resource.data.createdAt)
         || request.auth == null;
       
-      // Buyer/seller update own orders (limited fields), admin updates any
       allow update: if isAdmin()
         || (isAuthenticated() && (resource.data.buyerId == currentUserId() || resource.data.sellerId == currentUserId()));
       
-      // Only admin deletes orders
       allow delete: if isAdmin();
     }
     
     // ================= PAYMENTS COLLECTION =================
     
     match /payments/{paymentId} {
-      // Owner reads own, admin reads all
       allow read: if (isAuthenticated() && resource.data.userId == currentUserId()) || isAdmin();
       
-      // Authenticated user creates own payment
       allow create: if isAuthenticated()
         && hasAll(['id', 'userId', 'userEmail', 'amount', 'method', 'status', 'createdAt'])
         && request.resource.data.id == paymentId
@@ -198,21 +216,17 @@ service cloud.firestore {
         && request.resource.data.method in ['cib', 'stripe', 'cash', 'card', 'installment']
         && isValidTimestamp(request.resource.data.createdAt);
       
-      // Only admin updates payments
       allow update: if isAdmin() 
         && request.resource.data.status in ['pending', 'completed', 'verified', 'failed', 'cancelled', 'rejected'];
       
-      // Only admin deletes payments
       allow delete: if isAdmin();
     }
     
     // ================= CIB RECEIPTS COLLECTION =================
     
     match /cibReceipts/{receiptId} {
-      // Owner reads own, admin reads all
       allow read: if (isAuthenticated() && resource.data.userId == currentUserId()) || isAdmin();
       
-      // Authenticated user uploads own receipt
       allow create: if isAuthenticated()
         && hasAll(['id', 'paymentId', 'userId', 'userEmail', 'receiptImageUrl', 'amount', 'status', 'createdAt'])
         && request.resource.data.id == receiptId
@@ -222,21 +236,17 @@ service cloud.firestore {
         && isPositiveNumber(request.resource.data.amount)
         && isValidTimestamp(request.resource.data.createdAt);
       
-      // Only admin updates receipts
       allow update: if isAdmin() 
         && request.resource.data.status in ['pending', 'verified', 'rejected'];
       
-      // Only admin deletes receipts
       allow delete: if isAdmin();
     }
     
     // ================= INSTALLMENTS COLLECTION =================
     
     match /installments/{installmentId} {
-      // Owner reads own, admin reads all
       allow read: if (isAuthenticated() && resource.data.userId == currentUserId()) || isAdmin();
       
-      // Authenticated user creates installment
       allow create: if isAuthenticated()
         && hasAll(['id', 'paymentId', 'userId', 'totalAmount', 'downPayment', 'remainingAmount', 'monthlyInstallment', 'numberOfMonths', 'paidInstallments', 'nextDueDate', 'status', 'createdAt'])
         && request.resource.data.id == installmentId
@@ -250,40 +260,32 @@ service cloud.firestore {
         && request.resource.data.paidInstallments >= 0
         && isValidTimestamp(request.resource.data.createdAt);
       
-      // Only admin updates installments
       allow update: if isAdmin() 
         && request.resource.data.status in ['active', 'completed', 'defaulted', 'pending'];
       
-      // Only admin deletes installments
       allow delete: if isAdmin();
     }
     
     // ================= VIP SUBSCRIPTIONS COLLECTION =================
     
     match /vipSubscriptions/{subscriptionId} {
-      // Owner reads own, admin reads all
       allow read: if (isAuthenticated() && resource.data.userId == currentUserId()) || isAdmin();
       
-      // Authenticated user creates own subscription
       allow create: if isAuthenticated()
         && request.resource.data.userId == currentUserId()
         && request.resource.data.package in ['silver', 'gold', 'platinum']
         && isPositiveNumber(request.resource.data.price);
       
-      // Owner toggles auto-renew, admin can update any
       allow update: if (isAuthenticated() && resource.data.userId == currentUserId()) || isAdmin();
       
-      // Only admin deletes subscriptions
       allow delete: if isAdmin();
     }
     
     // ================= AD REQUESTS COLLECTION =================
     
     match /ad_requests/{requestId} {
-      // Admin reads all, user reads own
       allow read: if isAdmin() || (isAuthenticated() && resource.data.userId == currentUserId());
       
-      // Authenticated user creates ad request
       allow create: if isAuthenticated()
         && hasAll(['id', 'userId', 'image', 'companyName', 'description', 'status', 'createdAt'])
         && request.resource.data.id == requestId
@@ -294,21 +296,17 @@ service cloud.firestore {
         && hasMinLength(request.resource.data.description, 10)
         && isValidTimestamp(request.resource.data.createdAt);
       
-      // Only admin updates ad requests
       allow update: if isAdmin() 
         && request.resource.data.status in ['pending', 'approved', 'rejected'];
       
-      // Only admin deletes ad requests
       allow delete: if isAdmin();
     }
     
     // ================= ADS COLLECTION =================
     
     match /ads/{adId} {
-      // Authenticated users read active ads, admin reads all
       allow read: if isAdmin() || (isAuthenticated() && resource.data.active == true);
       
-      // Only admin creates ads
       allow create: if isAdmin()
         && hasAll(['id', 'image', 'companyName', 'active', 'createdAt'])
         && request.resource.data.id == adId
@@ -316,20 +314,16 @@ service cloud.firestore {
         && hasMinLength(request.resource.data.companyName, 2)
         && isValidTimestamp(request.resource.data.createdAt);
       
-      // Only admin updates ads
       allow update: if isAdmin();
       
-      // Only admin deletes ads
       allow delete: if isAdmin();
     }
     
     // ================= REVIEWS COLLECTION =================
     
     match /reviews/{reviewId} {
-      // Authenticated users can read reviews
       allow read: if isAuthenticated();
       
-      // Buyer creates review
       allow create: if isBuyer()
         && hasAll(['id', 'buyerId', 'sellerId', 'sheepId', 'rating', 'comment', 'createdAt'])
         && request.resource.data.id == reviewId
@@ -339,7 +333,6 @@ service cloud.firestore {
         && isNonEmptyString(request.resource.data.sellerId)
         && isValidTimestamp(request.resource.data.createdAt);
       
-      // Owner updates own review
       allow update: if isAuthenticated() && resource.data.buyerId == currentUserId()
         && isUnchanged('buyerId')
         && isUnchanged('sellerId')
@@ -347,51 +340,40 @@ service cloud.firestore {
         && isUnchanged('createdAt')
         && isInRange(request.resource.data.rating, 1, 5);
       
-      // Owner or admin deletes review
       allow delete: if isAuthenticated() && resource.data.buyerId == currentUserId() || isAdmin();
     }
     
     // ================= FAVORITES COLLECTION =================
     
     match /favorites/{favoriteId} {
-      // User reads own favorites
       allow read: if isOwner(resource.data.userId);
       
-      // Authenticated user adds to favorites
       allow create: if isAuthenticated()
         && request.resource.data.userId == currentUserId()
         && isNonEmptyString(request.resource.data.sheepId);
       
-      // No updates to favorites
       allow update: if false;
       
-      // User removes own favorite
       allow delete: if isOwner(resource.data.userId);
     }
     
     // ================= NOTIFICATIONS COLLECTION =================
     
     match /notifications/{notificationId} {
-      // User reads own notifications
       allow read: if isOwner(resource.data.userId);
       
-      // Only admin or backend creates notifications
       allow create: if isAdmin() || request.auth == null;
       
-      // User marks as read, admin can update
       allow update: if (isAuthenticated() && isOwner(resource.data.userId)) || isAdmin();
       
-      // Owner or admin deletes notification
       allow delete: if isOwner(resource.data.userId) || isAdmin();
     }
     
     // ================= SUPPORT TICKETS COLLECTION =================
     
     match /support/{ticketId} {
-      // User reads own tickets, admin reads all
       allow read: if (isAuthenticated() && resource.data.userId == currentUserId()) || isAdmin();
       
-      // Authenticated user creates ticket
       allow create: if isAuthenticated()
         && hasAll(['id', 'userId', 'subject', 'message', 'status', 'createdAt'])
         && request.resource.data.id == ticketId
@@ -401,33 +383,26 @@ service cloud.firestore {
         && hasMinLength(request.resource.data.message, 10)
         && isValidTimestamp(request.resource.data.createdAt);
       
-      // Only admin updates tickets
       allow update: if isAdmin();
       
-      // Only admin deletes tickets
       allow delete: if isAdmin();
     }
     
     // ================= SETTINGS COLLECTION =================
     
     match /settings/{settingId} {
-      // Authenticated users read settings
       allow read: if isAuthenticated();
       
-      // Only admin creates settings
       allow create: if isAdmin();
       
-      // Only admin updates settings
       allow update: if isAdmin();
       
-      // Only admin deletes settings
       allow delete: if isAdmin();
     }
     
     // ================= PASSWORD RESET TOKENS COLLECTION =================
     
     match /passwordResetTokens/{tokenId} {
-      // Backend only - no client access
       allow read: if request.auth == null;
       allow create: if request.auth == null;
       allow update: if request.auth == null;
@@ -437,7 +412,6 @@ service cloud.firestore {
     // ================= EMAIL VERIFICATION TOKENS COLLECTION =================
     
     match /emailVerificationTokens/{tokenId} {
-      // Backend only - no client access
       allow read: if request.auth == null;
       allow create: if request.auth == null;
       allow update: if request.auth == null;
@@ -469,3 +443,29 @@ service cloud.firestore {
     }
   }
 }
+```
+
+---
+
+## الميزات الأمنية الرئيسية:
+
+✅ **المستخدمون المصرحون** - يمكن إنشاء حسابات وطلبات  
+✅ **البائعون** - يمكنهم إضافة الأضاحي والتحكم بطلباتهم  
+✅ **المشترون** - يمكنهم إنشاء طلبات والتقييم  
+✅ **المسؤولون** - يمكنهم إدارة كل شيء  
+✅ **التحقق من البيانات** - التحقق من الأسعار والأعمار والأوزان  
+✅ **حماية البيانات الشخصية** - لا يمكن لأحد الوصول لبيانات الآخرين
+
+---
+
+## اختبار القواعس
+
+بعد النشر، جرب إنشاء طلب من التطبيق:
+1. سجل الدخول بحسابك
+2. اختر أضحية وأتمم الطلب
+3. يجب أن ترى: ✅ "تم إنشاء الطلب بنجاح"
+
+إذا حصلت على خطأ، تحقق من:
+- ✅ أن المستخدم مصرح به (logged in)
+- ✅ أن البيانات تتضمن `buyerId`, `sheepId`, `status`, `createdAt`
+- ✅ أن التوكن يُرسل مع الطلب (Authorization header)

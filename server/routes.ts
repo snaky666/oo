@@ -1134,10 +1134,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
+      // Try to get and verify user auth token for Firestore writes
+      let userIdToken: string | undefined;
+      const authHeader = req.headers.authorization;
+      if (authHeader && authHeader.startsWith("Bearer ")) {
+        userIdToken = authHeader.substring(7);
+      }
+
       console.log('📝 Creating order...', { 
         buyerId: orderData.buyerId, 
         sheepId: orderData.sheepId,
-        sheepOrigin: orderData.sheepOrigin 
+        sheepOrigin: orderData.sheepOrigin,
+        authenticated: !!userIdToken
       });
 
       // If it's a foreign sheep order, validate required documents and nationalId
@@ -1266,15 +1274,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // Use Admin SDK if available
           await adminDb.collection('orders').doc(orderId).set(orderDataToSave);
         } else {
-          // Fallback to REST API
+          // Fallback to REST API with user's auth token if available, otherwise use API key
+          const headers: any = {
+            "Content-Type": "application/json"
+          };
+
+          if (userIdToken) {
+            headers["Authorization"] = `Bearer ${userIdToken}`;
+          } else {
+            headers["X-Goog-Api-Key"] = FIREBASE_API_KEY || "";
+          }
+
           const response = await fetch(
             `https://firestore.googleapis.com/v1/projects/${FIREBASE_PROJECT_ID}/databases/(default)/documents/orders/${orderId}`,
             {
               method: "PATCH",
-              headers: {
-                "Content-Type": "application/json",
-                "X-Goog-Api-Key": FIREBASE_API_KEY || ""
-              },
+              headers,
               body: JSON.stringify({
                 fields: Object.entries(orderDataToSave).reduce((acc: any, [key, value]) => {
                   if (typeof value === 'string') acc[key] = { stringValue: value };
@@ -1286,6 +1301,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             }
           );
           if (!response.ok) {
+            const errorText = await response.text();
+            console.error(`❌ Firestore REST API error: ${response.status} - ${errorText}`);
             throw new Error(`Firestore REST API error: ${response.status}`);
           }
         }

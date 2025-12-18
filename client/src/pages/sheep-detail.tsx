@@ -232,11 +232,15 @@ export default function SheepDetail() {
 
       console.log("📝 Order data to be created:", baseOrderData);
 
+      // Get Firebase ID token for authentication
+      const idToken = await user.getIdToken();
+
       // Use secure server-side API for order creation (validates nationalId for foreign sheep)
       const response = await fetch("/api/orders/create", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          "Authorization": `Bearer ${idToken}`,
         },
         body: JSON.stringify(baseOrderData),
       });

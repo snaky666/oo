@@ -50,62 +50,68 @@ export default function AdminPaymentTab({ statusFilter = "all" }: AdminPaymentTa
   const fetchPaymentData = async () => {
     setLoading(true);
     try {
-      const [receiptsSnapshot, paymentsSnapshot, ordersSnapshot, usersSnapshot] = await Promise.all([
-        getDocs(collection(db, "cibReceipts")),
-        getDocs(collection(db, "payments")),
-        getDocs(collection(db, "orders")),
-        getDocs(collection(db, "users")),
+      const [receiptsRes, paymentsRes, ordersRes, usersRes] = await Promise.all([
+        fetch("/api/admin/cib-receipts"),
+        fetch("/api/admin/payments"),
+        fetch("/api/admin/orders"),
+        fetch("/api/admin/users"),
       ]);
+
+      const [receiptsData, paymentsData, ordersData, usersData] = await Promise.all([
+        receiptsRes.json(),
+        paymentsRes.json(),
+        ordersRes.json(),
+        usersRes.json(),
+      ]);
+
+      console.log("💳 Admin Payment Tab - جلب البيانات:", {
+        receipts: receiptsData.length,
+        payments: paymentsData.length,
+        orders: ordersData.length,
+        users: usersData.length,
+      });
 
       // إنشاء خريطة للمستخدمين (البائعين)
       const fullUsersMap: Record<string, User> = {};
-      usersSnapshot.docs.forEach((doc) => {
-        const userData = doc.data();
-        fullUsersMap[doc.id] = { uid: doc.id, ...userData } as User;
+      usersData.forEach((userData: any) => {
+        fullUsersMap[userData.uid] = userData as User;
       });
       setUsersMap(fullUsersMap);
 
       // إنشاء خريطة لنوع الأضحية من الطلبات وتخزين بيانات الطلبات كاملة
       const orderOriginMap: Record<string, string> = {};
       const fullOrdersMap: Record<string, Order> = {};
-      ordersSnapshot.docs.forEach((doc) => {
-        const orderData = doc.data();
-        orderOriginMap[doc.id] = orderData.sheepOrigin || "local";
-        fullOrdersMap[doc.id] = { id: doc.id, ...orderData } as Order;
+      ordersData.forEach((orderData: any) => {
+        orderOriginMap[orderData.id] = orderData.sheepOrigin || "local";
+        fullOrdersMap[orderData.id] = orderData as Order;
       });
       setOrdersMap(fullOrdersMap);
 
       // إثراء وصولات CIB بنوع الأضحية من الطلبات
-      const receiptsData = receiptsSnapshot.docs.map((doc) => {
-        const data = doc.data();
+      const enrichedReceipts = receiptsData.map((data: any) => {
         const orderId = data.orderId;
-        // إذا لم يكن sheepOrigin موجوداً في الوصل، نحصل عليه من الطلب
         const sheepOrigin = data.sheepOrigin || (orderId ? orderOriginMap[orderId] : undefined) || "local";
         return {
-          id: doc.id,
           ...data,
           sheepOrigin,
         };
       }) as CIBReceipt[];
 
       // إثراء المدفوعات بنوع الأضحية من الطلبات
-      const paymentsData = paymentsSnapshot.docs.map((doc) => {
-        const data = doc.data();
+      const enrichedPayments = paymentsData.map((data: any) => {
         const orderId = data.orderId;
         const sheepOrigin = data.sheepOrigin || (orderId ? orderOriginMap[orderId] : undefined) || "local";
         return {
-          id: doc.id,
           ...data,
           sheepOrigin,
         };
       }) as Payment[];
 
       // تحويل الطلبات إلى صيغة مدفوعات للعرض
-      const ordersData = ordersSnapshot.docs.map((doc) => {
-        const orderData = doc.data();
+      const ordersAsPayments = ordersData.map((orderData: any) => {
         return {
-          id: doc.id,
-          orderId: doc.id,
+          id: orderData.id,
+          orderId: orderData.id,
           userId: orderData.buyerId,
           userEmail: orderData.buyerEmail || "",
           amount: orderData.totalPrice || 0,
@@ -118,9 +124,9 @@ export default function AdminPaymentTab({ statusFilter = "all" }: AdminPaymentTa
       });
 
       // دمج المدفوعات مع الطلبات
-      const allPayments = [...paymentsData, ...ordersData];
+      const allPayments = [...enrichedPayments, ...ordersAsPayments];
 
-      setCIBReceipts(receiptsData.sort((a, b) => b.createdAt - a.createdAt));
+      setCIBReceipts(enrichedReceipts.sort((a, b) => b.createdAt - a.createdAt));
       setPayments(allPayments.sort((a, b) => b.createdAt - a.createdAt));
     } catch (error) {
       console.error("Error fetching payment data:", error);

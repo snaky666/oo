@@ -147,13 +147,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get sheep listings (public endpoint for guests and users)
   app.get("/api/sheep", async (req, res) => {
     try {
+      const approved = req.query.approved === "true";
+      console.log(`🐑 Fetching ${approved ? "approved" : "all"} sheep...`);
+
+      // Try Firebase Admin SDK first
+      if (adminDb) {
+        let query: any = adminDb.collection('sheep');
+        if (approved) {
+          query = query.where('status', '==', 'approved');
+        }
+        const snapshot = await query.get();
+        const data = snapshot.docs.map((doc: any) => ({
+          id: doc.id,
+          ...doc.data()
+        }));
+        console.log(`✅ Found ${data.length} ${approved ? "approved" : ""} sheep using Admin SDK`);
+        return res.json(data);
+      }
+
+      // Fallback to REST API
       if (!FIREBASE_PROJECT_ID || !FIREBASE_API_KEY) {
         console.warn("⚠️ Firebase not configured - returning empty list");
         return res.json([]);
       }
-
-      const approved = req.query.approved === "true";
-      console.log(`🐑 Fetching ${approved ? "approved" : "all"} sheep...`);
 
       // Use REST API with a direct Firestore query
       const body: any = {
@@ -265,13 +281,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get all orders (admin endpoint)
   app.get("/api/admin/orders", async (req, res) => {
     try {
+      // Try Firebase Admin SDK first
+      if (adminDb) {
+        console.log("📦 Fetching all orders for admin using Admin SDK...");
+        const snapshot = await adminDb.collection('orders').get();
+        const data = snapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        }));
+        console.log(`✅ Found ${data.length} orders`);
+        return res.json(data);
+      }
+
+      // Fallback to REST API
       if (!FIREBASE_PROJECT_ID || !FIREBASE_API_KEY) {
         console.warn("⚠️ Firebase not configured - returning empty list");
         return res.json([]);
       }
 
-      console.log("📦 Fetching all orders for admin...");
-
+      console.log("📦 Fetching all orders for admin using REST API...");
       const body = {
         structuredQuery: {
           from: [{ collectionId: "orders" }]
@@ -311,16 +339,143 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get all users (admin endpoint)
-  app.get("/api/admin/users", async (req, res) => {
+  // Get all CIB receipts (admin endpoint)
+  app.get("/api/admin/cib-receipts", async (req, res) => {
     try {
+      if (adminDb) {
+        console.log("🧾 Fetching all CIB receipts for admin using Admin SDK...");
+        const snapshot = await adminDb.collection('cibReceipts').get();
+        const data = snapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        }));
+        console.log(`✅ Found ${data.length} CIB receipts`);
+        return res.json(data);
+      }
+
+      if (!FIREBASE_PROJECT_ID || !FIREBASE_API_KEY) {
+        return res.json([]);
+      }
+
+      const body = {
+        structuredQuery: {
+          from: [{ collectionId: "cibReceipts" }]
+        }
+      };
+
+      const response = await fetch(
+        `https://firestore.googleapis.com/v1/projects/${FIREBASE_PROJECT_ID}/databases/(default)/documents:runQuery`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-Goog-Api-Key": FIREBASE_API_KEY
+          },
+          body: JSON.stringify(body)
+        }
+      );
+
+      let data = [];
+      if (response.ok) {
+        const result = await response.json();
+        if (Array.isArray(result)) {
+          data = result.filter((item: any) => item.document).map((item: any) => ({
+            id: item.document.name.split('/').pop(),
+            ...extractDocumentData(item.document.fields)
+          }));
+        }
+      }
+
+      res.json(data);
+    } catch (error: any) {
+      console.error("❌ Error:", error?.message);
+      res.json([]);
+    }
+  });
+
+  // Get all payments (admin endpoint)
+  app.get("/api/admin/payments", async (req, res) => {
+    try {
+      // Try Firebase Admin SDK first
+      if (adminDb) {
+        console.log("💳 Fetching all payments for admin using Admin SDK...");
+        const snapshot = await adminDb.collection('payments').get();
+        const data = snapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        }));
+        console.log(`✅ Found ${data.length} payments`);
+        return res.json(data);
+      }
+
+      // Fallback to REST API
       if (!FIREBASE_PROJECT_ID || !FIREBASE_API_KEY) {
         console.warn("⚠️ Firebase not configured - returning empty list");
         return res.json([]);
       }
 
-      console.log("👥 Fetching all users for admin...");
+      console.log("💳 Fetching all payments for admin using REST API...");
+      const body = {
+        structuredQuery: {
+          from: [{ collectionId: "payments" }]
+        }
+      };
 
+      const response = await fetch(
+        `https://firestore.googleapis.com/v1/projects/${FIREBASE_PROJECT_ID}/databases/(default)/documents:runQuery`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-Goog-Api-Key": FIREBASE_API_KEY
+          },
+          body: JSON.stringify(body)
+        }
+      );
+
+      let data = [];
+      if (response.ok) {
+        const result = await response.json();
+        if (Array.isArray(result)) {
+          data = result.filter((item: any) => item.document).map((item: any) => ({
+            id: item.document.name.split('/').pop(),
+            ...extractDocumentData(item.document.fields)
+          }));
+        }
+      } else {
+        console.error(`❌ Firestore API error: ${response.status} ${response.statusText}`);
+      }
+
+      console.log(`✅ Found ${data.length} payments`);
+      res.json(data);
+    } catch (error: any) {
+      console.error("❌ Error:", error?.message);
+      res.json([]);
+    }
+  });
+
+  // Get all users (admin endpoint)
+  app.get("/api/admin/users", async (req, res) => {
+    try {
+      // Try Firebase Admin SDK first
+      if (adminDb) {
+        console.log("👥 Fetching all users for admin using Admin SDK...");
+        const snapshot = await adminDb.collection('users').get();
+        const data = snapshot.docs.map(doc => ({
+          uid: doc.id,
+          ...doc.data()
+        }));
+        console.log(`✅ Found ${data.length} users`);
+        return res.json(data);
+      }
+
+      // Fallback to REST API
+      if (!FIREBASE_PROJECT_ID || !FIREBASE_API_KEY) {
+        console.warn("⚠️ Firebase not configured - returning empty list");
+        return res.json([]);
+      }
+
+      console.log("👥 Fetching all users for admin using REST API...");
       const body = {
         structuredQuery: {
           from: [{ collectionId: "users" }]

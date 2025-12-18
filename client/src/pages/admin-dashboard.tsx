@@ -497,11 +497,10 @@ export default function AdminDashboard() {
   useEffect(() => {
     const fetchAllPayments = async () => {
       try {
-        const paymentsSnapshot = await getDocs(collection(db, "payments"));
-        const paymentsData = paymentsSnapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        }));
+        const response = await fetch("/api/admin/payments");
+        if (!response.ok) throw new Error("Failed to fetch payments");
+        const paymentsData = await response.json();
+        console.log("💳 عدد المدفوعات المجلوبة:", paymentsData.length);
         setAllPayments(paymentsData);
       } catch (error) {
         console.error("Error fetching payments:", error);

@@ -1,20 +1,11 @@
-import fs from "node:fs";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
+import type { VercelRequest, VercelResponse } from "@vercel/node";
 import express, { type Express } from "express";
 import { registerRoutes } from "../server/routes";
-import { log } from "../server/app";
-
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const app = express();
 
 // Middleware
-app.use(express.json({
-  verify: (req: any, _res, buf) => {
-    req.rawBody = buf;
-  }
-}));
+app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
 // CORS middleware
@@ -33,16 +24,12 @@ app.use((req, res, next) => {
 // Register API routes
 registerRoutes(app);
 
-// Serve static files for client (SPA)
-const distPath = path.resolve(__dirname, "..", "dist", "public");
-if (fs.existsSync(distPath)) {
-  app.use(express.static(distPath));
-  
-  // SPA fallback
-  app.use("*", (_req, res) => {
-    res.setHeader("Cache-Control", "public, max-age=3600");
-    res.sendFile(path.resolve(distPath, "index.html"));
-  });
-}
+// Error handler
+app.use((err: any, _req: any, res: any, _next: any) => {
+  console.error("Error:", err);
+  res.status(err.statusCode || 500).json({ error: err.message });
+});
 
-export default app;
+export default function handler(req: VercelRequest, res: VercelResponse) {
+  return app(req as any, res as any);
+}

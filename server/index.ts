@@ -56,10 +56,11 @@ async function setupProduction(app: express.Express, _server: Server) {
     }));
   }
 
-  // Serve HTML for all non-API routes (SPA)
-  app.get("*", (req, res) => {
+  // Serve HTML for all non-API routes (SPA) - skip API routes to let them be handled
+  app.use("*", (req, res, next) => {
     if (req.path.startsWith("/api/")) {
-      return res.status(404).json({ error: "Not Found" });
+      // Skip API routes - they should be handled by registered routes above
+      return next();
     }
 
     const indexPath = path.join(publicBuildDir, "index.html");
@@ -75,6 +76,19 @@ async function setupProduction(app: express.Express, _server: Server) {
 export default async function runApp(
   setup: (app: express.Express, server: Server) => Promise<void>,
 ) {
+  // Add CORS middleware before routes
+  app.use((req, res, next) => {
+    res.header("Access-Control-Allow-Origin", "*");
+    res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, PATCH, OPTIONS");
+    res.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
+    
+    if (req.method === "OPTIONS") {
+      return res.sendStatus(200);
+    }
+    
+    next();
+  });
+
   const server = await registerRoutes(app);
 
   app.use((err: any, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
@@ -83,6 +97,11 @@ export default async function runApp(
 
     res.status(status).json({ message });
     throw err;
+  });
+
+  // Add 404 handler for API routes that don't exist
+  app.use("/api/", (req, res) => {
+    res.status(404).json({ error: "API endpoint not found" });
   });
 
   const port = parseInt(process.env.PORT || "5000", 10);

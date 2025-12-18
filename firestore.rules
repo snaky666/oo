@@ -1,314 +1,345 @@
-
 rules_version = '2';
+
 service cloud.firestore {
   match /databases/{database}/documents {
-    
-    // ================= HELPER FUNCTIONS =================
+
     function isAuthenticated() {
       return request.auth != null;
     }
-    
+
+    function currentUserId() {
+      return request.auth.uid;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && currentUserId() == userId;
+    }
+
+    function getUserData() {
+      return get(/databases/$(database)/documents/users/$(currentUserId())).data;
+    }
+
+    function userExists() {
+      return isAuthenticated() && exists(/databases/$(database)/documents/users/$(currentUserId()));
+    }
+
+    function hasRole(role) {
+      return userExists() && getUserData().role == role;
+    }
+
     function isAdmin() {
-      return isAuthenticated() && 
-        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+      return hasRole('admin');
     }
-    
+
     function isSeller() {
-      return isAuthenticated() && 
-        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'seller';
+      return hasRole('seller');
     }
-    
+
     function isBuyer() {
-      return isAuthenticated() && 
-        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'buyer';
+      return hasRole('buyer');
     }
-    
-    function isOwner(uid) {
-      return request.auth.uid == uid;
+
+    function isAdminOrOwner(userId) {
+      return isAdmin() || isOwner(userId);
     }
-    
-    // Validation functions
+
     function isValidEmail(email) {
-      return email.matches('^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$');
+      return email is string && email.size() >= 5 && email.matches('^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$');
     }
-    
+
+    function isNonEmptyString(field) {
+      return field is string && field.size() > 0;
+    }
+
+    function hasMinLength(field, minLen) {
+      return field is string && field.size() >= minLen;
+    }
+
+    function isPositiveNumber(num) {
+      return num is number && num > 0;
+    }
+
+    function isNonNegativeNumber(num) {
+      return num is number && num >= 0;
+    }
+
+    function isInRange(num, min, max) {
+      return num is number && num >= min && num <= max;
+    }
+
+    function isOneOf(value, allowedValues) {
+      return value in allowedValues;
+    }
+
+    function isValidTimestamp(ts) {
+      return ts is int && ts > 0;
+    }
+
     function isValidPrice(price) {
-      return price >= 10000 && price <= 10000000 && price == int(price);
+      return price is number && price >= 10000 && price <= 10000000;
     }
-    
+
     function isValidAge(age) {
-      return age >= 6 && age <= 60 && age == int(age);
+      return age is number && age >= 6 && age <= 60;
     }
-    
+
     function isValidWeight(weight) {
-      return weight >= 5 && weight <= 200 && weight == int(weight);
+      return weight is number && weight >= 5 && weight <= 200;
     }
 
-    // ================= USERS COLLECTION =================
+    function isValidUrl(url) {
+      return url is string && url.matches('^https://.*');
+    }
+
+    function isValidPhone(phone) {
+      return phone is string && phone.size() >= 8 && phone.size() <= 15;
+    }
+
+    function hasAll(fields) {
+      return request.resource.data.keys().hasAll(fields);
+    }
+
+    function isUnchanged(field) {
+      return request.resource.data[field] == resource.data[field];
+    }
+
     match /users/{userId} {
-      // Read: Anyone can read public profile info
-      allow read: if true;
-      
-      // Create: Owner creates their own profile (registration)
-      allow create: if isOwner(userId) && 
-        isValidEmail(request.resource.data.email) &&
-        request.resource.data.role in ['buyer', 'seller', 'admin'] &&
-        request.resource.data.fullName.size() >= 2;
-      
-      // Update: Owner updates own profile OR admin manages users
-      allow update: if isOwner(userId) || isAdmin();
-      
-      // Delete: Admin only
+      allow read: if isAuthenticated() && (isOwner(userId) || isAdmin() || (userExists() && resource.data.role in ['buyer', 'seller']));
+
+      allow create: if isOwner(userId)
+        && hasAll(['uid', 'email', 'role', 'createdAt'])
+        && request.resource.data.uid == userId
+        && isValidEmail(request.resource.data.email)
+        && isOneOf(request.resource.data.role, ['buyer', 'seller'])
+        && isValidTimestamp(request.resource.data.createdAt);
+
+      allow update: if isAdmin() || (isOwner(userId) && isUnchanged('uid') && isUnchanged('email') && (isUnchanged('role') || (resource.data.role == 'buyer' && request.resource.data.role == 'seller')));
+
       allow delete: if isAdmin();
     }
 
-    // ================= SHEEP COLLECTION =================
     match /sheep/{sheepId} {
-      // Read: Approved sheep visible to public, owner sees their own (pending/rejected), admin sees all
-      allow read: if resource.data.status == 'approved' || 
-                     (isAuthenticated() && isOwner(resource.data.sellerId)) ||
-                     isAdmin();
-      
-      // Create: Seller creates listing OR Admin creates foreign sheep
-      allow create: if (isSeller() && 
-                       isOwner(request.resource.data.sellerId) &&
-                       isValidPrice(request.resource.data.price) &&
-                       isValidAge(request.resource.data.age) &&
-                       isValidWeight(request.resource.data.weight) &&
-                       request.resource.data.description.size() >= 20 &&
-                       request.resource.data.images.size() >= 1 &&
-                       request.resource.data.status == 'pending') ||
-                       (isAdmin() &&
-                       isValidPrice(request.resource.data.price) &&
-                       isValidAge(request.resource.data.age) &&
-                       isValidWeight(request.resource.data.weight) &&
-                       request.resource.data.description.size() >= 10 &&
-                       request.resource.data.images.size() >= 1);
-      
-      // Update: Seller updates pending listings, admin can update any
-      allow update: if (isSeller() && isOwner(resource.data.sellerId) && resource.data.status == 'pending') ||
-                       (isAdmin() && request.resource.data.status in ['approved', 'rejected', 'pending']);
-      
-      // Delete: Seller deletes own, admin deletes any
-      allow delete: if (isSeller() && isOwner(resource.data.sellerId)) || isAdmin();
+      // السماح بالقراءة لأي مستخدم مسجل دخول أو الأغنام المعتمدة للجميع
+      allow read: if isAuthenticated() || resource.data.status == 'approved';
+
+      allow create: if isSeller()
+        && hasAll(['id', 'sellerId', 'images', 'price', 'age', 'weight', 'city', 'description', 'status', 'createdAt'])
+        && request.resource.data.sellerId == currentUserId()
+        && request.resource.data.status == 'pending'
+        && request.resource.data.images is list
+        && request.resource.data.images.size() >= 1
+        && request.resource.data.images.size() <= 5
+        && isValidPrice(request.resource.data.price)
+        && isValidAge(request.resource.data.age)
+        && isValidWeight(request.resource.data.weight)
+        && isNonEmptyString(request.resource.data.city)
+        && hasMinLength(request.resource.data.description, 20)
+        && isValidTimestamp(request.resource.data.createdAt);
+
+      allow update: if isAdmin() || (isSeller() && resource.data.sellerId == currentUserId() && resource.data.status == 'pending' && isUnchanged('sellerId') && request.resource.data.status == 'pending');
+
+      allow delete: if isAdmin() || (isSeller() && resource.data.sellerId == currentUserId() && resource.data.status == 'pending');
     }
 
-    // ================= ORDERS COLLECTION =================
     match /orders/{orderId} {
-      // Read: Buyer reads own, seller reads orders for their sheep, admin reads all
-      allow read: if isAdmin() || 
-                     (isAuthenticated() && isOwner(resource.data.buyerId)) ||
-                     (isAuthenticated() && isSeller() && resource.data.sellerId == request.auth.uid);
-      
-      // Create: Authenticated users can create orders
-      allow create: if isAuthenticated() && 
-                       request.auth.uid == request.resource.data.buyerId &&
-                       request.resource.data.status == 'pending' &&
-                       request.resource.data.totalPrice >= 1000 &&
-                       request.resource.data.totalPrice <= 10000000 &&
-                       request.resource.data.buyerName is string &&
-                       request.resource.data.buyerName.size() >= 2 &&
-                       request.resource.data.buyerPhone is string &&
-                       request.resource.data.buyerPhone.size() >= 7 &&
-                       request.resource.data.buyerCity is string &&
-                       request.resource.data.buyerAddress is string &&
-                       request.resource.data.paymentMethod in ['cash', 'card', 'installment'] &&
-                       request.resource.data.paymentStatus in ['pending', 'completed', 'verified', 'rejected'] &&
-                       request.resource.data.orderStatus in ['new', 'confirmed', 'ready', 'delivered', 'cancelled'] &&
-                       // Allow foreign sheep optional fields
-                       (!request.resource.data.keys().hasAny(['nationalId', 'paySlipImageUrl', 'workDocImageUrl']) ||
-                        (request.resource.data.sheepOrigin == 'foreign' &&
-                         request.resource.data.nationalId is string &&
-                         request.resource.data.nationalId.size() >= 5 &&
-                         request.resource.data.paySlipImageUrl is string &&
-                         request.resource.data.paySlipImageUrl.matches('^https://.*') &&
-                         request.resource.data.workDocImageUrl is string &&
-                         request.resource.data.workDocImageUrl.matches('^https://.*')));
-      
-      // Update: Buyer can update own pending orders, Admin can update any
-      allow update: if (isAuthenticated() && isOwner(resource.data.buyerId) && resource.data.status == 'pending') ||
-                       (isAdmin());
-      
-      // Delete: Admin only
+      allow read: if isAdmin() || (isAuthenticated() && resource.data.buyerId == currentUserId()) || (isAuthenticated() && resource.data.sellerId == currentUserId());
+
+      allow create: if isBuyer()
+        && hasAll(['id', 'buyerId', 'sellerId', 'sheepId', 'totalPrice', 'status', 'createdAt'])
+        && request.resource.data.buyerId == currentUserId()
+        && request.resource.data.buyerId != request.resource.data.sellerId
+        && request.resource.data.status == 'pending'
+        && isValidPrice(request.resource.data.totalPrice)
+        && isNonEmptyString(request.resource.data.sheepId)
+        && isNonEmptyString(request.resource.data.sellerId)
+        && isValidTimestamp(request.resource.data.createdAt);
+
+      allow update: if isAdmin() || (isAuthenticated() && (resource.data.buyerId == currentUserId() || resource.data.sellerId == currentUserId()) && isUnchanged('buyerId') && isUnchanged('sellerId') && isUnchanged('sheepId') && isUnchanged('totalPrice') && isUnchanged('createdAt'));
+
       allow delete: if isAdmin();
     }
 
-    // ================= PAYMENTS COLLECTION =================
     match /payments/{paymentId} {
-      // Read: User reads own, admin reads all
-      allow read: if (isAuthenticated() && isOwner(resource.data.userId)) || isAdmin();
-      
-      // Create: Authenticated user creates for their order
-      allow create: if isAuthenticated() && 
-                       isOwner(request.resource.data.userId) &&
-                       isValidPrice(request.resource.data.amount) &&
-                       request.resource.data.method in ['card', 'cash', 'installment'];
-      
-      // Update: Admin only (verification)
-      allow update: if isAdmin() && request.resource.data.status in ['pending', 'completed', 'failed', 'cancelled'];
-      
-      // Delete: Admin only
+      allow read: if isAdminOrOwner(resource.data.userId);
+
+      allow create: if isAuthenticated()
+        && hasAll(['id', 'userId', 'userEmail', 'amount', 'method', 'status', 'createdAt'])
+        && request.resource.data.userId == currentUserId()
+        && request.resource.data.status == 'pending'
+        && isValidPrice(request.resource.data.amount)
+        && isOneOf(request.resource.data.method, ['cib', 'stripe', 'cash', 'card', 'installment'])
+        && isValidTimestamp(request.resource.data.createdAt);
+
+      allow update: if isAdmin() && isOneOf(request.resource.data.status, ['pending', 'completed', 'verified', 'failed', 'cancelled', 'rejected']);
+
       allow delete: if isAdmin();
     }
 
-    // ================= CIB RECEIPTS COLLECTION =================
     match /cibReceipts/{receiptId} {
-      // Read: User reads own, admin reads all
-      allow read: if (isAuthenticated() && isOwner(resource.data.userId)) || isAdmin();
-      
-      // Create: User uploads own receipt
-      allow create: if isAuthenticated() && 
-                       isOwner(request.resource.data.userId) &&
-                       request.resource.data.receiptImageUrl.matches('^https://.*');
-      
-      // Update: Admin only (verification)
-      allow update: if isAdmin() && request.resource.data.status in ['pending', 'verified', 'rejected'];
-      
-      // Delete: Admin only
+      allow read: if isAdminOrOwner(resource.data.userId);
+
+      allow create: if isAuthenticated()
+        && hasAll(['id', 'paymentId', 'userId', 'userEmail', 'receiptImageUrl', 'amount', 'status', 'createdAt'])
+        && request.resource.data.userId == currentUserId()
+        && request.resource.data.status == 'pending'
+        && isValidUrl(request.resource.data.receiptImageUrl)
+        && isPositiveNumber(request.resource.data.amount)
+        && isValidTimestamp(request.resource.data.createdAt);
+
+      allow update: if isAdmin() && isOneOf(request.resource.data.status, ['pending', 'verified', 'rejected']);
+
       allow delete: if isAdmin();
     }
 
-    // ================= INSTALLMENTS COLLECTION =================
     match /installments/{installmentId} {
-      // Read: User reads own, admin reads all
-      allow read: if (isAuthenticated() && isOwner(resource.data.userId)) || isAdmin();
-      
-      // Create: Backend creates (validated by admin)
-      allow create: if isAuthenticated() && isOwner(request.resource.data.userId);
-      
-      // Update: Admin only
-      allow update: if isAdmin();
-      
-      // Delete: Admin only
+      allow read: if isAdminOrOwner(resource.data.userId);
+
+      allow create: if isAuthenticated()
+        && hasAll(['id', 'paymentId', 'userId', 'totalAmount', 'downPayment', 'remainingAmount', 'monthlyInstallment', 'numberOfMonths', 'paidInstallments', 'nextDueDate', 'status', 'createdAt'])
+        && request.resource.data.userId == currentUserId()
+        && request.resource.data.status == 'active'
+        && isPositiveNumber(request.resource.data.totalAmount)
+        && isNonNegativeNumber(request.resource.data.downPayment)
+        && isNonNegativeNumber(request.resource.data.remainingAmount)
+        && isPositiveNumber(request.resource.data.monthlyInstallment)
+        && isInRange(request.resource.data.numberOfMonths, 1, 24)
+        && request.resource.data.paidInstallments == 0
+        && isValidTimestamp(request.resource.data.createdAt);
+
+      allow update: if isAdmin() && isOneOf(request.resource.data.status, ['active', 'completed', 'defaulted']);
+
       allow delete: if isAdmin();
     }
 
-    // ================= VIP SUBSCRIPTIONS COLLECTION =================
     match /vipSubscriptions/{subscriptionId} {
-      // Read: User reads own, admin reads all
-      allow read: if (isAuthenticated() && isOwner(resource.data.userId)) || isAdmin();
-      
-      // Create: User creates own subscription
-      allow create: if isAuthenticated() && 
-                       isOwner(request.resource.data.userId) &&
-                       request.resource.data.package in ['silver', 'gold', 'platinum'] &&
-                       isValidPrice(request.resource.data.price);
-      
-      // Update: User can toggle auto-renew, admin can update any
-      allow update: if (isAuthenticated() && isOwner(resource.data.userId)) || isAdmin();
-      
-      // Delete: Admin only
+      allow read: if isAdminOrOwner(resource.data.userId);
+
+      allow create: if isAuthenticated()
+        && request.resource.data.userId == currentUserId()
+        && isOneOf(request.resource.data.package, ['silver', 'gold', 'platinum'])
+        && isPositiveNumber(request.resource.data.price);
+
+      allow update: if isAdmin() || (isOwner(resource.data.userId) && isUnchanged('userId') && isUnchanged('package') && isUnchanged('price') && isUnchanged('createdAt'));
+
       allow delete: if isAdmin();
     }
 
-    // ================= ADVERTISEMENTS COLLECTION =================
+    match /ad_requests/{requestId} {
+      allow read: if isAdmin() || (isAuthenticated() && resource.data.userId == currentUserId());
+
+      allow create: if isAuthenticated()
+        && hasAll(['image', 'companyName', 'description', 'status', 'createdAt'])
+        && request.resource.data.status == 'pending'
+        && isNonEmptyString(request.resource.data.image)
+        && hasMinLength(request.resource.data.companyName, 2)
+        && hasMinLength(request.resource.data.description, 10)
+        && isValidTimestamp(request.resource.data.createdAt);
+
+      allow update: if isAdmin() && isOneOf(request.resource.data.status, ['pending', 'approved', 'rejected']);
+
+      allow delete: if isAdmin();
+    }
+
     match /ads/{adId} {
-      // Read: Public can read active ads, admin can read all, backend can read
-      allow read: if resource.data.active == true || isAdmin() || request.auth == null;
-      
-      // Create: Admin or backend server
-      allow create: if isAdmin() || request.auth == null;
-      
-      // Update: Admin or backend server
-      allow update: if isAdmin() || request.auth == null;
-      
-      // Delete: Admin or backend server
-      allow delete: if isAdmin() || request.auth == null;
-    }
+      allow read: if isAdmin() || (isAuthenticated() && resource.data.active == true);
 
-    // ================= REVIEWS COLLECTION =================
-    match /reviews/{reviewId} {
-      // Read: Public can read all reviews
-      allow read: if true;
-      
-      // Create: Buyer creates review for purchased sheep
-      allow create: if isBuyer() && 
-                       isOwner(request.resource.data.buyerId) &&
-                       request.resource.data.rating >= 1 && 
-                       request.resource.data.rating <= 5;
-      
-      // Update: Owner updates own review
-      allow update: if isAuthenticated() && isOwner(resource.data.buyerId);
-      
-      // Delete: Owner or admin
-      allow delete: if (isAuthenticated() && isOwner(resource.data.buyerId)) || isAdmin();
-    }
+      allow create: if isAdmin()
+        && hasAll(['image', 'companyName', 'active', 'createdAt'])
+        && isNonEmptyString(request.resource.data.image)
+        && hasMinLength(request.resource.data.companyName, 2)
+        && isValidTimestamp(request.resource.data.createdAt);
 
-    // ================= FAVORITES COLLECTION =================
-    match /favorites/{favoriteId} {
-      // Read: User reads own favorites
-      allow read: if isAuthenticated() && isOwner(resource.data.userId);
-      
-      // Create: User adds to favorites
-      allow create: if isAuthenticated() && isOwner(request.resource.data.userId);
-      
-      // Delete: User removes from favorites
-      allow delete: if isAuthenticated() && isOwner(resource.data.userId);
-    }
-
-    // ================= NOTIFICATIONS COLLECTION =================
-    match /notifications/{notificationId} {
-      // Read: User reads own notifications
-      allow read: if isAuthenticated() && isOwner(resource.data.userId);
-      
-      // Create: Backend or admin creates notifications
-      allow create: if isAdmin() || request.auth == null;
-      
-      // Update: User marks as read, admin can update
-      allow update: if (isAuthenticated() && isOwner(resource.data.userId)) || isAdmin();
-      
-      // Delete: Owner or admin
-      allow delete: if (isAuthenticated() && isOwner(resource.data.userId)) || isAdmin();
-    }
-
-    // ================= SUPPORT TICKETS COLLECTION =================
-    match /support/{ticketId} {
-      // Read: User reads own tickets, admin reads all
-      allow read: if (isAuthenticated() && isOwner(resource.data.userId)) || isAdmin();
-      
-      // Create: Authenticated user creates ticket
-      allow create: if isAuthenticated() && isOwner(request.resource.data.userId);
-      
-      // Update: Admin responds to tickets
       allow update: if isAdmin();
-      
-      // Delete: Admin only
+
       allow delete: if isAdmin();
     }
 
-    // ================= PASSWORD RESET TOKENS COLLECTION =================
+    match /reviews/{reviewId} {
+      allow read: if isAuthenticated();
+
+      allow create: if isBuyer()
+        && request.resource.data.buyerId == currentUserId()
+        && isInRange(request.resource.data.rating, 1, 5)
+        && isNonEmptyString(request.resource.data.sheepId)
+        && isNonEmptyString(request.resource.data.sellerId);
+
+      allow update: if isAuthenticated() && isOwner(resource.data.buyerId) && isUnchanged('buyerId') && isUnchanged('sheepId') && isUnchanged('sellerId') && isInRange(request.resource.data.rating, 1, 5);
+
+      allow delete: if isAdminOrOwner(resource.data.buyerId);
+    }
+
+    match /favorites/{favoriteId} {
+      allow read: if isOwner(resource.data.userId);
+
+      allow create: if isAuthenticated() && request.resource.data.userId == currentUserId() && isNonEmptyString(request.resource.data.sheepId);
+
+      allow update: if false;
+
+      allow delete: if isOwner(resource.data.userId);
+    }
+
+    match /notifications/{notificationId} {
+      allow read: if isOwner(resource.data.userId);
+
+      allow create: if isAdmin();
+
+      allow update: if isAdmin() || (isOwner(resource.data.userId) && isUnchanged('userId'));
+
+      allow delete: if isAdminOrOwner(resource.data.userId);
+    }
+
+    match /support/{ticketId} {
+      allow read: if isAdminOrOwner(resource.data.userId);
+
+      allow create: if isAuthenticated()
+        && request.resource.data.userId == currentUserId()
+        && hasMinLength(request.resource.data.subject, 5)
+        && hasMinLength(request.resource.data.message, 10)
+        && request.resource.data.status == 'open';
+
+      allow update: if isAdmin();
+
+      allow delete: if isAdmin();
+    }
+
+    match /settings/{settingId} {
+      allow read: if isAuthenticated();
+      allow create: if isAdmin();
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    match /password_resets/{resetId} {
+      allow read: if false;
+      allow create: if false;
+      allow update: if false;
+      allow delete: if false;
+    }
+
+    match /pending_registrations/{registrationId} {
+      allow read: if false;
+      allow create: if false;
+      allow update: if false;
+      allow delete: if false;
+    }
+
     match /passwordResetTokens/{tokenId} {
-      // Read: Backend only (no client access)
-      allow read: if request.auth == null;
-      
-      // Create: Backend creates tokens
-      allow create: if request.auth == null;
-      
-      // Update: Backend updates tokens
-      allow update: if request.auth == null;
-      
-      // Delete: Backend deletes used tokens
-      allow delete: if request.auth == null;
+      allow read: if false;
+      allow create: if false;
+      allow update: if false;
+      allow delete: if false;
     }
 
-    // ================= EMAIL VERIFICATION TOKENS COLLECTION =================
     match /emailVerificationTokens/{tokenId} {
-      // Read: Backend only (no client access)
-      allow read: if request.auth == null;
-      
-      // Create: Backend creates tokens
-      allow create: if request.auth == null;
-      
-      // Update: Backend updates tokens
-      allow update: if request.auth == null;
-      
-      // Delete: Backend deletes used tokens
-      allow delete: if request.auth == null;
+      allow read: if false;
+      allow create: if false;
+      allow update: if false;
+      allow delete: if false;
     }
 
-    // ================= DEFAULT DENY =================
     match /{document=**} {
-      allow read, write: if false;
+      allow read: if false;
+      allow write: if false;
     }
   }
 }

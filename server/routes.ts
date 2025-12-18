@@ -1174,33 +1174,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
           });
         }
 
-        // Check max salary limit from settings
-        try {
-          if (!adminDb) {
-            console.error("❌ Firebase Admin DB not initialized for settings check");
-            return res.status(500).json({ 
-              success: false, 
-              error: "خطأ في الخادم. يرجى المحاولة لاحقاً." 
-            });
-          }
-          
-          const settingsDoc = await adminDb.collection('settings').doc('app').get();
-          if (settingsDoc.exists) {
-            const settings = settingsDoc.data();
-            const maxSalary = Number(settings?.maxSalaryForForeignSheep) || 0;
-            if (maxSalary > 0 && monthlySalary > maxSalary) {
-              return res.status(400).json({ 
-                success: false, 
-                error: `راتبك الشهري (${monthlySalary.toLocaleString()} DA) يتجاوز الحد الأقصى المسموح به (${maxSalary.toLocaleString()} DA) لطلب أضحية مستوردة`
-              });
+        // Check max salary limit from settings (optional validation)
+        if (adminDb) {
+          try {
+            const settingsDoc = await adminDb.collection('settings').doc('app').get();
+            if (settingsDoc.exists) {
+              const settings = settingsDoc.data();
+              const maxSalary = Number(settings?.maxSalaryForForeignSheep) || 0;
+              if (maxSalary > 0 && monthlySalary > maxSalary) {
+                return res.status(400).json({ 
+                  success: false, 
+                  error: `راتبك الشهري (${monthlySalary.toLocaleString()} DA) يتجاوز الحد الأقصى المسموح به (${maxSalary.toLocaleString()} DA) لطلب أضحية مستوردة`
+                });
+              }
             }
+          } catch (settingsError) {
+            console.warn("⚠️ Could not check salary settings:", settingsError);
           }
-        } catch (settingsError) {
-          console.error("⚠️ Could not check salary settings:", settingsError);
-          return res.status(500).json({ 
-            success: false, 
-            error: "فشل في التحقق من إعدادات الراتب. يرجى المحاولة لاحقاً." 
-          });
         }
 
         const nationalId = orderData.nationalId.trim();
@@ -1211,51 +1201,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const currentYear = new Date().getFullYear();
         const startOfYear = new Date(currentYear, 0, 1).getTime();
 
-        try {
-          // Ensure adminDb is available
-          if (!adminDb) {
-            console.error("❌ Firebase Admin DB not initialized");
-            return res.status(500).json({ 
-              success: false, 
-              error: "خطأ في الخادم. يرجى المحاولة لاحقاً." 
-            });
+        if (adminDb) {
+          try {
+            // Query using Firebase Admin SDK for authenticated access
+            const ordersSnapshot = await adminDb.collection('orders')
+              .where('nationalId', '==', nationalId)
+              .where('sheepOrigin', '==', 'foreign')
+              .where('createdAt', '>=', startOfYear)
+              .get();
+
+            const existingOrders = ordersSnapshot.size;
+            console.log(`📋 Found ${existingOrders} existing foreign sheep orders with this nationalId`);
+
+            if (existingOrders > 0) {
+              return res.status(400).json({ 
+                success: false, 
+                alreadyUsed: true,
+                error: `رقم بطاقة التعريف الوطنية "${nationalId}" تم استخدامه بالفعل لطلب أضحية مستوردة هذا العام. يمكنك طلب أضحية مستوردة واحدة فقط في السنة.`
+              });
+            }
+          } catch (queryError: any) {
+            console.warn("⚠️ Could not check nationalId uniqueness:", queryError?.message || queryError);
           }
-
-          // Query using Firebase Admin SDK for authenticated access
-          const ordersSnapshot = await adminDb.collection('orders')
-            .where('nationalId', '==', nationalId)
-            .where('sheepOrigin', '==', 'foreign')
-            .where('createdAt', '>=', startOfYear)
-            .get();
-
-          const existingOrders = ordersSnapshot.size;
-          console.log(`📋 Found ${existingOrders} existing foreign sheep orders with this nationalId`);
-
-          if (existingOrders > 0) {
-            return res.status(400).json({ 
-              success: false, 
-              alreadyUsed: true,
-              error: `رقم بطاقة التعريف الوطنية "${nationalId}" تم استخدامه بالفعل لطلب أضحية مستوردة هذا العام. يمكنك طلب أضحية مستوردة واحدة فقط في السنة.`
-            });
-          }
-        } catch (queryError: any) {
-          console.error("❌ Failed to check nationalId:", queryError?.message || queryError);
-          return res.status(500).json({ 
-            success: false, 
-            error: "فشل في التحقق من رقم بطاقة التعريف. يرجى المحاولة مرة أخرى." 
-          });
         }
       }
 
-      // Create the order in Firestore using Admin SDK
-      if (!adminDb) {
-        console.error("❌ Firebase Admin DB not initialized");
-        return res.status(500).json({ 
-          success: false, 
-          error: "خطأ في الخادم. يرجى المحاولة لاحقاً." 
-        });
-      }
-
+      // Create the order in Firestore
       const orderId = `order_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       
       // Prepare order data
@@ -1291,7 +1262,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       try {
-        await adminDb.collection('orders').doc(orderId).set(orderDataToSave);
+        if (adminDb) {
+          // Use Admin SDK if available
+          await adminDb.collection('orders').doc(orderId).set(orderDataToSave);
+        } else {
+          // Fallback to REST API
+          const response = await fetch(
+            `https://firestore.googleapis.com/v1/projects/${FIREBASE_PROJECT_ID}/databases/(default)/documents/orders/${orderId}`,
+            {
+              method: "PATCH",
+              headers: {
+                "Content-Type": "application/json",
+                "X-Goog-Api-Key": FIREBASE_API_KEY || ""
+              },
+              body: JSON.stringify({
+                fields: Object.entries(orderDataToSave).reduce((acc: any, [key, value]) => {
+                  if (typeof value === 'string') acc[key] = { stringValue: value };
+                  else if (typeof value === 'number') acc[key] = { integerValue: String(value) };
+                  else if (typeof value === 'boolean') acc[key] = { booleanValue: value };
+                  return acc;
+                }, {})
+              })
+            }
+          );
+          if (!response.ok) {
+            throw new Error(`Firestore REST API error: ${response.status}`);
+          }
+        }
+        
         console.log('✅ Order created successfully:', orderId);
         res.json({ 
           success: true, 

@@ -131,8 +131,8 @@ service cloud.firestore {
     // ================= SHEEP COLLECTION =================
     
     match /sheep/{sheepId} {
-      // Authenticated users can read all sheep
-      allow read: if isAuthenticated();
+      // Authenticated users or anyone can read approved sheep (for REST API access)
+      allow read: if isAuthenticated() || resource.data.status == 'approved';
       
       // Sellers create sheep listings
       allow create: if isSeller()

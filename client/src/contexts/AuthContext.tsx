@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import { User as FirebaseUser, onAuthStateChanged, signOut as firebaseSignOut, setPersistence, browserLocalPersistence, signInAnonymously } from "firebase/auth";
 import { doc, getDoc, setDoc } from "firebase/firestore";
-import { auth, db } from "@/lib/firebase";
+import { auth, db, isFirebaseConfigured } from "@/lib/firebase";
 import { User, UserRole } from "@shared/schema";
 
 interface AuthContextType {
@@ -21,6 +21,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   const fetchUserData = async (firebaseUser: FirebaseUser) => {
+    if (!db) return;
     try {
       const userDoc = await getDoc(doc(db, "users", firebaseUser.uid));
       if (userDoc.exists()) {
@@ -41,10 +42,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   useEffect(() => {
-    // Set Firebase persistence to browser local storage
+    if (!auth || !isFirebaseConfigured) {
+      setLoading(false);
+      return;
+    }
+
     setPersistence(auth, browserLocalPersistence)
       .then(() => {
-        // Persistence set successfully
         const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
           setFirebaseUser(firebaseUser);
           
@@ -66,10 +70,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const signOut = async () => {
-    await firebaseSignOut(auth);
+    if (auth) {
+      await firebaseSignOut(auth);
+    }
     setUser(null);
     setFirebaseUser(null);
-    // Clear guest mode when signing out
     localStorage.removeItem("guestMode");
   };
 

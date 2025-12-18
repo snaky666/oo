@@ -262,6 +262,104 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get all orders (admin endpoint)
+  app.get("/api/admin/orders", async (req, res) => {
+    try {
+      if (!FIREBASE_PROJECT_ID || !FIREBASE_API_KEY) {
+        console.warn("⚠️ Firebase not configured - returning empty list");
+        return res.json([]);
+      }
+
+      console.log("📦 Fetching all orders for admin...");
+
+      const body = {
+        structuredQuery: {
+          from: [{ collectionId: "orders" }]
+        }
+      };
+
+      const response = await fetch(
+        `https://firestore.googleapis.com/v1/projects/${FIREBASE_PROJECT_ID}/databases/(default)/documents:runQuery`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-Goog-Api-Key": FIREBASE_API_KEY
+          },
+          body: JSON.stringify(body)
+        }
+      );
+
+      let data = [];
+      if (response.ok) {
+        const result = await response.json();
+        if (Array.isArray(result)) {
+          data = result.filter((item: any) => item.document).map((item: any) => ({
+            id: item.document.name.split('/').pop(),
+            ...extractDocumentData(item.document.fields)
+          }));
+        }
+      } else {
+        console.error(`❌ Firestore API error: ${response.status} ${response.statusText}`);
+      }
+
+      console.log(`✅ Found ${data.length} orders`);
+      res.json(data);
+    } catch (error: any) {
+      console.error("❌ Error:", error?.message);
+      res.json([]);
+    }
+  });
+
+  // Get all users (admin endpoint)
+  app.get("/api/admin/users", async (req, res) => {
+    try {
+      if (!FIREBASE_PROJECT_ID || !FIREBASE_API_KEY) {
+        console.warn("⚠️ Firebase not configured - returning empty list");
+        return res.json([]);
+      }
+
+      console.log("👥 Fetching all users for admin...");
+
+      const body = {
+        structuredQuery: {
+          from: [{ collectionId: "users" }]
+        }
+      };
+
+      const response = await fetch(
+        `https://firestore.googleapis.com/v1/projects/${FIREBASE_PROJECT_ID}/databases/(default)/documents:runQuery`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-Goog-Api-Key": FIREBASE_API_KEY
+          },
+          body: JSON.stringify(body)
+        }
+      );
+
+      let data = [];
+      if (response.ok) {
+        const result = await response.json();
+        if (Array.isArray(result)) {
+          data = result.filter((item: any) => item.document).map((item: any) => ({
+            uid: item.document.name.split('/').pop(),
+            ...extractDocumentData(item.document.fields)
+          }));
+        }
+      } else {
+        console.error(`❌ Firestore API error: ${response.status} ${response.statusText}`);
+      }
+
+      console.log(`✅ Found ${data.length} users`);
+      res.json(data);
+    } catch (error: any) {
+      console.error("❌ Error:", error?.message);
+      res.json([]);
+    }
+  });
+
   // Get single sheep by ID (public endpoint for guests and users)
   app.get("/api/sheep/:id", async (req, res) => {
     try {
@@ -1387,29 +1485,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Settings API endpoints
+  // Settings API endpoints (using REST API)
   app.get("/api/settings", async (req, res) => {
     try {
-      if (!adminDb) {
-        return res.status(500).json({ error: "Database not initialized" });
-      }
-
-      const settingsDoc = await adminDb.collection('settings').doc('app').get();
-      
-      if (settingsDoc.exists) {
-        const data = settingsDoc.data();
-        res.json({
-          maxSalaryForForeignSheep: data?.maxSalaryForForeignSheep || 0,
-          updatedAt: data?.updatedAt || null,
-          updatedBy: data?.updatedBy || null,
-        });
-      } else {
-        res.json({
+      if (!FIREBASE_PROJECT_ID || !FIREBASE_API_KEY) {
+        console.warn("⚠️ Firebase not configured - returning default settings");
+        return res.json({
           maxSalaryForForeignSheep: 0,
           updatedAt: null,
           updatedBy: null,
         });
       }
+
+      const response = await fetch(
+        `https://firestore.googleapis.com/v1/projects/${FIREBASE_PROJECT_ID}/databases/(default)/documents/settings/app`,
+        {
+          method: "GET",
+          headers: {
+            "X-Goog-Api-Key": FIREBASE_API_KEY
+          }
+        }
+      );
+
+      if (!response.ok) {
+        // Document may not exist, return defaults
+        return res.json({
+          maxSalaryForForeignSheep: 0,
+          updatedAt: null,
+          updatedBy: null,
+        });
+      }
+
+      const doc = await response.json();
+      const data = extractDocumentData(doc.fields);
+      
+      res.json({
+        maxSalaryForForeignSheep: data?.maxSalaryForForeignSheep || 0,
+        updatedAt: data?.updatedAt || null,
+        updatedBy: data?.updatedBy || null,
+      });
     } catch (error: any) {
       console.error("❌ Error fetching settings:", error?.message);
       res.status(500).json({ error: "Failed to fetch settings" });
@@ -1418,17 +1532,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/settings", async (req, res) => {
     try {
-      if (!adminDb) {
-        return res.status(500).json({ error: "Database not initialized" });
+      if (!FIREBASE_PROJECT_ID || !FIREBASE_API_KEY) {
+        return res.status(500).json({ error: "Firebase not configured" });
       }
 
       const { maxSalaryForForeignSheep, updatedBy } = req.body;
 
-      await adminDb.collection('settings').doc('app').set({
-        maxSalaryForForeignSheep: maxSalaryForForeignSheep || 0,
-        updatedAt: Date.now(),
-        updatedBy: updatedBy || null,
-      }, { merge: true });
+      const fields: any = {
+        maxSalaryForForeignSheep: { integerValue: maxSalaryForForeignSheep || 0 },
+        updatedAt: { integerValue: Date.now() },
+      };
+      
+      if (updatedBy) {
+        fields.updatedBy = { stringValue: updatedBy };
+      }
+
+      const response = await fetch(
+        `https://firestore.googleapis.com/v1/projects/${FIREBASE_PROJECT_ID}/databases/(default)/documents/settings/app`,
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            "X-Goog-Api-Key": FIREBASE_API_KEY
+          },
+          body: JSON.stringify({ fields })
+        }
+      );
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("❌ Firestore update error:", errorText);
+        return res.status(500).json({ error: "Failed to save settings" });
+      }
 
       console.log('✅ Settings updated:', { maxSalaryForForeignSheep, updatedBy });
       res.json({ success: true });

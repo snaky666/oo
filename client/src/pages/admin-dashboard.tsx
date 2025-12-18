@@ -233,40 +233,40 @@ export default function AdminDashboard() {
   };
 
   const fetchSheep = async () => {
-    const snapshot = await getDocs(collection(db, "sheep"));
-    const sheepData = snapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data()
-    })) as Sheep[];
+    try {
+      const response = await fetch("/api/sheep");
+      if (!response.ok) throw new Error("Failed to fetch sheep");
+      const sheepData = await response.json() as Sheep[];
 
-    console.log("🐑 عدد الأضاحي المجلوبة:", sheepData.length);
+      console.log("🐑 عدد الأضاحي المجلوبة:", sheepData.length);
 
-    // عرض ملخص الأضاحي حسب البائع
-    const sheepBySeller: Record<string, number> = {};
-    const sheepByStatus: Record<string, number> = {};
+      // عرض ملخص الأضاحي حسب البائع
+      const sheepBySeller: Record<string, number> = {};
+      const sheepByStatus: Record<string, number> = {};
 
-    sheepData.forEach(s => {
-      if (s.sellerId) {
-        sheepBySeller[s.sellerId] = (sheepBySeller[s.sellerId] || 0) + 1;
-      }
-      if (s.status) {
-        sheepByStatus[s.status] = (sheepByStatus[s.status] || 0) + 1;
-      }
-    });
+      sheepData.forEach(s => {
+        if (s.sellerId) {
+          sheepBySeller[s.sellerId] = (sheepBySeller[s.sellerId] || 0) + 1;
+        }
+        if (s.status) {
+          sheepByStatus[s.status] = (sheepByStatus[s.status] || 0) + 1;
+        }
+      });
 
-    console.log("🏪 ملخص الأضاحي حسب البائع:", sheepBySeller);
-    console.log("📊 ملخص الأضاحي حسب الحالة:", sheepByStatus);
+      console.log("🏪 ملخص الأضاحي حسب البائع:", sheepBySeller);
+      console.log("📊 ملخص الأضاحي حسب الحالة:", sheepByStatus);
 
-    setSheep(sheepData);
+      setSheep(sheepData);
+    } catch (error) {
+      console.error("❌ خطأ في جلب الأضاحي:", error);
+    }
   };
 
   const fetchOrders = async () => {
     try {
-      const snapshot = await getDocs(collection(db, "orders"));
-      const ordersData = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      })) as Order[];
+      const response = await fetch("/api/admin/orders");
+      if (!response.ok) throw new Error("Failed to fetch orders");
+      const ordersData = await response.json() as Order[];
       console.log("🔍 عدد الطلبات المجلوبة:", ordersData.length);
 
       // عرض ملخص الطلبات حسب المشتري والبائع
@@ -292,12 +292,15 @@ export default function AdminDashboard() {
   };
 
   const fetchUsers = async () => {
-    const snapshot = await getDocs(collection(db, "users"));
-    const usersData = snapshot.docs.map(doc => ({
-      uid: doc.id,
-      ...doc.data()
-    })) as User[];
-    setUsers(usersData);
+    try {
+      const response = await fetch("/api/admin/users");
+      if (!response.ok) throw new Error("Failed to fetch users");
+      const usersData = await response.json() as User[];
+      console.log("👥 عدد المستخدمين المجلوبين:", usersData.length);
+      setUsers(usersData);
+    } catch (error) {
+      console.error("❌ خطأ في جلب المستخدمين:", error);
+    }
   };
 
   const handleReview = async (sheepId: string, approved: boolean, rejectionReason?: string) => {

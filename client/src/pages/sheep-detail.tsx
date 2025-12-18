@@ -241,6 +241,12 @@ export default function SheepDetail() {
         body: JSON.stringify(baseOrderData),
       });
 
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("❌ API Error:", response.status, errorText);
+        throw new Error(`API returned ${response.status}: ${errorText}`);
+      }
+
       const result = await response.json();
 
       if (!result.success) {

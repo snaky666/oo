@@ -38,13 +38,19 @@ export async function setupVite(app: Express, server: Server) {
     appType: "custom",
   });
 
-  // Serve static files from public directory with proper MIME types
+  // Serve static files from public directory with proper MIME types and cache control
   const publicDir = path.resolve(import.meta.dirname, "..", "public");
   app.use(express.static(publicDir, {
     setHeaders: (res, filepath) => {
       // Ensure JSON files have correct content type
       if (filepath.endsWith('.json')) {
         res.setHeader('Content-Type', 'application/json; charset=utf-8');
+      }
+      // Set appropriate cache headers for static assets
+      if (filepath.endsWith('.ico') || filepath.endsWith('.gif') || filepath.endsWith('.png')) {
+        res.setHeader('Cache-Control', 'public, max-age=31536000, immutable'); // 1 year
+      } else {
+        res.setHeader('Cache-Control', 'public, max-age=3600'); // 1 hour for other files
       }
     }
   }));

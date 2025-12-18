@@ -91,7 +91,7 @@ export default function SheepDetail() {
     if (params?.id) {
       fetchSheep(params.id);
     }
-  }, [params?.id, user]);
+  }, [params?.id]);
 
   useEffect(() => {
     if (user) {
@@ -108,10 +108,8 @@ export default function SheepDetail() {
       const sheepDoc = await getDoc(doc(db, "sheep", id));
       if (sheepDoc.exists()) {
         const data = sheepDoc.data();
-        // Allow viewing if approved OR if the user is the owner (seller)
-        const isOwner = user && data?.sellerId === user.uid;
-        const isAdmin = user && user.role === "admin";
-        if (data?.status === "approved" || isOwner || isAdmin) {
+        // Only allow viewing if approved
+        if (data?.status === "approved") {
           setSheep({ id: sheepDoc.id, ...data } as Sheep);
         } else {
           throw new Error("Sheep not approved");
@@ -353,34 +351,6 @@ export default function SheepDetail() {
   if (!sheep) return null;
 
   const images = sheep.images && sheep.images.length > 0 ? sheep.images : [placeholderImage];
-  const isOwner = user && sheep.sellerId === user.uid;
-  const isAdmin = user && user.role === "admin";
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "approved":
-        return "bg-green-500/10 text-green-700 dark:text-green-400 border-green-500/20";
-      case "pending":
-        return "bg-yellow-500/10 text-yellow-700 dark:text-yellow-400 border-yellow-500/20";
-      case "rejected":
-        return "bg-red-500/10 text-red-700 dark:text-red-400 border-red-500/20";
-      default:
-        return "";
-    }
-  };
-
-  const getStatusLabel = (status: string) => {
-    switch (status) {
-      case "approved":
-        return "مقبول";
-      case "pending":
-        return "قيد المراجعة";
-      case "rejected":
-        return "مرفوض";
-      default:
-        return status;
-    }
-  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -444,17 +414,11 @@ export default function SheepDetail() {
 
           {/* Details */}
           <div className="space-y-6">
-            {/* Price and Status */}
-            <div className="flex flex-wrap items-center gap-3">
+            {/* Price */}
+            <div>
               <Badge className="text-2xl font-bold px-4 py-2">
                 {sheep.price.toLocaleString()} DA
               </Badge>
-              {/* Show status for owner or admin */}
-              {(isOwner || isAdmin) && sheep.status !== "approved" && (
-                <Badge className={`text-base px-3 py-1 ${getStatusColor(sheep.status)}`}>
-                  {getStatusLabel(sheep.status)}
-                </Badge>
-              )}
             </div>
 
             {/* Metadata */}
@@ -488,37 +452,16 @@ export default function SheepDetail() {
               </p>
             </div>
 
-            {/* Order Button - hide for owners viewing their own sheep */}
-            {!isOwner && (
-              <Button
-                size="lg"
-                className="w-full text-lg"
-                onClick={() => setOrderDialogOpen(true)}
-                data-testid="button-create-order"
-              >
-                <ShoppingCart className="ml-2 h-5 w-5" />
-                طلب الشراء
-              </Button>
-            )}
-            
-            {/* Owner notice */}
-            {isOwner && (
-              <Card className="bg-muted/50">
-                <CardContent className="p-4 text-center">
-                  <p className="text-muted-foreground">هذا المنتج خاص بك</p>
-                  {sheep.status === "pending" && (
-                    <p className="text-sm text-yellow-600 dark:text-yellow-400 mt-1">
-                      في انتظار موافقة الإدارة
-                    </p>
-                  )}
-                  {sheep.status === "rejected" && sheep.rejectionReason && (
-                    <p className="text-sm text-red-600 dark:text-red-400 mt-1">
-                      سبب الرفض: {sheep.rejectionReason}
-                    </p>
-                  )}
-                </CardContent>
-              </Card>
-            )}
+            {/* Order Button */}
+            <Button
+              size="lg"
+              className="w-full text-lg"
+              onClick={() => setOrderDialogOpen(true)}
+              data-testid="button-create-order"
+            >
+              <ShoppingCart className="ml-2 h-5 w-5" />
+              طلب الشراء
+            </Button>
           </div>
         </div>
       </div>

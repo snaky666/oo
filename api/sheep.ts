@@ -1,17 +1,5 @@
-import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { initFirebase } from './_utils/firebase';
-
 const FIREBASE_PROJECT_ID = process.env.VITE_FIREBASE_PROJECT_ID;
 const FIREBASE_API_KEY = process.env.VITE_FIREBASE_API_KEY;
-
-function extractDocumentData(fields: any): any {
-  if (!fields) return {};
-  const result: any = {};
-  for (const [key, value] of Object.entries(fields)) {
-    result[key] = extractFieldValue(value);
-  }
-  return result;
-}
 
 function extractFieldValue(value: any): any {
   if (!value) return null;
@@ -23,7 +11,11 @@ function extractFieldValue(value: any): any {
     return value.arrayValue.values?.map((v: any) => extractFieldValue(v)) || [];
   }
   if (value.mapValue !== undefined) {
-    return extractDocumentData(value.mapValue.fields);
+    const result: any = {};
+    for (const [key, val] of Object.entries(value.mapValue.fields || {})) {
+      result[key] = extractFieldValue(val);
+    }
+    return result;
   }
   if (value.timestampValue !== undefined) {
     return new Date(value.timestampValue).getTime();
@@ -31,80 +23,75 @@ function extractFieldValue(value: any): any {
   return value;
 }
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
+function extractDocumentData(fields: any): any {
+  if (!fields) return {};
+  const result: any = {};
+  for (const [key, value] of Object.entries(fields)) {
+    result[key] = extractFieldValue(value);
+  }
+  return result;
+}
+
+export default async (req: any, res: any) => {
+  // Enable CORS
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
+  res.setHeader('Access-Control-Allow-Headers', 'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version');
   
   if (req.method === 'OPTIONS') {
-    return res.status(200).end();
+    res.status(200).end();
+    return;
   }
 
-  const { adminDb } = initFirebase();
-  const { id, approved } = req.query;
+  const { approved } = req.query;
 
   try {
-    if (id) {
-      if (adminDb) {
-        const doc = await adminDb.collection("sheep").doc(id as string).get();
-        if (!doc.exists) {
-          return res.status(404).json({ error: "Sheep not found" });
+    if (approved === 'true') {
+      // Get approved sheep
+      const body = {
+        structuredQuery: {
+          from: [{ collectionId: 'sheep' }],
+          where: {
+            fieldFilter: {
+              field: { fieldPath: 'status' },
+              op: 'EQUAL',
+              value: { stringValue: 'approved' }
+            }
+          }
         }
-        return res.json({ id: doc.id, ...doc.data() });
-      }
-      
-      const response = await fetch(
-        `https://firestore.googleapis.com/v1/projects/${FIREBASE_PROJECT_ID}/databases/(default)/documents/sheep/${id}`,
-        { headers: { "X-Goog-Api-Key": FIREBASE_API_KEY || "" } }
-      );
-      if (!response.ok) {
-        return res.status(404).json({ error: "Sheep not found" });
-      }
-      const doc = await response.json();
-      return res.json({ id, ...extractDocumentData(doc.fields) });
-    }
-
-    const isApproved = approved === "true";
-
-    if (adminDb) {
-      let query: any = adminDb.collection("sheep");
-      if (isApproved) {
-        query = query.where("status", "==", "approved");
-      }
-      const snapshot = await query.get();
-      const data = snapshot.docs.map((doc: any) => ({ id: doc.id, ...doc.data() }));
-      return res.json(data);
-    }
-
-    const body: any = { structuredQuery: { from: [{ collectionId: "sheep" }] } };
-    if (isApproved) {
-      body.structuredQuery.where = {
-        fieldFilter: { field: { fieldPath: "status" }, op: "EQUAL", value: { stringValue: "approved" } }
       };
-    }
 
-    const response = await fetch(
-      `https://firestore.googleapis.com/v1/projects/${FIREBASE_PROJECT_ID}/databases/(default)/documents:runQuery`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "X-Goog-Api-Key": FIREBASE_API_KEY || "" },
-        body: JSON.stringify(body)
+      const response = await fetch(
+        `https://firestore.googleapis.com/v1/projects/${FIREBASE_PROJECT_ID}/databases/(default)/documents:runQuery`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Goog-Api-Key': FIREBASE_API_KEY || ''
+          },
+          body: JSON.stringify(body)
+        }
+      );
+
+      if (!response.ok) {
+        return res.status(response.status).json({ error: 'Failed to fetch sheep' });
       }
-    );
 
-    let data: any[] = [];
-    if (response.ok) {
       const result = await response.json();
-      if (Array.isArray(result)) {
-        data = result.filter((item: any) => item.document).map((item: any) => ({
-          id: item.document.name.split('/').pop(),
-          ...extractDocumentData(item.document.fields)
-        }));
-      }
+      const data = Array.isArray(result)
+        ? result.filter((item: any) => item.document).map((item: any) => ({
+            id: item.document.name.split('/').pop(),
+            ...extractDocumentData(item.document.fields)
+          }))
+        : [];
+
+      return res.status(200).json(data);
     }
-    res.json(data);
+
+    res.status(400).json({ error: 'Invalid query' });
   } catch (error: any) {
-    console.error("Error:", error?.message);
-    res.status(500).json({ error: "Failed to fetch sheep" });
+    console.error('API Error:', error?.message);
+    res.status(500).json({ error: error?.message || 'Internal server error' });
   }
-}
+};

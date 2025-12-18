@@ -143,15 +143,15 @@ export interface Sheep {
   updatedAt?: number;
 }
 
-// Schema for creating a sheep (used in forms) - images handled separately
-// Must match Firestore rules: price 10000-10000000, age 6-60, weight 5-200, description >= 20 chars
+// Schema for creating a sheep (used in forms)
 export const insertSheepSchema = z.object({
-  price: z.number().min(10000, "السعر يجب أن يكون 10,000 دج على الأقل").max(10000000, "السعر يجب أن يكون أقل من 10,000,000 دج"),
-  age: z.number().min(6, "العمر يجب أن يكون 6 أشهر على الأقل").max(60, "العمر يجب أن يكون أقل من 60 شهر"),
-  weight: z.number().min(5, "الوزن يجب أن يكون 5 كجم على الأقل").max(200, "الوزن يجب أن يكون أقل من 200 كجم"),
+  price: z.number().min(1, "السعر يجب أن يكون أكبر من صفر"),
+  age: z.number().min(1, "العمر يجب أن يكون أكبر من صفر"),
+  weight: z.number().min(1, "الوزن يجب أن يكون أكبر من صفر"),
   city: z.string().min(2, "يجب اختيار الولاية"),
   municipality: z.string().min(2, "يجب اختيار البلدية"),
-  description: z.string().min(20, "الوصف يجب أن يكون 20 حرف على الأقل"),
+  description: z.string().min(10, "الوصف يجب أن يكون 10 أحرف على الأقل"),
+  images: z.array(z.string()).min(1, "يجب تحميل صورة واحدة على الأقل").max(5, "يمكن تحميل 5 صور كحد أقصى"),
   isVIP: z.boolean().optional().default(false),
 });
 

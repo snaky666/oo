@@ -150,22 +150,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const approved = req.query.approved === "true";
       console.log(`🐑 Fetching ${approved ? "approved" : "all"} sheep...`);
 
-      // Use Firebase Admin SDK if available (bypasses security rules)
-      if (adminDb) {
-        let query: any = adminDb.collection("sheep");
-        if (approved) {
-          query = query.where("status", "==", "approved");
-        }
-        const snapshot = await query.get();
-        const data = snapshot.docs.map((doc: any) => ({
-          id: doc.id,
-          ...doc.data()
-        }));
-        console.log(`✅ Found ${data.length} ${approved ? "approved" : ""} sheep (Admin SDK)`);
-        return res.json(data);
-      }
-
-      // Fallback to REST API
+      // Use REST API with a direct Firestore query
       const body: any = {
         structuredQuery: {
           from: [{ collectionId: "sheep" }]
@@ -218,18 +203,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       console.log("🐑 Fetching approved sheep...");
 
-      // Use Firebase Admin SDK if available
-      if (adminDb) {
-        const snapshot = await adminDb.collection("sheep").where("status", "==", "approved").get();
-        const data = snapshot.docs.map((doc: any) => ({
-          id: doc.id,
-          ...doc.data()
-        }));
-        console.log(`✅ Found ${data.length} approved sheep (Admin SDK)`);
-        return res.json(data);
-      }
-
-      // Fallback to REST API
+      // Use REST API with a direct Firestore query
       const body = {
         structuredQuery: {
           from: [{ collectionId: "sheep" }],
@@ -279,22 +253,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       console.log(`🐑 Fetching sheep ${req.params.id}...`);
 
-      // Use Firebase Admin SDK if available
-      if (adminDb) {
-        const doc = await adminDb.collection("sheep").doc(req.params.id).get();
-        if (!doc.exists) {
-          console.log(`⚠️ Sheep ${req.params.id} not found`);
-          return res.status(404).json({ error: "Sheep not found" });
-        }
-        const data = doc.data();
-        console.log(`✅ Returning sheep ${req.params.id} (Admin SDK)`);
-        return res.json({
-          id: doc.id,
-          ...data
-        });
-      }
-
-      // Fallback to REST API
       const response = await fetch(
         `https://firestore.googleapis.com/v1/projects/${FIREBASE_PROJECT_ID}/databases/(default)/documents/sheep/${req.params.id}`,
         {
@@ -317,6 +275,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const doc = await response.json();
       const data = extractDocumentData(doc.fields);
+
+      // Only return if approved
+      if (data?.status !== "approved") {
+        console.log(`⚠️ Sheep ${req.params.id} status is ${data?.status}, not approved`);
+        return res.status(403).json({ error: "This listing is not available" });
+      }
 
       console.log(`✅ Returning sheep ${req.params.id}`);
       res.json({
@@ -574,21 +538,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { email, code } = req.body;
       console.log('📧 Sending verification code to:', email);
 
-      // Respond immediately, send email in background
-      res.json({ success: true, message: "Verification code sent" });
+      const result = await sendVerificationEmail(email, code);
 
-      // Send email asynchronously (don't await)
-      sendVerificationEmail(email, code)
-        .then(result => {
-          if (result.success) {
-            console.log('✅ Verification email sent to:', email);
-          } else {
-            console.error('❌ Failed to send verification email:', result.error);
-          }
-        })
-        .catch(error => {
-          console.error('❌ Email sending error:', error?.message);
-        });
+      if (result.success) {
+        res.json({ success: true, message: "Verification code sent" });
+      } else {
+        res.status(500).json({ success: false, error: result.error });
+      }
     } catch (error: any) {
       console.error("❌ Send verification error:", error?.message);
       res.status(500).json({ success: false, error: error?.message });

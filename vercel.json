@@ -1,16 +1,13 @@
 {
   "version": 2,
-  "buildCommand": "npm run build && mkdir -p public && cp -r dist/public/* public/",
+  "buildCommand": "npm run build",
   "installCommand": "npm install",
-  "public": "public",
+  "outputDirectory": "dist/public",
   "env": {
     "NODE_ENV": "production"
   },
   "functions": {
     "api/[...].ts": {
-      "maxDuration": 30
-    },
-    "api/sheep.ts": {
       "maxDuration": 30
     }
   }

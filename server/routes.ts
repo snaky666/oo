@@ -147,6 +147,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get sheep listings (public endpoint for guests and users)
   app.get("/api/sheep", async (req, res) => {
     try {
+      if (!FIREBASE_PROJECT_ID || !FIREBASE_API_KEY) {
+        console.warn("⚠️ Firebase not configured - returning empty list");
+        return res.json([]);
+      }
+
       const approved = req.query.approved === "true";
       console.log(`🐑 Fetching ${approved ? "approved" : "all"} sheep...`);
 
@@ -173,7 +178,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            "X-Goog-Api-Key": FIREBASE_API_KEY || ""
+            "X-Goog-Api-Key": FIREBASE_API_KEY
           },
           body: JSON.stringify(body)
         }
@@ -188,6 +193,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             ...extractDocumentData(item.document.fields)
           }));
         }
+      } else {
+        console.error(`❌ Firestore API error: ${response.status} ${response.statusText}`);
       }
 
       console.log(`✅ Found ${data.length} ${approved ? "approved" : ""} sheep`);
@@ -201,6 +208,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Backward compatibility: Get approved sheep listings
   app.get("/api/sheep/approved", async (req, res) => {
     try {
+      if (!FIREBASE_PROJECT_ID || !FIREBASE_API_KEY) {
+        console.warn("⚠️ Firebase not configured - returning empty list");
+        return res.json([]);
+      }
+
       console.log("🐑 Fetching approved sheep...");
 
       // Use REST API with a direct Firestore query
@@ -223,7 +235,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            "X-Goog-Api-Key": FIREBASE_API_KEY || ""
+            "X-Goog-Api-Key": FIREBASE_API_KEY
           },
           body: JSON.stringify(body)
         }
@@ -238,6 +250,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             ...extractDocumentData(item.document.fields)
           }));
         }
+      } else {
+        console.error(`❌ Firestore API error: ${response.status} ${response.statusText}`);
       }
 
       console.log(`✅ Found ${data.length} approved sheep`);
@@ -251,6 +265,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get single sheep by ID (public endpoint for guests and users)
   app.get("/api/sheep/:id", async (req, res) => {
     try {
+      if (!FIREBASE_PROJECT_ID || !FIREBASE_API_KEY) {
+        console.warn("⚠️ Firebase not configured");
+        return res.status(503).json({ error: "Firebase not configured" });
+      }
+
       console.log(`🐑 Fetching sheep ${req.params.id}...`);
 
       const response = await fetch(
@@ -258,7 +277,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         {
           method: "GET",
           headers: {
-            "X-Goog-Api-Key": FIREBASE_API_KEY || ""
+            "X-Goog-Api-Key": FIREBASE_API_KEY
           }
         }
       );

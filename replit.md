@@ -9,13 +9,15 @@
 - Production run: Uses `server/index-prod.ts` which serves the built static files
 
 ## Required Environment Variables
-To fully use Firebase features, the following environment variables must be configured:
+To fully use Firebase features, configure these in the Secrets tab:
 - `VITE_FIREBASE_API_KEY`: Firebase Web API key (client-side)
 - `VITE_FIREBASE_PROJECT_ID`: Firebase project ID (client-side)
 - `VITE_FIREBASE_APP_ID`: Firebase App ID (client-side)
 - `FIREBASE_PRIVATE_KEY`: Firebase Admin SDK private key (server-side)
 - `FIREBASE_CLIENT_EMAIL`: Firebase Admin SDK client email (server-side)
 - `RESEND_API_KEY`: For email services (optional)
+
+**Note**: The app gracefully handles missing Firebase credentials by returning empty lists and showing appropriate warnings in logs. This allows development without full Firebase setup.
 
 ## User Preferences
 - اللغة الأساسية: العربية

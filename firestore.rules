@@ -45,6 +45,38 @@ service cloud.firestore {
       return email is string && email.size() >= 5 && email.matches('^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$');
     }
     
+    function isValidPhone(phone) {
+      return phone is string && phone.size() >= 7 && phone.size() <= 20;
+    }
+    
+    function isNonEmptyString(field) {
+      return field is string && field.size() > 0;
+    }
+    
+    function hasMinLength(field, minLen) {
+      return field is string && field.size() >= minLen;
+    }
+    
+    function isPositiveNumber(num) {
+      return num is number && num > 0;
+    }
+    
+    function isNonNegativeNumber(num) {
+      return num is number && num >= 0;
+    }
+    
+    function isInRange(num, min, max) {
+      return num is number && num >= min && num <= max;
+    }
+    
+    function isOneOf(value, allowedValues) {
+      return value in allowedValues;
+    }
+    
+    function isValidTimestamp(ts) {
+      return ts is int && ts > 0;
+    }
+    
     function isValidPrice(price) {
       return price is number && price >= 10000 && price <= 10000000;
     }
@@ -57,47 +89,54 @@ service cloud.firestore {
       return weight is number && weight >= 5 && weight <= 200;
     }
     
-    function isValidTimestamp(ts) {
-      return ts is int && ts > 0;
+    function isValidUrl(url) {
+      return url is string && url.matches('^https://.*');
+    }
+    
+    function hasAll(fields) {
+      return request.resource.data.keys().hasAll(fields);
+    }
+    
+    function isUnchanged(field) {
+      return request.resource.data[field] == resource.data[field];
     }
     
     // ================= USERS COLLECTION =================
     
     match /users/{userId} {
-      // Each user can only read their own profile, admins can read all
-      allow read: if isOwner(userId) || isAdmin();
+      // User can read own profile, admin can read all, sellers/buyers can read each other
+      allow read: if isOwner(userId) || isAdmin() || 
+                     (isAuthenticated() && userExists() && resource.data.role in ['buyer', 'seller']);
       
-      // Only the owner can create their own profile during registration
+      // Owner creates their profile during registration
       allow create: if isOwner(userId)
-        && request.resource.data.keys().hasAll(['uid', 'email', 'role', 'createdAt', 'phone', 'fullName'])
+        && hasAll(['uid', 'email', 'role', 'createdAt', 'phone', 'fullName'])
         && request.resource.data.uid == userId
         && isValidEmail(request.resource.data.email)
         && request.resource.data.role in ['buyer', 'seller', 'admin']
-        && request.resource.data.phone is string
-        && request.resource.data.phone.size() >= 7
-        && request.resource.data.fullName is string
-        && request.resource.data.fullName.size() >= 2
+        && isValidPhone(request.resource.data.phone)
+        && hasMinLength(request.resource.data.fullName, 2)
         && isValidTimestamp(request.resource.data.createdAt);
       
-      // Only the owner or admin can update user profile, cannot change uid or email
+      // Owner updates own profile, admin can update any
       allow update: if (isOwner(userId) || isAdmin())
-        && request.resource.data.uid == resource.data.uid
-        && request.resource.data.email == resource.data.email
-        && request.resource.data.createdAt == resource.data.createdAt;
+        && isUnchanged('uid')
+        && isUnchanged('email')
+        && isUnchanged('createdAt');
       
-      // Only admins can delete users
+      // Only admin can delete users
       allow delete: if isAdmin();
     }
     
-    // ================= PRODUCTS/SHEEP COLLECTION =================
+    // ================= SHEEP COLLECTION =================
     
     match /sheep/{sheepId} {
-      // Authenticated users can read all sheep, admins can read all
+      // Authenticated users can read all sheep
       allow read: if isAuthenticated();
       
-      // Sellers can create new sheep listings
+      // Sellers create sheep listings
       allow create: if isSeller()
-        && request.resource.data.keys().hasAll(['id', 'sellerId', 'images', 'price', 'age', 'weight', 'city', 'description', 'status', 'createdAt'])
+        && hasAll(['id', 'sellerId', 'images', 'price', 'age', 'weight', 'city', 'description', 'status', 'createdAt'])
         && request.resource.data.id == sheepId
         && request.resource.data.sellerId == currentUserId()
         && request.resource.data.status == 'pending'
@@ -107,17 +146,15 @@ service cloud.firestore {
         && isValidPrice(request.resource.data.price)
         && isValidAge(request.resource.data.age)
         && isValidWeight(request.resource.data.weight)
-        && request.resource.data.city is string
-        && request.resource.data.city.size() > 0
-        && request.resource.data.description is string
-        && request.resource.data.description.size() >= 20
+        && isNonEmptyString(request.resource.data.city)
+        && hasMinLength(request.resource.data.description, 20)
         && isValidTimestamp(request.resource.data.createdAt);
       
-      // Sellers can update only their own pending listings, admins can update any
-      allow update: if (isSeller() && resource.data.sellerId == currentUserId() && resource.data.status == 'pending') 
+      // Sellers update own pending sheep, admin updates any
+      allow update: if (isSeller() && resource.data.sellerId == currentUserId() && resource.data.status == 'pending' && isUnchanged('sellerId') && request.resource.data.status == 'pending') 
         || isAdmin();
       
-      // Sellers can delete only their own pending listings, admins can delete any
+      // Sellers delete own pending sheep, admin deletes any
       allow delete: if (isSeller() && resource.data.sellerId == currentUserId() && resource.data.status == 'pending') 
         || isAdmin();
     }
@@ -125,41 +162,318 @@ service cloud.firestore {
     // ================= ORDERS COLLECTION =================
     
     match /orders/{orderId} {
-      // Users can read their own orders (as buyer or seller), admins can read all
-      allow read: if isAdmin()
+      // Admin reads all, buyer/seller read their own orders
+      allow read: if isAdmin() 
         || (isAuthenticated() && resource.data.buyerId == currentUserId())
         || (isAuthenticated() && resource.data.sellerId == currentUserId());
       
-      // Buyers can create new orders
+      // Buyers create orders
       allow create: if isBuyer()
-        && request.resource.data.keys().hasAll(['id', 'buyerId', 'sellerId', 'sheepId', 'totalPrice', 'status', 'createdAt'])
+        && hasAll(['id', 'buyerId', 'sellerId', 'sheepId', 'totalPrice', 'status', 'createdAt'])
         && request.resource.data.id == orderId
         && request.resource.data.buyerId == currentUserId()
         && request.resource.data.buyerId != request.resource.data.sellerId
         && request.resource.data.status == 'pending'
         && isValidPrice(request.resource.data.totalPrice)
-        && request.resource.data.sheepId is string
-        && request.resource.data.sheepId.size() > 0
-        && request.resource.data.sellerId is string
-        && request.resource.data.sellerId.size() > 0
+        && isNonEmptyString(request.resource.data.sheepId)
+        && isNonEmptyString(request.resource.data.sellerId)
         && isValidTimestamp(request.resource.data.createdAt);
       
-      // Buyers and sellers can update their own orders (limited fields), admins can update any
+      // Buyer/seller update own orders (limited fields), admin updates any
       allow update: if isAdmin()
         || (isAuthenticated() && (resource.data.buyerId == currentUserId() || resource.data.sellerId == currentUserId())
-          && request.resource.data.buyerId == resource.data.buyerId
-          && request.resource.data.sellerId == resource.data.sellerId
-          && request.resource.data.sheepId == resource.data.sheepId
-          && request.resource.data.totalPrice == resource.data.totalPrice
-          && request.resource.data.createdAt == resource.data.createdAt);
+          && isUnchanged('buyerId')
+          && isUnchanged('sellerId')
+          && isUnchanged('sheepId')
+          && isUnchanged('totalPrice')
+          && isUnchanged('createdAt'));
       
-      // Only admins can delete orders
+      // Only admin deletes orders
       allow delete: if isAdmin();
     }
     
-    // ================= DEFAULT DENY =================
+    // ================= PAYMENTS COLLECTION =================
     
-    // Deny all access to any collection not explicitly defined above
+    match /payments/{paymentId} {
+      // Owner reads own, admin reads all
+      allow read: if (isAuthenticated() && resource.data.userId == currentUserId()) || isAdmin();
+      
+      // Authenticated user creates own payment
+      allow create: if isAuthenticated()
+        && hasAll(['id', 'userId', 'userEmail', 'amount', 'method', 'status', 'createdAt'])
+        && request.resource.data.id == paymentId
+        && request.resource.data.userId == currentUserId()
+        && request.resource.data.status == 'pending'
+        && isValidPrice(request.resource.data.amount)
+        && request.resource.data.method in ['cib', 'stripe', 'cash', 'card', 'installment']
+        && isValidTimestamp(request.resource.data.createdAt);
+      
+      // Only admin updates payments
+      allow update: if isAdmin() 
+        && request.resource.data.status in ['pending', 'completed', 'verified', 'failed', 'cancelled', 'rejected'];
+      
+      // Only admin deletes payments
+      allow delete: if isAdmin();
+    }
+    
+    // ================= CIB RECEIPTS COLLECTION =================
+    
+    match /cibReceipts/{receiptId} {
+      // Owner reads own, admin reads all
+      allow read: if (isAuthenticated() && resource.data.userId == currentUserId()) || isAdmin();
+      
+      // Authenticated user uploads own receipt
+      allow create: if isAuthenticated()
+        && hasAll(['id', 'paymentId', 'userId', 'userEmail', 'receiptImageUrl', 'amount', 'status', 'createdAt'])
+        && request.resource.data.id == receiptId
+        && request.resource.data.userId == currentUserId()
+        && request.resource.data.status == 'pending'
+        && isValidUrl(request.resource.data.receiptImageUrl)
+        && isPositiveNumber(request.resource.data.amount)
+        && isValidTimestamp(request.resource.data.createdAt);
+      
+      // Only admin updates receipts
+      allow update: if isAdmin() 
+        && request.resource.data.status in ['pending', 'verified', 'rejected'];
+      
+      // Only admin deletes receipts
+      allow delete: if isAdmin();
+    }
+    
+    // ================= INSTALLMENTS COLLECTION =================
+    
+    match /installments/{installmentId} {
+      // Owner reads own, admin reads all
+      allow read: if (isAuthenticated() && resource.data.userId == currentUserId()) || isAdmin();
+      
+      // Authenticated user creates installment
+      allow create: if isAuthenticated()
+        && hasAll(['id', 'paymentId', 'userId', 'totalAmount', 'downPayment', 'remainingAmount', 'monthlyInstallment', 'numberOfMonths', 'paidInstallments', 'nextDueDate', 'status', 'createdAt'])
+        && request.resource.data.id == installmentId
+        && request.resource.data.userId == currentUserId()
+        && request.resource.data.status in ['active', 'pending']
+        && isPositiveNumber(request.resource.data.totalAmount)
+        && isNonNegativeNumber(request.resource.data.downPayment)
+        && isNonNegativeNumber(request.resource.data.remainingAmount)
+        && isPositiveNumber(request.resource.data.monthlyInstallment)
+        && isInRange(request.resource.data.numberOfMonths, 1, 24)
+        && request.resource.data.paidInstallments >= 0
+        && isValidTimestamp(request.resource.data.createdAt);
+      
+      // Only admin updates installments
+      allow update: if isAdmin() 
+        && request.resource.data.status in ['active', 'completed', 'defaulted', 'pending'];
+      
+      // Only admin deletes installments
+      allow delete: if isAdmin();
+    }
+    
+    // ================= VIP SUBSCRIPTIONS COLLECTION =================
+    
+    match /vipSubscriptions/{subscriptionId} {
+      // Owner reads own, admin reads all
+      allow read: if (isAuthenticated() && resource.data.userId == currentUserId()) || isAdmin();
+      
+      // Authenticated user creates own subscription
+      allow create: if isAuthenticated()
+        && request.resource.data.userId == currentUserId()
+        && request.resource.data.package in ['silver', 'gold', 'platinum']
+        && isPositiveNumber(request.resource.data.price);
+      
+      // Owner toggles auto-renew, admin can update any
+      allow update: if (isAuthenticated() && resource.data.userId == currentUserId()) || isAdmin();
+      
+      // Only admin deletes subscriptions
+      allow delete: if isAdmin();
+    }
+    
+    // ================= AD REQUESTS COLLECTION =================
+    
+    match /ad_requests/{requestId} {
+      // Admin reads all, user reads own
+      allow read: if isAdmin() || (isAuthenticated() && resource.data.userId == currentUserId());
+      
+      // Authenticated user creates ad request
+      allow create: if isAuthenticated()
+        && hasAll(['id', 'userId', 'image', 'companyName', 'description', 'status', 'createdAt'])
+        && request.resource.data.id == requestId
+        && request.resource.data.userId == currentUserId()
+        && request.resource.data.status == 'pending'
+        && isNonEmptyString(request.resource.data.image)
+        && hasMinLength(request.resource.data.companyName, 2)
+        && hasMinLength(request.resource.data.description, 10)
+        && isValidTimestamp(request.resource.data.createdAt);
+      
+      // Only admin updates ad requests
+      allow update: if isAdmin() 
+        && request.resource.data.status in ['pending', 'approved', 'rejected'];
+      
+      // Only admin deletes ad requests
+      allow delete: if isAdmin();
+    }
+    
+    // ================= ADS COLLECTION =================
+    
+    match /ads/{adId} {
+      // Authenticated users read active ads, admin reads all
+      allow read: if isAdmin() || (isAuthenticated() && resource.data.active == true);
+      
+      // Only admin creates ads
+      allow create: if isAdmin()
+        && hasAll(['id', 'image', 'companyName', 'active', 'createdAt'])
+        && request.resource.data.id == adId
+        && isNonEmptyString(request.resource.data.image)
+        && hasMinLength(request.resource.data.companyName, 2)
+        && isValidTimestamp(request.resource.data.createdAt);
+      
+      // Only admin updates ads
+      allow update: if isAdmin();
+      
+      // Only admin deletes ads
+      allow delete: if isAdmin();
+    }
+    
+    // ================= REVIEWS COLLECTION =================
+    
+    match /reviews/{reviewId} {
+      // Authenticated users can read reviews
+      allow read: if isAuthenticated();
+      
+      // Buyer creates review
+      allow create: if isBuyer()
+        && hasAll(['id', 'buyerId', 'sellerId', 'sheepId', 'rating', 'comment', 'createdAt'])
+        && request.resource.data.id == reviewId
+        && request.resource.data.buyerId == currentUserId()
+        && isInRange(request.resource.data.rating, 1, 5)
+        && isNonEmptyString(request.resource.data.sheepId)
+        && isNonEmptyString(request.resource.data.sellerId)
+        && isValidTimestamp(request.resource.data.createdAt);
+      
+      // Owner updates own review
+      allow update: if isAuthenticated() && resource.data.buyerId == currentUserId()
+        && isUnchanged('buyerId')
+        && isUnchanged('sellerId')
+        && isUnchanged('sheepId')
+        && isUnchanged('createdAt')
+        && isInRange(request.resource.data.rating, 1, 5);
+      
+      // Owner or admin deletes review
+      allow delete: if isAuthenticated() && resource.data.buyerId == currentUserId() || isAdmin();
+    }
+    
+    // ================= FAVORITES COLLECTION =================
+    
+    match /favorites/{favoriteId} {
+      // User reads own favorites
+      allow read: if isOwner(resource.data.userId);
+      
+      // Authenticated user adds to favorites
+      allow create: if isAuthenticated()
+        && request.resource.data.userId == currentUserId()
+        && isNonEmptyString(request.resource.data.sheepId);
+      
+      // No updates to favorites
+      allow update: if false;
+      
+      // User removes own favorite
+      allow delete: if isOwner(resource.data.userId);
+    }
+    
+    // ================= NOTIFICATIONS COLLECTION =================
+    
+    match /notifications/{notificationId} {
+      // User reads own notifications
+      allow read: if isOwner(resource.data.userId);
+      
+      // Only admin or backend creates notifications
+      allow create: if isAdmin() || request.auth == null;
+      
+      // User marks as read, admin can update
+      allow update: if (isAuthenticated() && isOwner(resource.data.userId)) || isAdmin();
+      
+      // Owner or admin deletes notification
+      allow delete: if isOwner(resource.data.userId) || isAdmin();
+    }
+    
+    // ================= SUPPORT TICKETS COLLECTION =================
+    
+    match /support/{ticketId} {
+      // User reads own tickets, admin reads all
+      allow read: if (isAuthenticated() && resource.data.userId == currentUserId()) || isAdmin();
+      
+      // Authenticated user creates ticket
+      allow create: if isAuthenticated()
+        && hasAll(['id', 'userId', 'subject', 'message', 'status', 'createdAt'])
+        && request.resource.data.id == ticketId
+        && request.resource.data.userId == currentUserId()
+        && request.resource.data.status == 'open'
+        && hasMinLength(request.resource.data.subject, 5)
+        && hasMinLength(request.resource.data.message, 10)
+        && isValidTimestamp(request.resource.data.createdAt);
+      
+      // Only admin updates tickets
+      allow update: if isAdmin();
+      
+      // Only admin deletes tickets
+      allow delete: if isAdmin();
+    }
+    
+    // ================= SETTINGS COLLECTION =================
+    
+    match /settings/{settingId} {
+      // Authenticated users read settings
+      allow read: if isAuthenticated();
+      
+      // Only admin creates settings
+      allow create: if isAdmin();
+      
+      // Only admin updates settings
+      allow update: if isAdmin();
+      
+      // Only admin deletes settings
+      allow delete: if isAdmin();
+    }
+    
+    // ================= PASSWORD RESET TOKENS COLLECTION =================
+    
+    match /passwordResetTokens/{tokenId} {
+      // Backend only - no client access
+      allow read: if request.auth == null;
+      allow create: if request.auth == null;
+      allow update: if request.auth == null;
+      allow delete: if request.auth == null;
+    }
+    
+    // ================= EMAIL VERIFICATION TOKENS COLLECTION =================
+    
+    match /emailVerificationTokens/{tokenId} {
+      // Backend only - no client access
+      allow read: if request.auth == null;
+      allow create: if request.auth == null;
+      allow update: if request.auth == null;
+      allow delete: if request.auth == null;
+    }
+    
+    // ================= PASSWORD RESET COLLECTION =================
+    
+    match /password_resets/{resetId} {
+      allow read: if false;
+      allow create: if false;
+      allow update: if false;
+      allow delete: if false;
+    }
+    
+    // ================= PENDING REGISTRATIONS COLLECTION =================
+    
+    match /pending_registrations/{registrationId} {
+      allow read: if false;
+      allow create: if false;
+      allow update: if false;
+      allow delete: if false;
+    }
+    
+    // ================= DEFAULT DENY ALL =================
+    
     match /{document=**} {
       allow read, write: if false;
     }

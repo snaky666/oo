@@ -73,7 +73,7 @@ async function setupProduction(app: express.Express, _server: Server) {
 }
 
 export default async function runApp(
-  setup: (app: express.Express, server: express.Server) => Promise<void>,
+  setup: (app: express.Express, server: Server) => Promise<void>,
 ) {
   const server = await registerRoutes(app);
 

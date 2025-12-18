@@ -1,35 +1,19 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import express, { type Express } from "express";
-import { registerRoutes } from "../server/routes";
 
-const app = express();
+// Test endpoint - delete after confirming it works
+if (process.env.NODE_ENV === "production") {
+  console.log("[API] Serverless function handler loaded");
+}
 
-// Middleware
-app.use(express.json());
-app.use(express.urlencoded({ extended: false }));
-
-// CORS middleware
-app.use((req, res, next) => {
-  res.header("Access-Control-Allow-Origin", "*");
-  res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, PATCH, OPTIONS");
-  res.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
-  
-  if (req.method === "OPTIONS") {
-    return res.sendStatus(200);
-  }
-  
-  next();
-});
-
-// Register API routes
-registerRoutes(app);
-
-// Error handler
-app.use((err: any, _req: any, res: any, _next: any) => {
-  console.error("Error:", err);
-  res.status(err.statusCode || 500).json({ error: err.message });
-});
-
-export default function handler(req: VercelRequest, res: VercelResponse) {
-  return app(req as any, res as any);
+export default async function handler(
+  req: VercelRequest,
+  res: VercelResponse
+) {
+  // Test response to verify API routing works
+  return res.status(200).json({
+    message: "API catch-all endpoint working",
+    path: req.url,
+    method: req.method,
+    timestamp: new Date().toISOString()
+  });
 }

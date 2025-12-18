@@ -1,29 +1,17 @@
 {
   "version": 2,
-  "buildCommand": "npm run build",
+  "buildCommand": "npm run build && mkdir -p public && cp -r dist/public/* public/",
   "installCommand": "npm install",
+  "public": "public",
   "env": {
     "NODE_ENV": "production"
   },
-  "rewrites": [
-    {
-      "source": "/api/(.*)",
-      "destination": "/api/[...].ts"
+  "functions": {
+    "api/[...].ts": {
+      "maxDuration": 30
     },
-    {
-      "source": "/:path*",
-      "destination": "/index.html"
+    "api/sheep.ts": {
+      "maxDuration": 30
     }
-  ],
-  "headers": [
-    {
-      "source": "/assets/(.*)",
-      "headers": [
-        {
-          "key": "Cache-Control",
-          "value": "public, max-age=31536000, immutable"
-        }
-      ]
-    }
-  ]
+  }
 }

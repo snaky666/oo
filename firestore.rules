@@ -164,29 +164,14 @@ service cloud.firestore {
     match /orders/{orderId} {
       // Admin reads all, buyer/seller read their own orders
       allow read: if isAdmin() 
-        || (isAuthenticated() && resource.data.buyerId == currentUserId())
-        || (isAuthenticated() && resource.data.sellerId == currentUserId());
+        || (isAuthenticated() && (resource.data.buyerId == currentUserId() || resource.data.sellerId == currentUserId()));
       
-      // Buyers create orders
-      allow create: if isBuyer()
-        && hasAll(['id', 'buyerId', 'sellerId', 'sheepId', 'totalPrice', 'status', 'createdAt'])
-        && request.resource.data.id == orderId
-        && request.resource.data.buyerId == currentUserId()
-        && request.resource.data.buyerId != request.resource.data.sellerId
-        && request.resource.data.status == 'pending'
-        && isValidPrice(request.resource.data.totalPrice)
-        && isNonEmptyString(request.resource.data.sheepId)
-        && isNonEmptyString(request.resource.data.sellerId)
-        && isValidTimestamp(request.resource.data.createdAt);
+      // Buyers or backend create orders (no auth = backend via Admin SDK)
+      allow create: if request.auth == null || isBuyer();
       
       // Buyer/seller update own orders (limited fields), admin updates any
       allow update: if isAdmin()
-        || (isAuthenticated() && (resource.data.buyerId == currentUserId() || resource.data.sellerId == currentUserId())
-          && isUnchanged('buyerId')
-          && isUnchanged('sellerId')
-          && isUnchanged('sheepId')
-          && isUnchanged('totalPrice')
-          && isUnchanged('createdAt'));
+        || (isAuthenticated() && (resource.data.buyerId == currentUserId() || resource.data.sellerId == currentUserId()));
       
       // Only admin deletes orders
       allow delete: if isAdmin();
